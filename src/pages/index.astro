@@ -1,12 +1,13 @@
 ---
 // src/pages/index.astro
+export const prerender = true; // Explicitly mark as static
+
 import Layout from '../layouts/Layout.astro';
 import ExponatCard from '../components/ExponatCard.astro';
 import { getExponate, getKioskConfig, getMuseumInfo } from '../lib/sanity';
 
-// Kiosk Config laden (basierend auf MAC oder Default)
-const mac = Astro.url.searchParams.get('mac') || 'default';
-const kioskConfig = await getKioskConfig(mac);
+// For static generation, we use default config
+const kioskConfig = await getKioskConfig('default');
 const museumInfo = await getMuseumInfo();
 
 // Exponate basierend auf Kiosk-Modus laden
