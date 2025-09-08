@@ -1,10 +1,8 @@
 import { defineConfig } from 'astro/config';
-import netlify from '@astrojs/netlify';
 
 // https://astro.build/config
 export default defineConfig({
-  output: 'hybrid',
-  adapter: netlify(),
+  output: 'static', // Changed to static for simpler deployment
   vite: {
     define: {
       'import.meta.env.PUBLIC_SANITY_PROJECT_ID': JSON.stringify('832k5je1'),
