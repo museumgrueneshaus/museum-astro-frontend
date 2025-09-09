@@ -8,9 +8,12 @@ export interface Props {
 
 const { exponat, showQR = false } = Astro.props;
 
-const imageUrl = exponat.hauptbild 
-  ? urlFor(exponat.hauptbild).width(400).height(300).url()
-  : '/placeholder.jpg';
+const lqip = exponat.hauptbild?.asset?.metadata?.lqip || '';
+const widths = [320,480,640,768,1024];
+const src = exponat.hauptbild ? urlFor(exponat.hauptbild).width(640).height(480).auto('format').fit('crop').url() : '/placeholder.jpg';
+const srcset = exponat.hauptbild
+  ? widths.map(w => `${urlFor(exponat.hauptbild).width(w).height(Math.round(w*0.75)).auto('format').fit('crop').url()} ${w}w`).join(', ')
+  : undefined;
 ---
 
 <a href={`/exponat/${exponat._id}`} class="exponat-link">
@@ -23,9 +26,13 @@ const imageUrl = exponat.hauptbild
   >
   <div class="card-image">
     <img 
-      src={imageUrl} 
+      src={src}
+      srcset={srcset}
+      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
       alt={exponat.titel}
       loading="lazy"
+      decoding="async"
+      style={lqip ? `background: url(${lqip}) center / cover no-repeat` : undefined}
     />
     {exponat.ist_highlight && (
       <span class="highlight-badge" aria-label="Highlight">Highlight</span>

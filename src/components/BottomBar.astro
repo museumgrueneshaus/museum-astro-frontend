@@ -1,0 +1,39 @@
+---
+export interface Props {
+  show?: boolean;
+}
+
+const { show = true } = Astro.props;
+---
+
+{show && (
+  <nav class="bottom-bar mobile-only" aria-label="Quick actions">
+    <button class="bottom-btn" data-mode="explorer">Entdecken</button>
+    <button class="bottom-btn" data-action="search">Suche</button>
+    <button class="bottom-btn" data-mode="scan">Scan</button>
+    <a class="bottom-btn" href="/" data-action="info">Info</a>
+  </nav>
+)}
+
+<style>
+  .mobile-only { display: none; }
+  @media (max-width: 768px) {
+    .mobile-only { display: grid; }
+  }
+  .bottom-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    padding: 8px 12px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    z-index: 40;
+  }
+  .bottom-btn {
+    appearance: none; background: transparent; border: none; padding: 8px 0; font-weight: 700; color: var(--muted);
+  }
+  .bottom-btn.active { color: var(--primary); border-bottom: 2px solid currentColor; }
+</style>
+

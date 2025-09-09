@@ -14,9 +14,12 @@ if (!exponat) {
   return Astro.redirect('/404');
 }
 
-const imageUrl = exponat.hauptbild
-  ? urlFor(exponat.hauptbild).width(1200).height(900).url()
-  : '/placeholder.jpg';
+const lqip = exponat.hauptbild?.asset?.metadata?.lqip || '';
+const widths = [480,640,768,1024,1280];
+const src = exponat.hauptbild ? urlFor(exponat.hauptbild).width(1024).height(768).auto('format').fit('crop').url() : '/placeholder.jpg';
+const srcset = exponat.hauptbild
+  ? widths.map(w => `${urlFor(exponat.hauptbild).width(w).height(Math.round(w*0.75)).auto('format').fit('crop').url()} ${w}w`).join(', ')
+  : undefined;
 ---
 
 <Layout title={exponat.titel}>
@@ -26,7 +29,7 @@ const imageUrl = exponat.hauptbild
 
       <div class="detail-content">
         <div class="detail-image">
-          <img src={imageUrl} alt={exponat.titel} />
+          <img src={src} srcset={srcset} sizes="(max-width: 900px) 100vw, 50vw" alt={exponat.titel} decoding="async" style={lqip ? `background: url(${lqip}) center/cover no-repeat` : undefined} />
         </div>
 
         <div class="detail-info">
@@ -77,4 +80,3 @@ const imageUrl = exponat.hauptbild
   .metadata { margin-top: var(--space-8); padding-top: var(--space-6); border-top: 1px solid var(--border); display: grid; gap: .5rem; color: var(--text); }
   @media (max-width: 900px) { .detail-content { grid-template-columns: 1fr; padding: var(--space-6); gap: var(--space-6); } }
 </style>
-

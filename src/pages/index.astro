@@ -3,6 +3,7 @@
 
 import Layout from '../layouts/Layout.astro';
 import ExponatCard from '../components/ExponatCard.astro';
+import BottomBar from '../components/BottomBar.astro';
 import { getExponate, getKioskConfig, getMuseumInfo, getKategorien } from '../lib/sanity';
 
 // For static generation, we use default config
@@ -72,14 +73,14 @@ const primaryColor = kioskConfig?.design?.primaerfarbe || '#111827';
       <!-- Explorer Mode -->
       <section class="mode-content explorer-mode active" data-mode-content="explorer">
         <div class="toolbar">
-          <div class="filters">
+          <div class="filters chips-scroll">
             <button class="chip active" data-filter="all">Alle</button>
             <button class="chip" data-filter="highlights">Highlights</button>
             {kategorien?.map(k => (
               <button class="chip" data-category={k._id}>{k.titel}</button>
             ))}
           </div>
-          <div class="search">
+          <div class="search desktop-only">
             <input id="search-input" class="search-input" type="search" placeholder="Suche Exponate…" autocomplete="off" />
           </div>
         </div>
@@ -146,6 +147,14 @@ const primaryColor = kioskConfig?.design?.primaerfarbe || '#111827';
       </section>
     </main>
 
+    <!-- Search overlay (mobile) -->
+    <div id="search-overlay" class="search-overlay mobile-only" hidden>
+      <div class="search-panel container">
+        <input id="search-input-mobile" class="search-input" type="search" placeholder="Suche…" autofocus />
+        <button id="search-close" class="seg-btn" aria-label="Schließen">Schließen</button>
+      </div>
+    </div>
+
     <!-- Footer -->
     <footer class="app-footer">
       <div class="container footer-info">
@@ -158,6 +167,9 @@ const primaryColor = kioskConfig?.design?.primaerfarbe || '#111827';
         </div>
       </div>
     </footer>
+
+    <!-- Bottom bar (mobile) -->
+    <BottomBar />
 
     <!-- Idle Overlay -->
     <div class="idle-overlay" id="idle-overlay">
@@ -186,7 +198,7 @@ const primaryColor = kioskConfig?.design?.primaerfarbe || '#111827';
     }
 
     .header-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--space-4); }
-    .header-actions { display: flex; justify-content: flex-end; }
+    .header-actions { display: flex; justify-content: flex-end; gap: var(--space-4); }
 
     .segmented { display: inline-flex; gap: var(--space-6); background: transparent; border: none; padding: 0; }
     .seg-btn {
@@ -233,7 +245,9 @@ const primaryColor = kioskConfig?.design?.primaerfarbe || '#111827';
 
     /* Explorer Mode */
     .toolbar { margin-bottom: var(--space-8); display:flex; gap: var(--space-6); justify-content: space-between; align-items: center; flex-wrap: wrap; }
-    .filters { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .filters { display: flex; gap: .5rem; flex-wrap: nowrap; }
+    .chips-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .chips-scroll::-webkit-scrollbar { display: none; }
     .chip {
       border: 1px solid var(--border);
       background: #fff;
@@ -457,19 +471,22 @@ const primaryColor = kioskConfig?.design?.primaerfarbe || '#111827';
 
     /* Touch optimizations */
     @media (pointer: coarse) {
-      .exponate-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+      .exponate-grid { grid-template-columns: 1fr; }
     }
 
     /* Responsive */
+    .desktop-only { display: block; }
+    .mobile-only { display: none; }
     @media (max-width: 768px) {
-      .kiosk-header h1 {
-        font-size: 1.5rem;
-      }
-
-      .slide {
-        flex-direction: column;
-      }
+      .desktop-only { display: none; }
+      .mobile-only { display: block; }
+      .kiosk-main { padding-bottom: 64px; }
+      .exponate-grid { grid-template-columns: 1fr; }
+      .slide { flex-direction: column; }
     }
+
+    .search-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); backdrop-filter: blur(2px); z-index: 60; }
+    .search-panel { display: flex; gap: var(--space-4); align-items: center; padding-top: var(--space-8); }
   </style>
 
   <script>
@@ -657,6 +674,28 @@ const primaryColor = kioskConfig?.design?.primaerfarbe || '#111827';
       }
       deferredPrompt = null;
     });
+
+    // Bottom bar interactions
+    document.querySelectorAll('.bottom-btn[data-mode]')?.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.getAttribute('data-mode');
+        const t = document.querySelector(`.seg-btn[data-mode="${target}"]`);
+        (t as HTMLElement)?.click();
+      });
+    });
+
+    // Mobile search overlay
+    const searchOverlay = document.getElementById('search-overlay');
+    const searchClose = document.getElementById('search-close');
+    const inputMobile = document.getElementById('search-input-mobile') as HTMLInputElement | null;
+    document.querySelectorAll('[data-action="search"]').forEach(el => {
+      el.addEventListener('click', () => {
+        if (!searchOverlay) return;
+        searchOverlay.removeAttribute('hidden');
+        setTimeout(() => inputMobile?.focus(), 0);
+      });
+    });
+    searchClose?.addEventListener('click', () => searchOverlay?.setAttribute('hidden', ''));
     // Explorer filtering/search
     const chips = document.querySelectorAll('.chip');
     const cards = Array.from(document.querySelectorAll('.exponat-card'));
