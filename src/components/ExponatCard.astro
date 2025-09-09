@@ -13,13 +13,14 @@ const imageUrl = exponat.hauptbild
   : '/placeholder.jpg';
 ---
 
-<article 
-  class="exponat-card touchable" 
-  data-id={exponat._id}
-  data-category={exponat.kategorie?._id || ''}
-  data-highlight={exponat.ist_highlight ? 'true' : 'false'}
-  data-search={(exponat.titel + ' ' + (exponat.untertitel || '') + ' ' + (exponat.kurzbeschreibung || '') + ' ' + (exponat.tags || []).join(' ')).toLowerCase()}
->
+<a href={`/exponat/${exponat._id}`} class="exponat-link">
+  <article 
+    class="exponat-card touchable" 
+    data-id={exponat._id}
+    data-category={exponat.kategorie?._id || ''}
+    data-highlight={exponat.ist_highlight ? 'true' : 'false'}
+    data-search={(exponat.titel + ' ' + (exponat.untertitel || '') + ' ' + (exponat.kurzbeschreibung || '') + ' ' + (exponat.tags || []).join(' ')).toLowerCase()}
+  >
   <div class="card-image">
     <img 
       src={imageUrl} 
@@ -71,16 +72,19 @@ const imageUrl = exponat.hauptbild
       )}
     </div>
   </div>
-</article>
+  </article>
+</a>
 
 <style>
+  .exponat-link { color: inherit; text-decoration: none; display: block; }
+
   .exponat-card {
     background: #fff;
-    border-radius: var(--radius-2);
+    border-radius: 0;
     overflow: hidden;
-    box-shadow: var(--shadow);
+    box-shadow: none;
     cursor: pointer;
-    transition: transform .2s ease, box-shadow .2s ease;
+    transition: none;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -88,8 +92,8 @@ const imageUrl = exponat.hauptbild
   }
 
   .exponat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 24px rgba(17,24,39,.08);
+    transform: none;
+    box-shadow: none;
   }
 
   .card-image {
@@ -97,28 +101,28 @@ const imageUrl = exponat.hauptbild
     width: 100%;
     aspect-ratio: 4/3;
     overflow: hidden;
-    background: var(--bg-alt);
+    background: var(--bg);
   }
 
   .card-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform .35s ease;
+    transition: none;
   }
 
   .exponat-card:hover .card-image img {
-    transform: scale(1.03);
+    transform: none;
   }
 
   .highlight-badge {
     position: absolute;
     top: 10px;
     left: 10px;
-    background: rgba(255,255,255,.9);
+    background: rgba(255,255,255,1);
     color: var(--primary);
     padding: 2px 10px;
-    border-radius: 999px;
+    border-radius: 0;
     font-size: 0.7rem;
     font-weight: 700;
     border: 1px solid var(--border);
@@ -128,10 +132,10 @@ const imageUrl = exponat.hauptbild
     position: absolute;
     top: 10px;
     right: 10px;
-    background: rgba(255,255,255,.9);
+    background: rgba(255,255,255,1);
     width: 30px;
     height: 30px;
-    border-radius: 6px;
+    border-radius: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -219,9 +223,9 @@ const imageUrl = exponat.hauptbild
 
   .media-badge {
     font-size: .75rem;
-    background: var(--bg-alt);
+    background: var(--bg);
     padding: 4px 10px;
-    border-radius: 999px;
+    border-radius: 0;
     color: var(--text-dim);
     border: 1px solid var(--border);
   }
@@ -243,10 +247,10 @@ const imageUrl = exponat.hauptbild
 
   /* Dark theme adjustments */
   [data-theme="dark"] .exponat-card {
-    background: #0c111b;
+    background: var(--bg);
   }
 
   [data-theme="dark"] .qr-badge {
-    background: rgba(15,23,42,.9);
+    background: var(--bg);
   }
 </style>

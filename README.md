@@ -75,6 +75,19 @@ Konfiguriere die ID/Dataset per Umgebungsvariablen (bereits in Code verdrahtet):
 
 Fallback (wenn Variablen fehlen): `832k5je1` / `production`.
 
+### Auto-Deploy bei Sanity Publish (Build Hook)
+
+Wenn Inhalte veröffentlicht werden sollen automatisch Builds starten:
+1. Netlify Build Hook erstellen (Site Settings → Build & deploy → Build hooks)
+2. In Sanity einen Webhook anlegen (manage.sanity.io → API → Webhooks):
+   - URL: deine Netlify Build Hook URL (z. B. `https://api.netlify.com/build_hooks/68c029e04a4a99209a1825e8`)
+   - Methode: POST, Include payload: aus
+   - Trigger: Create, Update, Delete
+   - Filter:
+     ```groq
+     _type in ["exponat","kategorie","kioskConfig","museumInfo"] && !(_id in path("drafts.**"))
+     ```
+
 ### Kiosk Modi
 
 Das System unterstützt verschiedene Modi:
