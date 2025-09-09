@@ -1,0 +1,713 @@
+---
+// src/pages/index.astro
+
+import Layout from '../layouts/Layout.astro';
+import ExponatCard from '../components/ExponatCard.astro';
+import { getExponate, getKioskConfig, getMuseumInfo, getKategorien } from '../lib/sanity';
+
+// For static generation, we use default config
+const kioskConfig = await getKioskConfig('default');
+const museumInfo = await getMuseumInfo();
+
+// Exponate basierend auf Kiosk-Modus laden
+let exponate = [];
+let pageTitle = museumInfo?.name || 'Museum Digital';
+const kategorien = await getKategorien().catch(() => []);
+
+switch(kioskConfig?.modus) {
+  case 'slideshow':
+    exponate = kioskConfig.konfiguration?.slideshow_settings?.exponate || 
+               await getExponate({ highlight: true });
+    break;
+  case 'category':
+    const categoryId = kioskConfig.konfiguration?.category_settings?.kategorie?._ref;
+    exponate = await getExponate({ category: categoryId });
+    break;
+  case 'explorer':
+  default:
+    const explorerSettings = kioskConfig?.konfiguration?.explorer_settings;
+    exponate = await getExponate({
+      highlight: explorerSettings?.nur_highlights,
+      categories: explorerSettings?.kategorien,
+      limit: explorerSettings?.items_pro_seite || 12
+    });
+}
+
+// Theme aus Config
+const theme = kioskConfig?.design?.theme || 'default';
+const primaryColor = kioskConfig?.design?.primaerfarbe || '#111827';
+---
+
+<Layout title={pageTitle} theme={theme}>
+  <div class="kiosk-app" data-mode={kioskConfig?.modus || 'explorer'}>
+    <!-- Professional Header -->
+    <header class="app-header">
+      <div class="container header-bar">
+        <div class="brand">
+          {museumInfo?.logo && (
+            <img src={museumInfo.logo} alt={museumInfo.name} class="brand-logo" />
+          )}
+          <div>
+            <div class="brand-title">{pageTitle}</div>
+            {museumInfo?.untertitel && (
+              <div class="brand-subtitle">{museumInfo.untertitel}</div>
+            )}
+          </div>
+        </div>
+
+        <nav class="segmented" data-kiosk-modes>
+          <button data-mode="explorer" class="seg-btn active">Entdecken</button>
+          <button data-mode="slideshow" class="seg-btn">Slideshow</button>
+          <button data-mode="scan" class="seg-btn">QR Scan</button>
+        </nav>
+
+        <div class="header-actions">
+          <button id="install-app" class="seg-btn" style="display:none">Installieren</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="kiosk-main container">
+      <!-- Explorer Mode -->
+      <section class="mode-content explorer-mode active" data-mode-content="explorer">
+        <div class="toolbar">
+          <div class="filters">
+            <button class="chip active" data-filter="all">Alle</button>
+            <button class="chip" data-filter="highlights">Highlights</button>
+            {kategorien?.map(k => (
+              <button class="chip" data-category={k._id}>{k.titel}</button>
+            ))}
+          </div>
+          <div class="search">
+            <input id="search-input" class="search-input" type="search" placeholder="Suche Exponate…" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="exponate-grid">
+          {exponate.map(exponat => (
+            <ExponatCard exponat={exponat} showQR={kioskConfig?.funktionen?.zeige_qr_codes} />
+          ))}
+        </div>
+
+        {exponate.length === 0 && (
+          <div class="empty-state">
+            <p>Keine Exponate gefunden</p>
+          </div>
+        )}
+      </section>
+
+      <!-- Slideshow Mode -->
+      <section class="mode-content slideshow-mode" data-mode-content="slideshow">
+        <div class="slideshow-container">
+          <div class="slideshow-track">
+            {exponate.map((exponat, index) => (
+              <div class="slide" data-slide={index}>
+                <div class="slide-image">
+                  {exponat.hauptbild && (
+                    <img src={exponat.hauptbild} alt={exponat.titel} />
+                  )}
+                </div>
+                <div class="slide-info">
+                  <h2>{exponat.titel}</h2>
+                  <p class="inv-nr">{exponat.inventarnummer}</p>
+                  <p>{exponat.kurzbeschreibung}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div class="slideshow-controls">
+            <button class="prev-btn" aria-label="Vorherige Folie">←</button>
+            <button class="play-pause-btn" aria-label="Pause">⏸</button>
+            <button class="next-btn" aria-label="Nächste Folie">→</button>
+          </div>
+          <div class="slideshow-dots">
+            {exponate.map((_, index) => (
+              <span class="dot" data-dot={index}></span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <!-- QR Scanner Mode -->
+      <section class="mode-content scanner-mode" data-mode-content="scan">
+        <div class="scanner-container">
+          <div class="scanner-viewport">
+            <video id="scanner-video"></video>
+            <div class="scanner-overlay">
+              <div class="scanner-frame"></div>
+            </div>
+          </div>
+          <div class="scanner-info">
+            <h2>QR-Code scannen</h2>
+            <p>Halten Sie den QR-Code vor die Kamera</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div class="container footer-info">
+        {kioskConfig?.funktionen?.zeige_uhr && (
+          <div class="clock" id="clock">12:00</div>
+        )}
+        <div class="status">
+          <span class="status-dot online"></span>
+          <span id="status-text">Online</span>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Idle Overlay -->
+    <div class="idle-overlay" id="idle-overlay">
+      <div class="idle-content">
+        <h2>Berühren Sie den Bildschirm</h2>
+        <p>um fortzufahren</p>
+      </div>
+    </div>
+  </div>
+
+  <style define:vars={{ primaryColor }}>
+    .kiosk-app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .brand-logo {
+      height: 40px;
+      width: auto;
+      border-radius: 4px;
+      object-fit: contain;
+    }
+
+    .header-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--space-4); }
+    .header-actions { display: flex; justify-content: flex-end; }
+
+    .segmented {
+      display: inline-flex;
+      gap: 0;
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px;
+    }
+    .seg-btn {
+      appearance: none;
+      border: 0;
+      background: transparent;
+      padding: 8px 16px;
+      border-radius: 999px;
+      color: var(--muted);
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .seg-btn.active {
+      background: #fff;
+      color: var(--primary);
+      box-shadow: var(--shadow);
+    }
+
+    /* Main Content */
+    .kiosk-main {
+      flex: 1;
+      position: relative;
+      padding: var(--space-8) 0;
+      width: 100%;
+    }
+
+    .mode-content {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+      overflow: visible;
+    }
+
+    .mode-content.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* Explorer Mode */
+    .toolbar { margin-bottom: var(--space-8); display:flex; gap: var(--space-6); justify-content: space-between; align-items: center; flex-wrap: wrap; }
+    .filters { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .chip {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text-dim);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .chip.active, .chip:hover {
+      color: var(--primary);
+      border-color: #d1d5db;
+      box-shadow: 0 1px 0 rgba(0,0,0,.02);
+    }
+
+    .search { position: relative; min-width: 220px; }
+    .search-input { width: 100%; border: 1px solid var(--border); border-radius: 999px; padding: 10px 14px; outline: none; font: inherit; }
+    .search-input:focus { border-color: #d1d5db; box-shadow: 0 0 0 3px rgba(37, 99, 235, .08); }
+
+    .exponate-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: var(--space-8);
+      animation: fadeIn 0.5s;
+    }
+
+    /* Slideshow Mode */
+    .slideshow-container {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .slideshow-track {
+      position: relative;
+      width: 100%;
+      max-width: 1200px;
+      height: 70%;
+    }
+
+    .slide {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      gap: 3rem;
+      align-items: center;
+      opacity: 0;
+      transition: opacity 1s;
+    }
+
+    .slide.active {
+      opacity: 1;
+    }
+
+    .slide-image {
+      flex: 1;
+      height: 100%;
+    }
+
+    .slide-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 15px;
+    }
+
+    .slide-info {
+      flex: 1;
+      color: white;
+    }
+
+    .slide-info h2 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .slideshow-controls {
+      display: flex;
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .slideshow-controls button {
+      width: 48px;
+      height: 48px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid var(--border);
+      font-size: 1.25rem;
+      cursor: pointer;
+      transition: transform 0.2s;
+      box-shadow: var(--shadow);
+    }
+
+    .slideshow-controls button:hover {
+      transform: scale(1.1);
+    }
+
+    .slideshow-dots {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.5);
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .dot.active {
+      background: white;
+    }
+
+    /* Scanner Mode */
+    .scanner-container {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .scanner-viewport {
+      position: relative;
+      width: 100%;
+      max-width: 500px;
+      height: 500px;
+    }
+
+    #scanner-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 15px;
+    }
+
+    .scanner-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .scanner-frame {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 250px;
+      height: 250px;
+      border: 3px solid white;
+      border-radius: 15px;
+      animation: pulse 2s infinite;
+    }
+
+    .scanner-info {
+      text-align: center;
+      color: white;
+      margin-top: 2rem;
+    }
+
+    /* Footer */
+    .footer-info { display: flex; justify-content: space-between; align-items: center; }
+
+    .clock {
+      font-size: 1.25rem;
+      font-weight: 500;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; margin-right: 6px; }
+    .status-dot.offline { background: #f59e0b; }
+
+    /* Idle Overlay */
+    .idle-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.5s, visibility 0.5s;
+      z-index: 9999;
+    }
+
+    .idle-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .idle-content {
+      text-align: center;
+      color: white;
+    }
+
+    .idle-content h2 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      animation: pulse 2s infinite;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Touch optimizations */
+    @media (pointer: coarse) {
+      .exponate-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .kiosk-header h1 {
+        font-size: 1.5rem;
+      }
+
+      .slide {
+        flex-direction: column;
+      }
+    }
+  </style>
+
+  <script>
+    // Clock Update
+    function updateClock() {
+      const clock = document.getElementById('clock');
+      if (clock) {
+        const now = new Date();
+        clock.textContent = now.toLocaleTimeString('de-DE', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        });
+      }
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Mode Switching
+    const modeBtns = document.querySelectorAll('.seg-btn');
+    const modeContents = document.querySelectorAll('.mode-content');
+    
+    modeBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.mode;
+        
+        // Update buttons
+        modeBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Update content
+        modeContents.forEach(content => {
+          content.classList.remove('active');
+          if (content.dataset.modeContent === mode) {
+            content.classList.add('active');
+          }
+        });
+
+        // Special handling for slideshow
+        if (mode === 'slideshow') {
+          startSlideshow();
+        } else {
+          stopSlideshow();
+        }
+
+        // Special handling for scanner
+        if (mode === 'scan') {
+          startScanner();
+        } else {
+          stopScanner();
+        }
+      });
+    });
+
+    // Slideshow
+    let slideshowInterval;
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const dots = document.querySelectorAll('.dot');
+
+    function showSlide(index) {
+      slides.forEach(s => s.classList.remove('active'));
+      dots.forEach(d => d.classList.remove('active'));
+      
+      if (slides[index]) {
+        slides[index].classList.add('active');
+      }
+      if (dots[index]) {
+        dots[index].classList.add('active');
+      }
+      
+      currentSlide = index;
+    }
+
+    function nextSlide() {
+      currentSlide = (currentSlide + 1) % slides.length;
+      showSlide(currentSlide);
+    }
+
+    function prevSlide() {
+      currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+      showSlide(currentSlide);
+    }
+
+    function startSlideshow() {
+      showSlide(0);
+      slideshowInterval = setInterval(nextSlide, 10000); // 10 seconds
+    }
+
+    function stopSlideshow() {
+      clearInterval(slideshowInterval);
+    }
+
+    // Slideshow controls
+    document.querySelector('.prev-btn')?.addEventListener('click', () => {
+      stopSlideshow();
+      prevSlide();
+    });
+
+    document.querySelector('.next-btn')?.addEventListener('click', () => {
+      stopSlideshow();
+      nextSlide();
+    });
+
+    document.querySelector('.play-pause-btn')?.addEventListener('click', (e) => {
+      if (slideshowInterval) {
+        stopSlideshow();
+        e.target.textContent = '▶';
+      } else {
+        startSlideshow();
+        e.target.textContent = '⏸';
+      }
+    });
+
+    // QR Scanner (placeholder - needs real implementation)
+    function startScanner() {
+      console.log('Scanner würde hier starten');
+      // Implement with QR scanner library
+    }
+
+    function stopScanner() {
+      console.log('Scanner gestoppt');
+    }
+
+    // Idle detection
+    let idleTimer;
+    const idleTimeout = 300000; // 5 minutes
+    const idleOverlay = document.getElementById('idle-overlay');
+
+    function resetIdleTimer() {
+      clearTimeout(idleTimer);
+      idleOverlay?.classList.remove('active');
+      
+      idleTimer = setTimeout(() => {
+        idleOverlay?.classList.add('active');
+      }, idleTimeout);
+    }
+
+    // Reset on any interaction
+    ['touchstart', 'mousedown', 'keypress'].forEach(event => {
+      document.addEventListener(event, resetIdleTimer);
+    });
+
+    resetIdleTimer();
+
+    // Online/Offline detection
+    function updateOnlineStatus() {
+      const statusDot = document.querySelector('.status-dot');
+      const statusText = document.getElementById('status-text');
+      
+      if (navigator.onLine) {
+        statusDot?.classList.remove('offline');
+        statusDot?.classList.add('online');
+        if (statusText) statusText.textContent = 'Online';
+      } else {
+        statusDot?.classList.remove('online');
+        statusDot?.classList.add('offline');
+        if (statusText) statusText.textContent = 'Offline';
+      }
+    }
+
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    updateOnlineStatus();
+
+    // Service Worker for offline support
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(console.error);
+    }
+
+    // Install (A2HS) prompt
+    let deferredPrompt;
+    const installBtn = document.getElementById('install-app');
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (installBtn) installBtn.style.display = 'inline-block';
+    });
+
+    installBtn?.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const result = await deferredPrompt.userChoice;
+      if (result.outcome === 'accepted') {
+        installBtn.style.display = 'none';
+      }
+      deferredPrompt = null;
+    });
+  </script>
+</Layout>
+---
+    // Explorer filtering/search
+    const chips = document.querySelectorAll('.chip');
+    const cards = Array.from(document.querySelectorAll('.exponat-card'));
+    const input = document.getElementById('search-input');
+
+    let activeCategory = 'all';
+    let onlyHighlights = false;
+    let term = '';
+
+    function applyFilters() {
+      const t = term.trim().toLowerCase();
+      for (const el of cards) {
+        const matchesTerm = !t || el.dataset.search?.includes(t);
+        const matchesCat = activeCategory === 'all' || el.dataset.category === activeCategory;
+        const matchesHL = !onlyHighlights || el.dataset.highlight === 'true';
+        const show = matchesTerm && matchesCat && matchesHL;
+        el.style.display = show ? '' : 'none';
+      }
+    }
+
+    chips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        chips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        onlyHighlights = chip.dataset.filter === 'highlights';
+        activeCategory = chip.dataset.category || (chip.dataset.filter ? 'all' : activeCategory);
+        if (chip.dataset.filter === 'all') { activeCategory = 'all'; onlyHighlights = false; }
+        applyFilters();
+      })
+    });
+
+    input?.addEventListener('input', (e) => {
+      term = e.target.value || '';
+      applyFilters();
+    });

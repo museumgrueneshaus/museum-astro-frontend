@@ -1,0 +1,14 @@
+{
+  "name": "Museum Kiosk",
+  "short_name": "Museum",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#111827",
+  "description": "Kiosk-Erlebnis für Museen – entdecken, stöbern, scannen.",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
+

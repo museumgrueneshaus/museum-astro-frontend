@@ -1,0 +1,144 @@
+---
+export const prerender = false; // This makes it a server-rendered page
+
+import Layout from '../../layouts/Layout.astro';
+import { getExponat, urlFor } from '../../lib/sanity';
+
+const { id } = Astro.params;
+const exponat = await getExponat(id);
+
+if (!exponat) {
+  return Astro.redirect('/404');
+}
+
+const imageUrl = exponat.hauptbild 
+  ? urlFor(exponat.hauptbild).width(800).height(600).url()
+  : '/placeholder.jpg';
+---
+
+<Layout title={exponat.titel}>
+  <div class="exponat-detail">
+    <button onclick="history.back()" class="back-button">
+      ← Zurück
+    </button>
+    
+    <div class="detail-content">
+      <div class="detail-image">
+        <img src={imageUrl} alt={exponat.titel} />
+      </div>
+      
+      <div class="detail-info">
+        <span class="inv-nummer">{exponat.inventarnummer}</span>
+        <h1>{exponat.titel}</h1>
+        {exponat.untertitel && <h2>{exponat.untertitel}</h2>}
+        
+        <p class="description">{exponat.kurzbeschreibung}</p>
+        
+        {exponat.beschreibung && (
+          <div class="full-description">
+            {exponat.beschreibung}
+          </div>
+        )}
+        
+        <div class="metadata">
+          {exponat.datierung?.jahr_text && (
+            <div class="meta-item">
+              <strong>Datierung:</strong> {exponat.datierung.jahr_text}
+            </div>
+          )}
+          {exponat.herstellung?.material && (
+            <div class="meta-item">
+              <strong>Material:</strong> {exponat.herstellung.material}
+            </div>
+          )}
+          {exponat.physisch?.masse && (
+            <div class="meta-item">
+              <strong>Maße:</strong> {exponat.physisch.masse}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .exponat-detail {
+    min-height: 100vh;
+    padding: 2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+
+  .back-button {
+    padding: 0.75rem 1.5rem;
+    background: white;
+    border: none;
+    border-radius: 30px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-bottom: 2rem;
+    transition: transform 0.3s;
+  }
+
+  .back-button:hover {
+    transform: translateX(-4px);
+  }
+
+  .detail-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    padding: 3rem;
+  }
+
+  .detail-image img {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+  }
+
+  .inv-nummer {
+    font-size: 0.875rem;
+    color: #666;
+    font-family: monospace;
+  }
+
+  .detail-info h1 {
+    font-size: 2.5rem;
+    margin: 0.5rem 0;
+  }
+
+  .detail-info h2 {
+    font-size: 1.5rem;
+    color: #666;
+    font-style: italic;
+  }
+
+  .description {
+    font-size: 1.25rem;
+    line-height: 1.6;
+    margin: 2rem 0;
+  }
+
+  .metadata {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .meta-item {
+    margin: 0.5rem 0;
+  }
+
+  @media (max-width: 768px) {
+    .detail-content {
+      grid-template-columns: 1fr;
+      padding: 1.5rem;
+    }
+  }
+</style>

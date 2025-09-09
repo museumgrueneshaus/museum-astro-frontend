@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Offline – Museum</title>
+    <style>
+      :root {
+        --text: #111827; --muted:#6b7280; --border:#e5e7eb; --bg:#ffffff;
+        --shadow: 0 1px 1px rgba(0,0,0,.04), 0 8px 24px rgba(17,24,39,.06);
+      }
+      body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); }
+      .wrap { min-height: 100vh; display: grid; place-items: center; padding: 3rem 1rem; }
+      .card { max-width: 600px; width: 100%; border: 1px solid var(--border); border-radius: 16px; padding: 2rem; box-shadow: var(--shadow); text-align: center; }
+      h1 { font-size: 1.75rem; margin: .25rem 0 0.5rem; }
+      p { color: var(--muted); }
+      .btn { display:inline-block; margin-top:1rem; padding:.6rem 1rem; border:1px solid var(--border); border-radius:999px; text-decoration:none; color:var(--text); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <div style="font-size:3rem">🛰️</div>
+        <h1>Du bist offline</h1>
+        <p>Keine Verbindung – bereits besuchte Seiten können weiterhin angezeigt werden.</p>
+        <a class="btn" href="/">Zur Startseite</a>
+      </div>
+    </div>
+  </body>
+  </html>
+

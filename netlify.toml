@@ -1,0 +1,30 @@
+[build]
+  command = "npm install && npm run build"
+  publish = "dist"
+
+[build.environment]
+  NPM_FLAGS = "--version"
+  NODE_VERSION = "20"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/_astro/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# SSR via Astro Netlify adapter; no SPA fallback redirect
+
+# API proxy to Sanity can be added if you run into CORS issues.
+# Prefer configuring CORS in your Sanity project to allow your Netlify domain.

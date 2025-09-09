@@ -1,0 +1,23 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="404 - Seite nicht gefunden">
+  <div class="error-page container">
+    <div class="error-card">
+      <div class="error-code">404</div>
+      <h2 class="error-title">Seite nicht gefunden</h2>
+      <p class="error-text">Die angeforderte Seite existiert nicht oder wurde verschoben.</p>
+      <a href="/" class="home-button">Zur Startseite</a>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .error-page { min-height: 70vh; display: grid; place-items: center; padding: var(--space-12) 0; }
+  .error-card { text-align: center; background: #fff; border: 1px solid var(--border); border-radius: var(--radius-3); padding: var(--space-10); box-shadow: var(--shadow); max-width: 640px; width: 100%; }
+  .error-code { font-size: clamp(3rem, 8vw, 5rem); font-weight: 800; letter-spacing: -1px; color: var(--primary); }
+  .error-title { margin-top: var(--space-4); font-size: clamp(1.25rem, 2.4vw, 1.75rem); }
+  .error-text { color: var(--text-dim); margin: var(--space-4) 0 var(--space-8); }
+  .home-button { display: inline-block; padding: 10px 16px; background: #fff; color: var(--primary); text-decoration: none; border-radius: 999px; border: 1px solid var(--border); font-weight: 600; box-shadow: var(--shadow); }
+</style>
