@@ -1,0 +1,263 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import ExponatCard from '../../components/ExponatCard.astro';
+import BottomBar from '../../components/BottomBar.astro';
+import { getExponate, getKioskConfig, getMuseumInfo, getKategorien } from '../../lib/sanity';
+
+// Mobile focuses on Explorer + Scanner; no slideshow
+const kioskConfig = await getKioskConfig('default').catch(() => null);
+const museumInfo = await getMuseumInfo().catch(() => ({ name: 'Museum Digital' }));
+const kategorien = await getKategorien().catch(() => []);
+
+let exponate = [];
+try {
+  const explorerSettings = kioskConfig?.konfiguration?.explorer_settings;
+  exponate = await getExponate({
+    highlight: explorerSettings?.nur_highlights,
+    categories: explorerSettings?.kategorien,
+    limit: explorerSettings?.items_pro_seite || 20
+  });
+} catch { exponate = []; }
+
+const pageTitle = museumInfo?.name ? `${museumInfo.name} – Mobil` : 'Museum – Mobil';
+---
+
+<Layout title={pageTitle}>
+  <div class="mobile-app" data-mode="explorer">
+    <header class="m-header container">
+      <div class="m-title">{museumInfo?.name || 'Museum'}</div>
+      <div class="m-sub">{museumInfo?.untertitel || 'Katalog'}</div>
+      <div class="m-actions">
+        <button class="m-action" data-action="search" aria-label="Suche">🔍</button>
+        <button class="m-action" data-mode="scan" aria-label="Scanner">📷</button>
+      </div>
+    </header>
+
+    <main class="m-main">
+      <!-- Explorer -->
+      <section class="m-section active" data-mode-content="explorer">
+        <div class="container">
+          <div class="m-search">
+            <input id="search-input" class="m-search-input" type="search" placeholder="Suche Exponate…" autocomplete="off" />
+          </div>
+
+          <div class="m-chips">
+            <button class="m-chip active" data-filter="all">Alle</button>
+            <button class="m-chip" data-filter="highlights">Highlights</button>
+            {kategorien?.map(k => (
+              <button class="m-chip" data-category={k._id}>{k.titel}</button>
+            ))}
+          </div>
+
+          <div class="m-grid">
+            {exponate.map((exponat) => (
+              <ExponatCard exponat={exponat} showQR={kioskConfig?.funktionen?.zeige_qr_codes} />
+            ))}
+          </div>
+
+          {exponate.length === 0 && (
+            <div class="m-empty">Keine Exponate gefunden</div>
+          )}
+        </div>
+      </section>
+
+      <!-- Scanner -->
+      <section class="m-section" data-mode-content="scan">
+        <div class="scanner-container">
+          <div class="scanner-viewport">
+            <video id="scanner-video" playsinline></video>
+            <div class="scanner-overlay"><div class="scanner-frame"></div></div>
+          </div>
+          <div class="scanner-info">
+            <h2>QR-Code scannen</h2>
+            <p>Bitte Kamera-Zugriff erlauben</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <BottomBar />
+
+    <div id="search-overlay" class="search-overlay" hidden>
+      <div class="container search-panel">
+        <input id="search-input-mobile" class="m-search-input" type="search" placeholder="Suche…" />
+        <button id="search-close" class="m-chip">Schließen</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .mobile-app { min-height: 100vh; background: var(--bg); }
+    .m-header { display:flex; align-items:center; justify-content: space-between; gap: 1rem; padding: var(--space-6) var(--space-6); border-bottom: 1px solid var(--border); }
+    .m-title { font-weight: 800; }
+    .m-sub { color: var(--muted); font-weight: 500; }
+    .m-actions { display:flex; gap:.5rem; }
+    .m-action { appearance:none; border:1px solid var(--border); background:#fff; padding:.5rem .75rem; border-radius:999px; }
+
+    .m-main { padding: var(--space-6) 0 80px; }
+    .m-search { position: sticky; top: 0; background: var(--bg); padding-bottom: var(--space-4); z-index: 5; }
+    .m-search-input { width: 100%; border:1px solid var(--border); border-radius:999px; padding:12px 16px; font:inherit; }
+    .m-chips { display:flex; gap:.5rem; overflow-x:auto; -webkit-overflow-scrolling:touch; padding: var(--space-4) 0; }
+    .m-chip { border:1px solid var(--border); background:#fff; padding:8px 12px; border-radius:999px; font-weight:600; }
+    .m-chip.active, .m-chip:focus-visible { color: var(--primary); border-color:#d1d5db; }
+    .m-grid { display:grid; grid-template-columns: 1fr; gap: var(--space-6); }
+    .m-empty { text-align:center; color: var(--muted); padding: var(--space-10) 0; }
+
+    .m-section { display:none; }
+    .m-section.active { display:block; }
+
+    /* Scanner */
+    .scanner-container { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height: 60vh; background: #0b0f17; padding: var(--space-6) 0; }
+    .scanner-viewport { position: relative; width: min(520px, 86vw); aspect-ratio: 3/4; background:#000; border-radius: 16px; overflow: hidden; }
+    .scanner-viewport video { width:100%; height:100%; object-fit:cover; }
+    .scanner-overlay { position:absolute; inset:0; pointer-events:none; }
+    .scanner-frame { position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width: 70%; aspect-ratio: 1; border: 3px solid #fff; border-radius: 12px; }
+    .scanner-info { color:#fff; text-align:center; margin-top: var(--space-6); }
+
+    .search-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); backdrop-filter: blur(2px); z-index: 60; }
+    .search-panel { display:flex; gap: var(--space-4); align-items:center; padding-top: var(--space-8); }
+  </style>
+
+  <script>
+    // Mode toggling
+    function setMode(mode) {
+      document.querySelectorAll('.m-section').forEach(s => s.classList.remove('active'));
+      document.querySelector(`[data-mode-content="${mode}"]`)?.classList.add('active');
+      if (mode === 'scan') startScanner(); else stopScanner();
+    }
+
+    // Bottom buttons
+    document.querySelectorAll('.bottom-btn[data-mode]')?.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const m = btn.getAttribute('data-mode');
+        if (!m) return;
+        setMode(m);
+      });
+    });
+
+    // Header buttons
+    document.querySelectorAll('.m-action[data-mode]')?.forEach(btn => {
+      btn.addEventListener('click', () => setMode(btn.getAttribute('data-mode')));
+    });
+
+    // Search overlay
+    const searchOverlay = document.getElementById('search-overlay');
+    const searchClose = document.getElementById('search-close');
+    const inputMobile = document.getElementById('search-input-mobile');
+    document.querySelectorAll('[data-action="search"]').forEach(el => {
+      el.addEventListener('click', () => {
+        if (!searchOverlay) return;
+        searchOverlay.removeAttribute('hidden');
+        setTimeout(() => inputMobile && inputMobile.focus(), 0);
+      });
+    });
+    searchClose?.addEventListener('click', () => searchOverlay?.setAttribute('hidden', ''));
+
+    // Filtering
+    const chips = document.querySelectorAll('.m-chip');
+    const cards = Array.from(document.querySelectorAll('.exponat-card'));
+    const input = document.getElementById('search-input');
+    let activeCategory = 'all';
+    let onlyHighlights = false;
+    let term = '';
+    function applyFilters() {
+      const t = term.trim().toLowerCase();
+      for (const el of cards) {
+        const matchesTerm = !t || el.dataset.search?.includes(t);
+        const matchesCat = activeCategory === 'all' || el.dataset.category === activeCategory;
+        const matchesHL = !onlyHighlights || el.dataset.highlight === 'true';
+        const show = matchesTerm && matchesCat && matchesHL;
+        el.style.display = show ? '' : 'none';
+      }
+    }
+    chips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        chips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        onlyHighlights = chip.dataset.filter === 'highlights';
+        activeCategory = chip.dataset.category || (chip.dataset.filter ? 'all' : activeCategory);
+        if (chip.dataset.filter === 'all') { activeCategory = 'all'; onlyHighlights = false; }
+        applyFilters();
+      })
+    });
+    input?.addEventListener('input', (e) => { term = e.target.value || ''; applyFilters(); });
+
+    // QR Scanner (same implementation as desktop page)
+    const SANITY_PROJECT_ID = "{import.meta.env.PUBLIC_SANITY_PROJECT_ID || '832k5je1'}";
+    const SANITY_DATASET = "{import.meta.env.PUBLIC_SANITY_DATASET || 'production'}";
+    let qrScanner;
+    async function startScanner() {
+      const video = document.getElementById('scanner-video');
+      if (!video) return;
+      try {
+        const { default: QrScanner } = await import('qr-scanner');
+        if (!qrScanner) {
+          qrScanner = new QrScanner(
+            video,
+            async (result) => {
+              const text = (result && (result.data || result)) ? (result.data || String(result)) : '';
+              if (!text) return;
+              try {
+                try { const u = new URL(text); window.location.href = u.href; return; } catch {}
+                const groq = '*[_type=="exponat" && qr_code.current == $code][0]{_id}';
+                const api = `https://${SANITY_PROJECT_ID}.api.sanity.io/v1/data/query/${SANITY_DATASET}?query=${encodeURIComponent(groq)}&$code=${encodeURIComponent(text)}`;
+                const res = await fetch(api);
+                const data = await res.json();
+                const id = data && data.result && data.result._id;
+                if (id) window.location.href = `/exponat/${id}`; else alert('Kein Exponat gefunden.');
+              } catch (err) {
+                console.error('QR-Verarbeitung fehlgeschlagen', err);
+                alert('QR-Code konnte nicht verarbeitet werden.');
+              } finally {
+                stopScanner();
+              }
+            },
+            { preferredCamera: 'environment', highlightScanRegion: true, highlightCodeOutline: true }
+          );
+        }
+        await qrScanner.start();
+      } catch (e) {
+        console.warn('qr-scanner Import/Start fehlgeschlagen, versuche BarcodeDetector', e);
+        try {
+          if ('BarcodeDetector' in window) {
+            const constraints = { video: { facingMode: 'environment' } };
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            video.srcObject = stream;
+            await video.play();
+            const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+            const scan = async () => {
+              if (video.readyState === HTMLMediaElement.HAVE_ENOUGH_DATA) {
+                try {
+                  const barcodes = await detector.detect(video);
+                  const code = barcodes?.[0]?.rawValue;
+                  if (code) {
+                    try { const u = new URL(code); window.location.href = u.href; return; } catch {}
+                    const groq = '*[_type=="exponat" && qr_code.current == $code][0]{_id}';
+                    const api = `https://${SANITY_PROJECT_ID}.api.sanity.io/v1/data/query/${SANITY_DATASET}?query=${encodeURIComponent(groq)}&$code=${encodeURIComponent(code)}`;
+                    const res = await fetch(api);
+                    const data = await res.json();
+                    const id = data && data.result && data.result._id;
+                    if (id) window.location.href = `/exponat/${id}`; else alert('Kein Exponat gefunden.');
+                    return;
+                  }
+                } catch {}
+              }
+              requestAnimationFrame(scan);
+            };
+            requestAnimationFrame(scan);
+          } else {
+            alert('QR-Scan wird von diesem Gerät/Browser nicht unterstützt.');
+          }
+        } catch (err) {
+          console.error('BarcodeDetector fehlgeschlagen', err);
+          alert('Kamera-Zugriff nicht möglich. Bitte Berechtigungen prüfen.');
+        }
+      }
+    }
+    function stopScanner() { try { qrScanner && qrScanner.stop(); } catch {} }
+
+    // Default mode
+    setMode('explorer');
+  </script>
+</Layout>
+

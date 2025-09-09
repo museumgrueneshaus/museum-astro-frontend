@@ -129,6 +129,16 @@ Die App ist als Progressive Web App konfiguriert:
 - Installierbar auf Homescreen
 - Vollbild-Modus
 
+### Separate Mobile-Seite
+
+Zusätzlich zur Startseite (`/`) gibt es eine mobile-optimierte Seite unter `/mobile/`:
+- Fokus auf Explorer + QR-Scanner
+- Vereinfachte Navigation mit Bottom-Bar
+
+Aufruf: `https://deine-app.netlify.app/mobile/`
+
+Optional kann per Link/QR-Code direkt auf die Mobile-Seite verwiesen werden.
+
 ## 🔐 Umgebungsvariablen
 
 Beispiel (`.env.example` vorhanden):

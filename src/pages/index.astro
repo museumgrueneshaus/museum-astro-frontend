@@ -3,12 +3,13 @@
 
 import Layout from '../layouts/Layout.astro';
 import ExponatCard from '../components/ExponatCard.astro';
+import ModePreview from '../components/ModePreview.astro';
 import BottomBar from '../components/BottomBar.astro';
-import { getExponate, getKioskConfig, getMuseumInfo, getKategorien } from '../lib/sanity';
+import { getExponate, getKioskConfig, getMuseumInfo, getKategorien, urlFor } from '../lib/sanity';
 
 // For static generation, we use default config
-const kioskConfig = await getKioskConfig('default');
-const museumInfo = await getMuseumInfo();
+const kioskConfig = await getKioskConfig('default').catch(() => null);
+const museumInfo = await getMuseumInfo().catch(() => ({ name: 'Museum Digital' }));
 
 // Exponate basierend auf Kiosk-Modus laden
 let exponate = [];
@@ -17,26 +18,50 @@ const kategorien = await getKategorien().catch(() => []);
 
 switch(kioskConfig?.modus) {
   case 'slideshow':
-    exponate = kioskConfig.konfiguration?.slideshow_settings?.exponate || 
-               await getExponate({ highlight: true });
+    try {
+      exponate = kioskConfig?.konfiguration?.slideshow_settings?.exponate || await getExponate({ highlight: true });
+    } catch { exponate = []; }
     break;
   case 'category':
-    const categoryId = kioskConfig.konfiguration?.category_settings?.kategorie?._ref;
-    exponate = await getExponate({ category: categoryId });
+    try {
+      const categoryId = kioskConfig?.konfiguration?.category_settings?.kategorie?._ref;
+      exponate = await getExponate({ category: categoryId });
+    } catch { exponate = []; }
     break;
   case 'explorer':
   default:
-    const explorerSettings = kioskConfig?.konfiguration?.explorer_settings;
-    exponate = await getExponate({
-      highlight: explorerSettings?.nur_highlights,
-      categories: explorerSettings?.kategorien,
-      limit: explorerSettings?.items_pro_seite || 12
-    });
+    try {
+      const explorerSettings = kioskConfig?.konfiguration?.explorer_settings;
+      exponate = await getExponate({
+        highlight: explorerSettings?.nur_highlights,
+        categories: explorerSettings?.kategorien,
+        limit: explorerSettings?.items_pro_seite || 12
+      });
+    } catch { exponate = []; }
 }
 
 // Theme aus Config
 const theme = kioskConfig?.design?.theme || 'default';
 const primaryColor = kioskConfig?.design?.primaerfarbe || '#111827';
+// Prepare mode previews from Sanity config
+let explorerPreview = [];
+let slideshowPreview = [];
+try {
+  const expSettings = kioskConfig?.konfiguration?.explorer_settings;
+  explorerPreview = await getExponate({
+    highlight: expSettings?.nur_highlights,
+    categories: expSettings?.kategorien,
+    limit: 4
+  });
+} catch {}
+try {
+  const ss = kioskConfig?.konfiguration?.slideshow_settings;
+  if (ss?.exponate && ss.exponate.length > 0) {
+    slideshowPreview = ss.exponate.slice(0, 1);
+  } else {
+    slideshowPreview = await getExponate({ highlight: true, limit: 1 });
+  }
+} catch {}
 ---
 
 <Layout title={pageTitle} theme={theme}>
@@ -70,6 +95,8 @@ const primaryColor = kioskConfig?.design?.primaerfarbe || '#111827';
 
     <!-- Main Content -->
     <main class="kiosk-main container">
+      <!-- Modes Preview (desktop only) -->
+      <ModePreview explorerItems={explorerPreview} slideshowItems={slideshowPreview} />
       <!-- Explorer Mode -->
       <section class="mode-content explorer-mode active" data-mode-content="explorer">
         <div class="toolbar">
@@ -200,23 +227,11 @@ const primaryColor = kioskConfig?.design?.primaerfarbe || '#111827';
     .header-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--space-4); }
     .header-actions { display: flex; justify-content: flex-end; gap: var(--space-4); }
 
-    .segmented { display: inline-flex; gap: var(--space-6); background: transparent; border: none; padding: 0; }
-    .seg-btn {
-      appearance: none;
-      border: 0;
-      background: transparent;
-      padding: 6px 0;
-      border-radius: 0;
-      color: var(--muted);
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .seg-btn.active {
-      background: transparent;
-      color: var(--primary);
-      box-shadow: none;
-      border-bottom: 2px solid currentColor;
-    }
+    /* Minimal segmented control (text with underline) */
+    .segmented { display: inline-flex; gap: var(--space-6); background: transparent; border: 0; padding: 0; }
+    .seg-btn { appearance: none; border: 0; background: transparent; padding: 6px 0; color: var(--muted); font-weight: 700; cursor: pointer; letter-spacing: .2px; }
+    .seg-btn:hover { color: var(--text); }
+    .seg-btn.active { color: var(--text); border-bottom: 2px solid currentColor; }
 
     /* Main Content */
     .kiosk-main {
@@ -248,31 +263,16 @@ const primaryColor = kioskConfig?.design?.primaerfarbe || '#111827';
     .filters { display: flex; gap: .5rem; flex-wrap: nowrap; }
     .chips-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .chips-scroll::-webkit-scrollbar { display: none; }
-    .chip {
-      border: 1px solid var(--border);
-      background: #fff;
-      color: var(--text-dim);
-      border-radius: 999px;
-      padding: 6px 12px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .chip.active, .chip:hover {
-      color: var(--primary);
-      border-color: #d1d5db;
-      box-shadow: 0 1px 0 rgba(0,0,0,.02);
-    }
+    .chip { border: 0; background: transparent; color: var(--muted); border-radius: 0; padding: 0; font-weight: 600; cursor: pointer; letter-spacing: .2px; border-bottom: 2px solid transparent; }
+    .chip:hover { color: var(--text); }
+    .chip.active { color: var(--text); border-bottom-color: currentColor; }
 
-    .search { position: relative; min-width: 220px; }
-    .search-input { width: 100%; border: 1px solid var(--border); border-radius: 999px; padding: 10px 14px; outline: none; font: inherit; }
-    .search-input:focus { border-color: #d1d5db; box-shadow: 0 0 0 3px rgba(37, 99, 235, .08); }
+    .search { position: relative; min-width: 260px; }
+    .search-input { width: 100%; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; padding: 10px 2px; outline: none; font: inherit; background: transparent; transition: border-color .2s; }
+    .search-input::placeholder { color: var(--muted); }
+    .search-input:focus { border-bottom-color: #cbd5e1; box-shadow: none; }
 
-    .exponate-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: var(--space-8);
-      animation: fadeIn 0.5s;
-    }
+    .exponate-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: clamp(1.5rem, 2.5vw, 2.5rem); animation: fadeIn 0.5s; }
 
     /* Slideshow Mode */
     .slideshow-container {
@@ -333,7 +333,7 @@ const primaryColor = kioskConfig?.design?.primaerfarbe || '#111827';
       margin-top: 2rem;
     }
 
-    .slideshow-controls button { width: 44px; height: 44px; border-radius: 0; background: #fff; border: 1px solid var(--border); font-size: 1.1rem; cursor: pointer; transition: none; box-shadow: none; }
+    .slideshow-controls button { width: 44px; height: 44px; border-radius: 0; background: transparent; border: 1px solid var(--border); font-size: 1.1rem; cursor: pointer; transition: none; box-shadow: none; }
 
     .slideshow-controls button:hover {
       transform: scale(1.1);
@@ -504,8 +504,8 @@ const primaryColor = kioskConfig?.design?.primaerfarbe || '#111827';
     setInterval(updateClock, 1000);
     updateClock();
 
-    // Mode Switching
-    const modeBtns = document.querySelectorAll('.seg-btn');
+    // Mode Switching (limit to mode buttons only)
+    const modeBtns = document.querySelectorAll('.seg-btn[data-mode]');
     const modeContents = document.querySelectorAll('.mode-content');
     
     modeBtns.forEach(btn => {
@@ -540,6 +540,15 @@ const primaryColor = kioskConfig?.design?.primaerfarbe || '#111827';
       });
     });
 
+    // Modes preview tiles -> set mode
+    document.querySelectorAll('.mode-card[data-mode]')?.forEach(tile => {
+      tile.addEventListener('click', () => {
+        const m = tile.getAttribute('data-mode');
+        const targetBtn = document.querySelector(`.seg-btn[data-mode="${m}"]`);
+        if (targetBtn) targetBtn.click();
+      });
+    });
+
     // Slideshow
     let slideshowInterval;
     let currentSlide = 0;
@@ -571,6 +580,7 @@ const primaryColor = kioskConfig?.design?.primaerfarbe || '#111827';
     }
 
     function startSlideshow() {
+      if (!slides || slides.length === 0) return;
       showSlide(0);
       slideshowInterval = setInterval(nextSlide, 10000); // 10 seconds
     }
@@ -600,14 +610,106 @@ const primaryColor = kioskConfig?.design?.primaerfarbe || '#111827';
       }
     });
 
-    // QR Scanner (placeholder - needs real implementation)
-    function startScanner() {
-      console.log('Scanner würde hier starten');
-      // Implement with QR scanner library
+    // QR Scanner implementation
+    const SANITY_PROJECT_ID = "{import.meta.env.PUBLIC_SANITY_PROJECT_ID || '832k5je1'}";
+    const SANITY_DATASET = "{import.meta.env.PUBLIC_SANITY_DATASET || 'production'}";
+
+    let qrScanner;
+    async function startScanner() {
+      const video = document.getElementById('scanner-video');
+      if (!video) return;
+
+      try {
+        // Lazy import to avoid loading on other modes
+        const { default: QrScanner } = await import('qr-scanner');
+        // Optional: set worker path if needed
+        // QrScanner.WORKER_PATH = '/qr-scanner-worker.min.js';
+
+        if (!qrScanner) {
+          qrScanner = new QrScanner(
+            video,
+            async (result) => {
+              const text = (result && (result.data || result)) ? (result.data || String(result)) : '';
+              if (!text) return;
+              try {
+                // If it's a URL, navigate directly
+                try {
+                  const u = new URL(text);
+                  window.location.href = u.href;
+                  return;
+                } catch {}
+
+                // Otherwise, try lookup by qr_code via Sanity HTTP API
+                const groq = '*[_type=="exponat" && qr_code.current == $code][0]{_id}';
+                const api = `https://${SANITY_PROJECT_ID}.api.sanity.io/v1/data/query/${SANITY_DATASET}?query=${encodeURIComponent(groq)}&$code=${encodeURIComponent(text)}`;
+                const res = await fetch(api);
+                const data = await res.json();
+                const id = data && data.result && data.result._id;
+                if (id) {
+                  window.location.href = `/exponat/${id}`;
+                } else {
+                  alert('Kein Exponat für diesen QR-Code gefunden.');
+                }
+              } catch (err) {
+                console.error('QR-Verarbeitung fehlgeschlagen', err);
+                alert('QR-Code konnte nicht verarbeitet werden.');
+              } finally {
+                stopScanner();
+              }
+            },
+            { preferredCamera: 'environment', highlightScanRegion: true, highlightCodeOutline: true }
+          );
+        }
+        await qrScanner.start();
+      } catch (e) {
+        console.warn('qr-scanner Import/Start fehlgeschlagen, versuche BarcodeDetector', e);
+        try {
+          if ('BarcodeDetector' in window) {
+            const constraints = { video: { facingMode: 'environment' } };
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            video.srcObject = stream;
+            await video.play();
+
+            const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+
+            const scan = async () => {
+              if (video.readyState === HTMLMediaElement.HAVE_ENOUGH_DATA) {
+                try {
+                  const barcodes = await detector.detect(video);
+                  const code = barcodes?.[0]?.rawValue;
+                  if (code) {
+                    // Reuse handler from above
+                    try {
+                      const u = new URL(code);
+                      window.location.href = u.href;
+                      return;
+                    } catch {}
+                    const groq = '*[_type=="exponat" && qr_code.current == $code][0]{_id}';
+                    const api = `https://${SANITY_PROJECT_ID}.api.sanity.io/v1/data/query/${SANITY_DATASET}?query=${encodeURIComponent(groq)}&$code=${encodeURIComponent(code)}`;
+                    const res = await fetch(api);
+                    const data = await res.json();
+                    const id = data && data.result && data.result._id;
+                    if (id) window.location.href = `/exponat/${id}`;
+                    else alert('Kein Exponat für diesen QR-Code gefunden.');
+                    return;
+                  }
+                } catch {}
+              }
+              requestAnimationFrame(scan);
+            };
+            requestAnimationFrame(scan);
+          } else {
+            alert('QR-Scan wird von diesem Gerät/Browser nicht unterstützt.');
+          }
+        } catch (err) {
+          console.error('BarcodeDetector fehlgeschlagen', err);
+          alert('Kamera-Zugriff nicht möglich. Bitte Berechtigungen prüfen.');
+        }
+      }
     }
 
     function stopScanner() {
-      console.log('Scanner gestoppt');
+      try { qrScanner && qrScanner.stop(); } catch {}
     }
 
     // Idle detection
@@ -680,14 +782,14 @@ const primaryColor = kioskConfig?.design?.primaerfarbe || '#111827';
       btn.addEventListener('click', () => {
         const target = btn.getAttribute('data-mode');
         const t = document.querySelector(`.seg-btn[data-mode="${target}"]`);
-        (t as HTMLElement)?.click();
+        if (t) t.click();
       });
     });
 
     // Mobile search overlay
     const searchOverlay = document.getElementById('search-overlay');
     const searchClose = document.getElementById('search-close');
-    const inputMobile = document.getElementById('search-input-mobile') as HTMLInputElement | null;
+    const inputMobile = document.getElementById('search-input-mobile');
     document.querySelectorAll('[data-action="search"]').forEach(el => {
       el.addEventListener('click', () => {
         if (!searchOverlay) return;
@@ -733,3 +835,4 @@ const primaryColor = kioskConfig?.design?.primaerfarbe || '#111827';
     });
   </script>
 </Layout>
+    /* Modes preview styles moved to component */

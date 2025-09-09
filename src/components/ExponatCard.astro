@@ -85,31 +85,9 @@ const srcset = exponat.hauptbild
 <style>
   .exponat-link { color: inherit; text-decoration: none; display: block; }
 
-  .exponat-card {
-    background: #fff;
-    border-radius: 0;
-    overflow: hidden;
-    box-shadow: none;
-    cursor: pointer;
-    transition: none;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    border: 1px solid var(--border);
-  }
+  .exponat-card { background: #fff; border-radius: 0; overflow: hidden; box-shadow: none; cursor: pointer; transition: color .15s ease; display: flex; flex-direction: column; height: 100%; border: 0; }
 
-  .exponat-card:hover {
-    transform: none;
-    box-shadow: none;
-  }
-
-  .card-image {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 4/3;
-    overflow: hidden;
-    background: var(--bg);
-  }
+  .card-image { position: relative; width: 100%; aspect-ratio: 4/3; overflow: hidden; background: #f8fafc; }
 
   .card-image img {
     width: 100%;
@@ -151,48 +129,15 @@ const srcset = exponat.hauptbild
     font-weight: 700;
   }
 
-  .card-content {
-    padding: var(--space-5);
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
+  .card-content { padding: var(--space-5) 0; flex: 1; display: flex; flex-direction: column; }
 
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--space-3);
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
+  .card-header { display: flex; justify-content: space-between; align-items: baseline; margin: var(--space-3) 0; gap: 0.5rem; }
 
-  .inv-nummer {
-    font-size: 0.75rem;
-    color: var(--muted);
-    font-weight: 500;
-    font-family: monospace;
-  }
+  .inv-nummer { font-size: 0.75rem; color: var(--muted); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
 
-  .kategorie {
-    font-size: 0.75rem;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-weight: 500;
-    white-space: nowrap;
-  }
+  .kategorie { font-size: 0.72rem; padding: 0; border-radius: 0; font-weight: 700; white-space: nowrap; letter-spacing: .06em; text-transform: uppercase; background: transparent !important; }
 
-  .card-title {
-    font-size: clamp(1.1rem, 1.2vw, 1.25rem);
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: var(--space-2);
-    line-height: 1.3;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
+  .card-title { font-size: clamp(1.1rem, 1.2vw, 1.35rem); font-weight: 800; letter-spacing: .2px; color: var(--text); margin-bottom: var(--space-2); line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
   .card-subtitle {
     font-size: 0.875rem;
@@ -201,17 +146,7 @@ const srcset = exponat.hauptbild
     font-style: italic;
   }
 
-  .card-description {
-    font-size: 0.875rem;
-    color: var(--text-dim);
-    line-height: 1.5;
-    flex: 1;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    margin-bottom: var(--space-4);
-  }
+  .card-description { font-size: 0.94rem; color: var(--text-dim); line-height: 1.65; flex: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin: var(--space-3) 0 var(--space-4); }
 
   .card-year {
     font-size: 0.75rem;
@@ -220,22 +155,9 @@ const srcset = exponat.hauptbild
     font-weight: 500;
   }
 
-  .card-footer {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: auto;
-    padding-top: var(--space-3);
-    border-top: 1px solid var(--border);
-  }
+  .card-footer { display: flex; gap: 0.5rem; margin-top: auto; padding-top: var(--space-3); border-top: 1px solid var(--border); }
 
-  .media-badge {
-    font-size: .75rem;
-    background: var(--bg);
-    padding: 4px 10px;
-    border-radius: 0;
-    color: var(--text-dim);
-    border: 1px solid var(--border);
-  }
+  .media-badge { font-size: .72rem; background: transparent; padding: 0; border-radius: 0; color: var(--muted); border: 0; letter-spacing: .06em; text-transform: uppercase; }
 
   /* Touch device optimizations */
   @media (pointer: coarse) {

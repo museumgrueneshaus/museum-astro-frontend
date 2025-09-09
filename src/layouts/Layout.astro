@@ -136,6 +136,9 @@ const { title, theme = 'default' } = Astro.props;
     outline-offset: 2px;
   }
 
+  /* Honor the HTML hidden attribute across all components */
+  [hidden] { display: none !important; }
+
   /* Loading animation */
   @keyframes spin {
     to { transform: rotate(360deg); }

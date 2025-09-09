@@ -3,8 +3,13 @@ import Layout from '../../layouts/Layout.astro';
 import { client, getExponat, urlFor } from '../../lib/sanity';
 
 export async function getStaticPaths() {
-  const ids = await client.fetch(`*[_type == "exponat"]._id`);
-  return ids.map((id) => ({ params: { id } }));
+  try {
+    const ids = await client.fetch(`*[_type == "exponat"]._id`);
+    return ids.map((id) => ({ params: { id } }));
+  } catch (e) {
+    // Offline or Sanity unreachable: build without pre-rendered detail pages
+    return [];
+  }
 }
 
 const { id } = Astro.params;

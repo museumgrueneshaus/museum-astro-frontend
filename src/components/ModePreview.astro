@@ -1,0 +1,65 @@
+---
+import { urlFor } from '../lib/sanity';
+
+export interface Props {
+  explorerItems?: any[];
+  slideshowItems?: any[];
+}
+
+const { explorerItems = [], slideshowItems = [] } = Astro.props;
+const exp = Array.isArray(explorerItems) ? explorerItems.slice(0, 4) : [];
+const slide = Array.isArray(slideshowItems) ? slideshowItems[0] : null;
+---
+
+<section class="modes-preview desktop-only">
+  <button class="mode-card" data-mode="explorer" aria-label="Modus Entdecken">
+    <div class="mode-thumb explorer">
+      <div class="grid-2">
+        {exp.length > 0 ? (
+          exp.map((it) => (
+            <img src={it?.hauptbild ? urlFor(it.hauptbild).width(320).height(240).auto('format').fit('crop').url() : '/placeholder.jpg'} alt={it?.titel || 'Exponat'} />
+          ))
+        ) : (
+          <>
+            <div class="ph"></div><div class="ph"></div><div class="ph"></div><div class="ph"></div>
+          </>
+        )}
+      </div>
+    </div>
+    <div class="mode-label">Entdecken</div>
+  </button>
+
+  <button class="mode-card" data-mode="slideshow" aria-label="Modus Slideshow">
+    <div class="mode-thumb slideshow">
+      {slide ? (
+        <img src={slide?.hauptbild ? urlFor(slide.hauptbild).width(720).height(420).auto('format').fit('crop').url() : '/placeholder.jpg'} alt={slide?.titel || 'Exponat'} />
+      ) : (
+        <div class="ph"></div>
+      )}
+    </div>
+    <div class="mode-label">Slideshow</div>
+  </button>
+
+  <button class="mode-card" data-mode="scan" aria-label="Modus QR Scan">
+    <div class="mode-thumb scan">
+      <div class="frame"></div>
+    </div>
+    <div class="mode-label">QR Scan</div>
+  </button>
+</section>
+
+<style>
+  .modes-preview { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(1rem, 2vw, 2rem); margin: var(--space-8) 0 var(--space-10); }
+  .mode-card { appearance: none; border: 0; background: transparent; cursor: pointer; text-align: left; }
+  .mode-thumb { position: relative; border: 1px solid var(--border); background: #fff; }
+  .mode-label { margin-top: .5rem; font-weight: 700; letter-spacing: .02em; }
+  .mode-thumb.explorer .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); aspect-ratio: 4/3; }
+  .mode-thumb.explorer .ph { background: #f3f4f6; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .mode-thumb.explorer .grid-2 > :nth-child(2n) { border-right: 0; }
+  .mode-thumb.explorer .grid-2 > :nth-last-child(-n+2) { border-bottom: 0; }
+  .mode-thumb.slideshow { aspect-ratio: 16/9; display: grid; place-items: center; overflow: hidden; }
+  .mode-thumb.slideshow .ph { width: 100%; height: 100%; background: #f3f4f6; }
+  .mode-thumb.scan { aspect-ratio: 3/4; background: #0b0f17; }
+  .mode-thumb.scan .frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60%; aspect-ratio: 1; border: 2px solid #fff; }
+  @media (max-width: 900px) { .modes-preview { display: none; } }
+</style>
