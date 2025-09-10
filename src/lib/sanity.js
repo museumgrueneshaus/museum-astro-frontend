@@ -116,6 +116,36 @@ export async function getExponatByQR(qrCode) {
   return await client.fetch(query, { qrCode });
 }
 
+export async function getExponateByIds(ids = []) {
+  if (!ids || ids.length === 0) return [];
+  const cleaned = ids.map((x) => (typeof x === 'string' ? x : x?._ref || x?._id)).filter(Boolean);
+  if (cleaned.length === 0) return [];
+  const projection = `{
+    _id,
+    inventarnummer,
+    titel,
+    untertitel,
+    kurzbeschreibung,
+    beschreibung,
+    hauptbild{..., asset->{_id, metadata{lqip}}},
+    bilder[]{..., asset->{_id, metadata{lqip}}},
+    "kategorie": kategorie->{_id, titel, slug, icon, farbe},
+    datierung,
+    herstellung,
+    physisch,
+    organisation,
+    tags,
+    ist_highlight,
+    reihenfolge,
+    qr_code,
+    audio,
+    video,
+    dokumente
+  }`;
+  const query = `*[_type == "exponat" && _id in $ids] | order(reihenfolge asc, _createdAt desc) ${projection}`;
+  return await client.fetch(query, { ids: cleaned });
+}
+
 export async function getKategorien() {
   const query = `*[_type == "kategorie"] | order(reihenfolge asc, titel asc) {
     _id,

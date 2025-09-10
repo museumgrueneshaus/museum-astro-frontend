@@ -1,6 +1,6 @@
 ---
 import Layout from '../../../layouts/Layout.astro';
-import { getKioskConfigByIdentifier, getMuseumInfo, getExponate } from '../../../lib/sanity';
+import { getKioskConfigByIdentifier, getMuseumInfo, getExponate, getExponateByIds } from '../../../lib/sanity';
 
 export async function getStaticPaths() {
   return [];
@@ -13,7 +13,7 @@ const museumInfo = await getMuseumInfo().catch(() => ({ name: 'Museum Digital' }
 let exponate = [];
 try {
   const ss = kioskConfig?.konfiguration?.slideshow_settings;
-  if (ss?.exponate && ss.exponate.length > 0) exponate = ss.exponate;
+  if (ss?.exponate && ss.exponate.length > 0) exponate = await getExponateByIds(ss.exponate);
   else exponate = await getExponate({ highlight: true, limit: 20 });
 } catch { exponate = []; }
 

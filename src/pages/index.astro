@@ -5,7 +5,7 @@ import Layout from '../layouts/Layout.astro';
 import ExponatCard from '../components/ExponatCard.astro';
 import ModePreview from '../components/ModePreview.astro';
 import BottomBar from '../components/BottomBar.astro';
-import { getExponate, getKioskConfig, getMuseumInfo, getKategorien, urlFor } from '../lib/sanity';
+import { getExponate, getKioskConfig, getMuseumInfo, getKategorien, getExponateByIds, urlFor } from '../lib/sanity';
 
 // For static generation, we use default config
 const kioskConfig = await getKioskConfig('default').catch(() => null);
@@ -57,7 +57,7 @@ try {
 try {
   const ss = kioskConfig?.konfiguration?.slideshow_settings;
   if (ss?.exponate && ss.exponate.length > 0) {
-    slideshowPreview = ss.exponate.slice(0, 1);
+    slideshowPreview = await getExponateByIds(ss.exponate.slice(0, 1));
   } else {
     slideshowPreview = await getExponate({ highlight: true, limit: 1 });
   }
