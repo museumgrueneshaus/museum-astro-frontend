@@ -19,7 +19,7 @@ const pageTitle = `${museumInfo?.name || 'Museum'} – Slideshow`;
 const theme = kioskConfig?.design?.theme || 'default';
 ---
 
-<Layout title={pageTitle} theme={theme}>
+<Layout title={pageTitle} theme={theme} idleHome="/">
   <div class="kiosk-app" data-mode="slideshow">
     <header class="app-header">
       <div class="container header-bar">

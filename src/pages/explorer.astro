@@ -21,7 +21,7 @@ const pageTitle = `${museumInfo?.name || 'Museum'} – Entdecken`;
 const theme = kioskConfig?.design?.theme || 'default';
 ---
 
-<Layout title={pageTitle} theme={theme}>
+<Layout title={pageTitle} theme={theme} idleHome="/">
   <div class="kiosk-app" data-mode="explorer">
     <header class="app-header">
       <div class="container header-bar">

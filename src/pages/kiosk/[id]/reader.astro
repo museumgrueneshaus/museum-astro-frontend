@@ -15,7 +15,7 @@ const theme = kioskConfig?.design?.theme || 'default';
 const defaultFile = kioskConfig?.konfiguration?.reader_settings?.pdf_url || '';
 ---
 
-<Layout title={pageTitle} theme={theme}>
+<Layout title={pageTitle} theme={theme} idleHome={`/kiosk/${id}`}>
   <div class="kiosk-app" data-kiosk={id}>
     <header class="app-header">
       <div class="container header-bar">

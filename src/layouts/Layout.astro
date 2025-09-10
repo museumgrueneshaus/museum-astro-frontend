@@ -2,9 +2,11 @@
 export interface Props {
   title: string;
   theme?: string;
+  idleHome?: string; // optional: when idle, navigate to this path
+  idleMs?: number;   // optional: idle timeout in ms (default 300000)
 }
 
-const { title, theme = 'default' } = Astro.props;
+const { title, theme = 'default', idleHome, idleMs = 300000 } = Astro.props;
 ---
 
 <!DOCTYPE html>
@@ -28,8 +30,32 @@ const { title, theme = 'default' } = Astro.props;
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   </head>
-  <body data-theme={theme}>
+  <body data-theme={theme} data-idle-home={idleHome} data-idle-ms={idleHome ? String(idleMs) : undefined}>
     <slot />
+    <script>
+      // Global idle return-to-start: if body has data-idle-home, navigate there after inactivity
+      (function(){
+        const home = document.body.getAttribute('data-idle-home');
+        if (!home) return;
+        const msAttr = document.body.getAttribute('data-idle-ms');
+        const timeoutMs = Math.max(10000, parseInt(msAttr || '300000', 10));
+        let timer;
+        const overlay = document.getElementById('idle-overlay');
+        const reset = () => {
+          clearTimeout(timer);
+          overlay?.classList.remove('active');
+          timer = setTimeout(() => {
+            // Show overlay briefly if present, then navigate
+            overlay?.classList.add('active');
+            setTimeout(() => { window.location.href = home; }, 1000);
+          }, timeoutMs);
+        };
+        ['pointerdown','touchstart','mousedown','keydown','scroll'].forEach(ev => {
+          document.addEventListener(ev, reset, { passive: true });
+        });
+        reset();
+      })();
+    </script>
   </body>
 </html>
 

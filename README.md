@@ -217,6 +217,46 @@ Dokumenttyp: `kioskConfig`
 - Reader mit PDF aus Config: `/kiosk/Filiale‑Sued/reader`
 - Mobile Scan: `/mobile`
 
+## 🧰 Sanity – Getting Started
+
+1) Projekt & CORS
+- Lege ein Sanity‑Projekt an, notiere `projectId` und `dataset` (z. B. `production`).
+- Erlaube die Netlify‑Domain in Sanity CORS (Lesen, kein Token nötig):
+  - https://DEINE-SITE.netlify.app
+  - http://localhost:4321 (für lokale Entwicklung)
+
+2) Schemas (Minimalumfang)
+- `exponat`: Felder wie `titel`, `kurzbeschreibung`, `hauptbild` (image), `bilder[]` (image[]), `inventarnummer`, `kategorie` (ref), `ist_highlight`, `qr_code` (slug/text), `audio`, `video`, `dokumente`.
+- `kategorie`: `titel`, `slug`, optional `farbe` (hex), `icon` (text/emoji), `reihenfolge`.
+- `kioskConfig`: `name`, `mac_adresse`, `standort`, `modus`, `konfiguration` (object)
+  - `explorer_settings`: `nur_highlights` (bool), `kategorien` (ref[]), `items_pro_seite` (number)
+  - `slideshow_settings`: `exponate` (ref[] zu `exponat`)
+  - `reader_settings`: `pdf_url` (string)
+  - `design`: `theme` (string)
+  - `funktionen`: `zeige_qr_codes` (bool), `zeige_uhr` (bool)
+- `museumInfo`: `name`, `untertitel`, `logo`, `willkommenstext`, `kontakt`, `oeffnungszeiten`, `sprachen`.
+
+3) .env
+```
+PUBLIC_SANITY_PROJECT_ID=your_project_id
+PUBLIC_SANITY_DATASET=production
+```
+
+4) Optional: Netlify Build Hook
+- Richte einen Build Hook ein und verknüpfe ihn in Sanity Webhooks (Create/Update/Delete für `exponat`, `kategorie`, `kioskConfig`, `museumInfo`).
+
+## 🖥️ Betrieb der Kioske (Empfehlungen)
+
+- Browser Kiosk‑Modus: Autostart im Vollbild, Adressleiste/OS Gesten deaktivieren.
+- Energie & Updates: OS‑Updates außerhalb der Öffnungszeiten; Bildschirmdimmung/Schonung.
+- Netzwerk: stabile LAN/WLAN; Uhren‑/Zeitserver korrekt; Caching erlaubt.
+- Reset bei Inaktivität: Die App besitzt "Return to Start" – nach 5 Minuten ohne Eingabe navigiert sie zurück zur Startseite des jeweiligen Bereichs:
+  - Desktop‑Modusseiten (`/explorer`, `/slideshow`, `/reader`) → `/`
+  - Pro‑Kiosk Seiten (`/kiosk/[id]/…`) → `/kiosk/[id]`
+  - Deaktiviert auf `/mobile` (bewusst) und optional auf der Showcase‑Startseite.
+- Fernwartung: Inhalte via Sanity; Code via Git/Netlify; optional Monitoring (Ping/Uptime).
+
+
 ## 🧭 Seitenübersicht (Routen)
 
 - `/` Showcase (Desktop): Vorschau der Modi + Explorer-Start.

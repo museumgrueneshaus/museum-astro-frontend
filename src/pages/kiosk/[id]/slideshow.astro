@@ -21,7 +21,7 @@ const pageTitle = `${kioskConfig?.name || id} – Slideshow`;
 const theme = kioskConfig?.design?.theme || 'default';
 ---
 
-<Layout title={pageTitle} theme={theme}>
+<Layout title={pageTitle} theme={theme} idleHome={`/kiosk/${id}`}>
   <div class="kiosk-app" data-kiosk={id}>
     <header class="app-header">
       <div class="container header-bar">
