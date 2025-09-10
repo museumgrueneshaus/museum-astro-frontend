@@ -24,9 +24,10 @@ try {
 
 const pageTitle = `${kioskConfig?.name || id} – Entdecken`;
 const theme = kioskConfig?.design?.theme || 'default';
+const idleMs = kioskConfig?.konfiguration?.idle_ms || 300000;
 ---
 
-<Layout title={pageTitle} theme={theme} idleHome={`/kiosk/${id}`}>
+<Layout title={pageTitle} theme={theme} idleHome={`/kiosk/${id}`} idleMs={idleMs}>
   <div class="explorer-app" data-kiosk={id}>
     <main class="explorer-main">
       <div class="toolbar">

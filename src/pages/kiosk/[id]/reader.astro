@@ -13,12 +13,13 @@ const museumInfo = await getMuseumInfo().catch(() => ({ name: 'Museum Digital' }
 const pageTitle = `${kioskConfig?.name || id} – Reader`;
 const theme = kioskConfig?.design?.theme || 'default';
 const defaultFile = kioskConfig?.konfiguration?.reader_settings?.pdf_url || '';
+const idleMs = kioskConfig?.konfiguration?.idle_ms || 300000;
 ---
 
-<Layout title={pageTitle} theme={theme} idleHome={`/kiosk/${id}`}>
+<Layout title={pageTitle} theme={theme} idleHome={`/kiosk/${id}`} idleMs={idleMs}>
   <div class="reader-app" data-kiosk={id}>
     <main class="reader-main" data-default-file={defaultFile}>
-      <div class="reader-toolbar">
+      <div class="reader-toolbar" id="reader-toolbar">
         <div class="controls-left">
           <button id="prev-page" aria-label="Vorherige Seite">←</button>
           <span class="page-indicator"><input id="page-input" type="number" min="1" value="1" /> <span id="page-sep">/</span> <span id="page-count">?</span></span>
@@ -41,7 +42,8 @@ const defaultFile = kioskConfig?.konfiguration?.reader_settings?.pdf_url || '';
   <style>
     .reader-app { min-height: 100vh; background: #fff; }
     .reader-main { min-height: 100vh; padding: 0; margin: 0; display: grid; grid-template-rows: auto 1fr; }
-    .reader-toolbar { display:flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+    .reader-toolbar { display:flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 8px 12px; border-bottom: 1px solid var(--border); transition: opacity .2s, transform .2s; }
+    .reader-toolbar.hidden { opacity: 0; transform: translateY(-8px); pointer-events: none; }
     .controls-left, .controls-right { display:flex; align-items:center; gap: .75rem; }
     .reader-viewport { min-height: 0; height: calc(100vh - 42px); background: #fff; display:grid; place-items:center; }
     .reader-frame { width: 100vw; height: 100%; border: 0; }
@@ -66,6 +68,7 @@ const defaultFile = kioskConfig?.konfiguration?.reader_settings?.pdf_url || '';
     const pageCount = document.getElementById('page-count');
     const spreadToggle = document.getElementById('spread-toggle');
     const fullscreenBtn = document.getElementById('fullscreen');
+    const toolbar = document.getElementById('reader-toolbar');
     function buildSrc(file, p) { const hash = `#page=${p}&view=FitH`; return `${file}${file.includes('#') ? '' : hash}`; }
     function render() {
       reader.innerHTML = '';
@@ -80,6 +83,14 @@ const defaultFile = kioskConfig?.konfiguration?.reader_settings?.pdf_url || '';
     pageInput?.addEventListener('change', (e) => { const v = parseInt(e.target.value || '1', 10); page = isNaN(v) ? 1 : Math.max(1, v); render(); updateUrl(); });
     spreadToggle?.addEventListener('change', (e) => { spread = e.target.checked; render(); updateUrl(); });
     fullscreenBtn?.addEventListener('click', () => { const el = reader; if (document.fullscreenElement) document.exitFullscreen(); else el.requestFullscreen?.(); });
-    if (spreadToggle) spreadToggle.checked = spread; render();
+    // Auto-hide toolbar on idle
+    let tbTimer;
+    const TB_HIDE_MS = 2000;
+    const showTb = () => toolbar?.classList.remove('hidden');
+    const hideTb = () => toolbar?.classList.add('hidden');
+    const resetTb = () => { showTb(); clearTimeout(tbTimer); tbTimer = setTimeout(hideTb, TB_HIDE_MS); };
+    ['mousemove','touchstart','keydown','click'].forEach(ev => document.addEventListener(ev, resetTb, {passive:true}));
+
+    if (spreadToggle) spreadToggle.checked = spread; render(); resetTb();
   </script>
 </Layout>

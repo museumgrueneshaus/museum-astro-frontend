@@ -3,10 +3,10 @@ export interface Props {
   title: string;
   theme?: string;
   idleHome?: string; // optional: when idle, navigate to this path
-  idleMs?: number;   // optional: idle timeout in ms (default 300000)
+  idleMs?: number;   // optional: idle timeout in ms (default 90000)
 }
 
-const { title, theme = 'default', idleHome, idleMs = 300000 } = Astro.props;
+const { title, theme = 'dark', idleHome, idleMs = 90000 } = Astro.props;
 ---
 
 <!DOCTYPE html>
@@ -15,15 +15,15 @@ const { title, theme = 'default', idleHome, idleMs = 300000 } = Astro.props;
     <meta charset="UTF-8" />
     <meta name="description" content="Museum Digital Kiosk System" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#667eea" />
+    <meta name="theme-color" content="#000000" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
     
-    <!-- Typography (system-first for performance) -->
+    <!-- Typography -->
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap">
     
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
@@ -38,18 +38,16 @@ const { title, theme = 'default', idleHome, idleMs = 300000 } = Astro.props;
         const home = document.body.getAttribute('data-idle-home');
         if (!home) return;
         const msAttr = document.body.getAttribute('data-idle-ms');
-        const timeoutMs = Math.max(10000, parseInt(msAttr || '300000', 10));
+        const timeoutMs = Math.max(10000, parseInt(msAttr || '90000', 10));
         let timer;
-        const overlay = document.getElementById('idle-overlay');
+        
         const reset = () => {
           clearTimeout(timer);
-          overlay?.classList.remove('active');
           timer = setTimeout(() => {
-            // Show overlay briefly if present, then navigate
-            overlay?.classList.add('active');
-            setTimeout(() => { window.location.href = home; }, 1000);
+            window.location.href = home;
           }, timeoutMs);
         };
+
         ['pointerdown','touchstart','mousedown','keydown','scroll'].forEach(ev => {
           document.addEventListener(ev, reset, { passive: true });
         });
@@ -61,55 +59,50 @@ const { title, theme = 'default', idleHome, idleMs = 300000 } = Astro.props;
 
 <style is:global>
   :root {
-    /* Color system */
-    --primary: #111827;          /* Near-black (museum editorial) */
-    --primary-acc: #2563eb;      /* Subtle accent for actions */
-    --text: #111827;             /* Gray-900 */
-    --text-dim: #4b5563;         /* Gray-600 */
-    --muted: #6b7280;            /* Gray-500 */
-    --bg: #ffffff;               /* Paper white */
-    --bg-alt: #f8fafc;           /* Gray-50 */
-    --border: #e5e7eb;           /* Gray-200 */
-    --shadow: none;
-
+    /* Color System (MoMA-inspired Dark Theme) */
+    --primary: #ffffff;      /* White for primary text and active elements */
+    --primary-acc: #3b82f6;  /* A brighter blue for accents if needed */
+    --text: #e5e5e5;         /* Light gray for body text (less stark than pure white) */
+    --text-dim: #9ca3af;     /* Muted gray for captions and secondary info */
+    --bg: #000000;           /* Pure black background */
+    --bg-alt: #111111;       /* Slightly lighter black for surfaces */
+    --border: #222222;       /* Dark gray for borders */
+    
     /* Typography */
-    --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-    --leading: 1.6;
-    --heading-tight: 1.2;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-display: 64px;
+    --font-h1: 48px;
+    --font-h2: 32px;
+    --font-body: 22px;
+    --font-caption: 18px;
+    --leading: 1.5;
+    --heading-tight: 1.1;
 
-    /* Sizing & rhythm */
-    --container: 1440px;
-    --space-1: .25rem;  /* 4 */
-    --space-2: .5rem;   /* 8 */
-    --space-3: .75rem;  /* 12 */
-    --space-4: 1rem;    /* 16 */
-    --space-5: 1.25rem; /* 20 */
-    --space-6: 1.5rem;  /* 24 */
-    --space-8: 2rem;    /* 32 */
-    --space-10: 2.5rem; /* 40 */
-    --space-12: 3rem;   /* 48 */
-    --radius-1: 0px;
-    --radius-2: 0px;
-    --radius-3: 0px;
+    /* Sizing & Rhythm (8px Grid) */
+    --space-1: 0.5rem;  /* 8px */
+    --space-2: 1rem;    /* 16px */
+    --space-3: 1.5rem;  /* 24px */
+    --space-4: 2rem;    /* 32px */
+    --space-5: 2.5rem;  /* 40px */
+    --space-6: 3rem;    /* 48px */
+    --space-7: 3.5rem;  /* 56px */
+    --space-8: 4rem;    /* 64px */
+
+    /* Radius */
+    --radius: 0px; /* Sharp, minimalist corners */
+    
+    /* Containers */
+    --container: 1440px; /* Default max width for container utility */
   }
 
-  [data-theme="dark"] {
-    --primary: #f9fafb;
-    --text: #f3f4f6;
-    --text-dim: #d1d5db;
-    --muted: #9ca3af;
-    --bg: #0b0f17;
-    --bg-alt: #0f172a;
-    --border: #1f2937;
-    --shadow: 0 1px 1px rgba(0,0,0,.2), 0 8px 24px rgba(0,0,0,.35);
-  }
-
-  [data-theme="high-contrast"] {
+  /* Light theme override if ever needed */
+  [data-theme="light"] {
     --primary: #000000;
-    --secondary: #ffffff;
-    --text: #000000;
+    --text: #111111;
+    --text-dim: #555555;
     --bg: #ffffff;
-    font-weight: bold;
+    --bg-alt: #f4f4f4;
+    --border: #e5e5e5;
   }
 
   * {
@@ -132,7 +125,7 @@ const { title, theme = 'default', idleHome, idleMs = 300000 } = Astro.props;
     color: var(--text);
     overflow-x: hidden;
     line-height: var(--leading);
-    font-size: clamp(15px, 1.2vw, 18px);
+    font-size: clamp(18px, 1.5vw, 22px); /* Increased base font size for kiosk */
   }
 
   /* Prevent text selection on touch devices */
@@ -158,8 +151,8 @@ const { title, theme = 'default', idleHome, idleMs = 300000 } = Astro.props;
 
   /* Focus styles for accessibility */
   :focus-visible {
-    outline: 3px solid var(--primary);
-    outline-offset: 2px;
+    outline: 3px solid var(--primary-acc);
+    outline-offset: 3px;
   }
 
   /* Honor the HTML hidden attribute across all components */
@@ -172,9 +165,9 @@ const { title, theme = 'default', idleHome, idleMs = 300000 } = Astro.props;
 
   .loading {
     display: inline-block;
-    width: 2rem;
-    height: 2rem;
-    border: 3px solid var(--border);
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--border);
     border-radius: 50%;
     border-top-color: var(--primary);
     animation: spin 1s linear infinite;
@@ -184,42 +177,9 @@ const { title, theme = 'default', idleHome, idleMs = 300000 } = Astro.props;
   .container {
     max-width: var(--container);
     margin: 0 auto;
-    padding: 0 var(--space-6);
+    padding: 0 var(--space-4);
   }
-
-  /* App shell header/footer primitives */
-  .app-header {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    backdrop-filter: none;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .app-header .brand {
-    display: flex;
-    align-items: center;
-    gap: var(--space-4);
-    padding: var(--space-4) 0;
-  }
-
-  .brand-title {
-    font-weight: 700;
-    letter-spacing: 0.2px;
-  }
-
-  .brand-subtitle {
-    color: var(--muted);
-    font-weight: 500;
-  }
-
-  .app-footer {
-    border-top: 1px solid var(--border);
-    color: var(--muted);
-    padding: var(--space-6) 0;
-  }
-
+  
   .sr-only {
     position: absolute;
     width: 1px;
@@ -234,11 +194,11 @@ const { title, theme = 'default', idleHome, idleMs = 300000 } = Astro.props;
 
   /* Touch feedback */
   .touchable {
-    transition: transform 0.1s;
+    transition: transform 0.1s ease-in-out;
   }
 
   .touchable:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
   }
 
   /* Scrollbar styling */
@@ -248,15 +208,12 @@ const { title, theme = 'default', idleHome, idleMs = 300000 } = Astro.props;
   }
 
   ::-webkit-scrollbar-track {
-    background: var(--bg-light);
+    background: var(--bg);
   }
 
   ::-webkit-scrollbar-thumb {
-    background: var(--primary);
+    background: var(--border);
     border-radius: 6px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--primary-dark);
+    border: 3px solid var(--bg);
   }
 </style>

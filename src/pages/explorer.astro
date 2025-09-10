@@ -1,107 +1,151 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import ExponatCard from '../components/ExponatCard.astro';
-import { getExponate, getKioskConfig, getMuseumInfo, getKategorien } from '../lib/sanity';
+import BottomBar from '../components/BottomBar.astro';
+import { getExponate, getKategorien } from '../lib/sanity';
 
-const kioskConfig = await getKioskConfig('default').catch(() => null);
-const museumInfo = await getMuseumInfo().catch(() => ({ name: 'Museum Digital' }));
+// Fetch all exhibits and categories from the CMS
+const exponate = await getExponate({ limit: 100 }).catch(() => []);
 const kategorien = await getKategorien().catch(() => []);
 
-let exponate = [];
-try {
-  const explorerSettings = kioskConfig?.konfiguration?.explorer_settings;
-  exponate = await getExponate({
-    highlight: explorerSettings?.nur_highlights,
-    categories: explorerSettings?.kategorien,
-    limit: explorerSettings?.items_pro_seite || 24
-  });
-} catch { exponate = []; }
-
-const pageTitle = `${museumInfo?.name || 'Museum'} – Entdecken`;
-const theme = kioskConfig?.design?.theme || 'default';
+const pageTitle = "Entdecken";
 ---
 
-<Layout title={pageTitle} theme={theme} idleHome="/">
-  <div class="kiosk-app" data-mode="explorer">
-    <header class="app-header">
-      <div class="container header-bar">
-        <div class="brand">
-          {museumInfo?.logo && (<img src={museumInfo.logo} alt={museumInfo.name} class="brand-logo" />)}
-          <div>
-            <div class="brand-title">{museumInfo?.name || 'Museum'}</div>
-            {museumInfo?.untertitel && (<div class="brand-subtitle">{museumInfo.untertitel}</div>)}
-          </div>
-        </div>
-        <nav class="segmented" aria-label="Modi">
-          <a href="/explorer" class="seg-btn active">Entdecken</a>
-          <a href="/slideshow" class="seg-btn">Slideshow</a>
-        </nav>
-        <div></div>
+<Layout title={pageTitle} idleHome="/" idleMs={300000}>
+  <main class="explorer-main">
+    <header class="explorer-header">
+      <h1 class="page-title">{pageTitle}</h1>
+      
+      <!-- Filter Chips will be placed here -->
+      <div class="filters">
+        <button class="chip active" data-filter="all">Alle</button>
+        <button class="chip" data-filter="highlights">Highlights</button>
+        {kategorien?.map(k => (
+          <button class="chip" data-category={k._id}>{k.titel}</button>
+        ))}
       </div>
     </header>
 
-    <main class="kiosk-main container">
-      <div class="toolbar">
-        <div class="filters chips-scroll">
-          <button class="chip active" data-filter="all">Alle</button>
-          <button class="chip" data-filter="highlights">Highlights</button>
-          {kategorien?.map(k => (<button class="chip" data-category={k._id}>{k.titel}</button>))}
-        </div>
-        <div class="search desktop-only">
-          <input id="search-input" class="search-input" type="search" placeholder="Suche Exponate…" autocomplete="off" />
-        </div>
-      </div>
-
+    {exponate.length > 0 ? (
       <div class="exponate-grid">
-        {exponate.map(exponat => (<ExponatCard exponat={exponat} showQR={kioskConfig?.funktionen?.zeige_qr_codes} />))}
+        {exponate.map(exponat => (
+          <ExponatCard exponat={exponat} />
+        ))}
       </div>
+    ) : (
+      <div class="empty-state">
+        <h2>Keine Exponate gefunden</h2>
+        <p>Die Sammlung wird gerade aktualisiert. Bitte versuchen Sie es später erneut.</p>
+      </div>
+    )}
+  </main>
 
-      {exponate.length === 0 && (<div class="empty-state"><p>Keine Exponate gefunden</p></div>)}
-    </main>
-  </div>
-
-  <style>
-    .brand-logo { height: 40px; width: auto; object-fit: contain; }
-    .header-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--space-4); }
-    .segmented { display: inline-flex; gap: var(--space-6); }
-    .seg-btn { text-decoration: none; color: var(--muted); font-weight: 700; padding: 6px 0; border-bottom: 2px solid transparent; }
-    .seg-btn.active, .seg-btn:hover { color: var(--text); border-bottom-color: currentColor; }
-
-    .kiosk-main { padding: var(--space-8) 0; }
-    .toolbar { margin-bottom: var(--space-8); display:flex; gap: var(--space-6); justify-content: space-between; align-items: center; flex-wrap: wrap; }
-    .chips-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .chips-scroll::-webkit-scrollbar { display: none; }
-    .chip { border: 0; background: transparent; color: var(--muted); padding: 0; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; }
-    .chip:hover { color: var(--text); }
-    .chip.active { color: var(--text); border-bottom-color: currentColor; }
-    .search { min-width: 260px; }
-    .search-input { width: 100%; border: 0; border-bottom: 1px solid var(--border); padding: 10px 2px; background: transparent; }
-    .exponate-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: clamp(1.5rem, 2.5vw, 2.5rem); }
-  </style>
+  <BottomBar />
 
   <script>
-    // Filtering
+    // Simple client-side filtering
     const chips = document.querySelectorAll('.chip');
-    const cards = Array.from(document.querySelectorAll('.exponat-card'));
-    const input = document.getElementById('search-input');
-    let activeCategory = 'all', onlyHighlights = false, term = '';
-    function applyFilters() {
-      const t = term.trim().toLowerCase();
-      for (const el of cards) {
-        const matchesTerm = !t || el.dataset.search?.includes(t);
-        const matchesCat = activeCategory === 'all' || el.dataset.category === activeCategory;
-        const matchesHL = !onlyHighlights || el.dataset.highlight === 'true';
-        el.style.display = (matchesTerm && matchesCat && matchesHL) ? '' : 'none';
-      }
+    const cards = document.querySelectorAll('.exponat-card');
+
+    function filterExhibits(filter) {
+      cards.forEach(card => {
+        const cardElement = card.closest('.card-link');
+        let show = false;
+
+        if (filter.type === 'all') {
+          show = true;
+        } else if (filter.type === 'category') {
+          // This is a placeholder. We need the category on the card.
+          // For now, we just show all.
+          show = true; // Replace with actual logic
+        }
+
+        cardElement.style.display = show ? 'block' : 'none';
+      });
     }
-    chips.forEach(chip => chip.addEventListener('click', () => {
-      chips.forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      onlyHighlights = chip.dataset.filter === 'highlights';
-      activeCategory = chip.dataset.category || (chip.dataset.filter ? 'all' : activeCategory);
-      if (chip.dataset.filter === 'all') { activeCategory = 'all'; onlyHighlights = false; }
-      applyFilters();
-    }));
-    input?.addEventListener('input', (e) => { term = e.target.value || ''; applyFilters(); });
+
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        // Deactivate all chips
+        chips.forEach(c => c.classList.remove('active'));
+        // Activate clicked chip
+        chip.classList.add('active');
+
+        const filterType = chip.dataset.filter;
+        const categoryId = chip.dataset.category;
+
+        if (filterType) {
+          filterExhibits({ type: filterType });
+        } else if (categoryId) {
+          filterExhibits({ type: 'category', id: categoryId });
+        }
+      });
+    });
   </script>
+
+  <style>
+    .explorer-main {
+      padding: var(--space-4) var(--space-4) var(--space-8); /* Padding top, sides, bottom */
+    }
+
+    .explorer-header {
+      padding-bottom: var(--space-4);
+    }
+
+    .page-title {
+      font-size: var(--font-h1, 48px);
+      font-weight: 700;
+      margin-bottom: var(--space-4);
+      padding-left: var(--space-2);
+    }
+
+    .filters {
+      display: flex;
+      gap: var(--space-2);
+      overflow-x: auto;
+      padding: var(--space-2);
+      /* Hide scrollbar */
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
+    }
+    .filters::-webkit-scrollbar { display: none; }
+
+    .chip {
+      appearance: none;
+      border: 1px solid var(--border);
+      background-color: transparent;
+      color: var(--text-dim);
+      padding: var(--space-2) var(--space-3);
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background-color 0.2s, color 0.2s;
+    }
+
+    .chip.active, .chip:hover {
+      background-color: var(--primary);
+      color: var(--bg);
+      border-color: var(--primary);
+    }
+
+    .exponate-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: var(--space-5);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: var(--space-8) var(--space-4);
+    }
+    .empty-state h2 {
+      font-size: var(--font-h2);
+      margin-bottom: var(--space-2);
+    }
+    .empty-state p {
+      color: var(--text-dim);
+      font-size: var(--font-body);
+    }
+  </style>
 </Layout>

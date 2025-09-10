@@ -31,9 +31,10 @@ try {
 
 const pageTitle = `${museumInfo?.name || 'Museum'} – ${kioskConfig?.name || id}`;
 const theme = kioskConfig?.design?.theme || 'default';
+const idleMs = kioskConfig?.konfiguration?.idle_ms || 300000;
 ---
 
-<Layout title={pageTitle} theme={theme} idleHome={`/kiosk/${id}`}>
+<Layout title={pageTitle} theme={theme} idleHome={`/kiosk/${id}`} idleMs={idleMs}>
   <div class="kiosk-app" data-kiosk={id}>
     <header class="app-header">
       <div class="container header-bar">
@@ -46,7 +47,7 @@ const theme = kioskConfig?.design?.theme || 'default';
         </div>
         <nav class="segmented" aria-label="Modi">
           <a class="seg-btn" href={`/kiosk/${id}/explorer`}>Entdecken</a>
-          <a class="seg-btn" href={`/kiosk/${id}/slideshow`}>Slideshow</a>
+          <a class="seg-btn" href={`/kiosk/${id}/slideshow`}>Präsentation</a>
           <a class="seg-btn" href={`/kiosk/${id}/reader`}>Reader</a>
         </nav>
         <div></div>
