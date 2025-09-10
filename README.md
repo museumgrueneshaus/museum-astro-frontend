@@ -139,6 +139,15 @@ Aufruf: `https://deine-app.netlify.app/mobile/`
 
 Optional kann per Link/QR-Code direkt auf die Mobile-Seite verwiesen werden.
 
+## 🧭 Seitenübersicht (Routen)
+
+- `/` Showcase (Desktop): Vorschau der Modi + Explorer-Start.
+- `/mobile` Mobile-Ansicht: Explorer + QR-Scanner, mobil optimiert.
+- `/explorer` Explorer-Modus: Filter, Suche, Kachel-Übersicht.
+- `/slideshow` Slideshow-Modus: automatische Präsentation.
+- `/scan` Scanner-Modus: QR-Code scannen und Exponat öffnen.
+- `/exponat/[id]` Detailseite eines Exponats.
+
 ## 🔐 Umgebungsvariablen
 
 Beispiel (`.env.example` vorhanden):

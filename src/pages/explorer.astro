@@ -1,0 +1,109 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ExponatCard from '../components/ExponatCard.astro';
+import { getExponate, getKioskConfig, getMuseumInfo, getKategorien } from '../lib/sanity';
+
+const kioskConfig = await getKioskConfig('default').catch(() => null);
+const museumInfo = await getMuseumInfo().catch(() => ({ name: 'Museum Digital' }));
+const kategorien = await getKategorien().catch(() => []);
+
+let exponate = [];
+try {
+  const explorerSettings = kioskConfig?.konfiguration?.explorer_settings;
+  exponate = await getExponate({
+    highlight: explorerSettings?.nur_highlights,
+    categories: explorerSettings?.kategorien,
+    limit: explorerSettings?.items_pro_seite || 24
+  });
+} catch { exponate = []; }
+
+const pageTitle = `${museumInfo?.name || 'Museum'} – Entdecken`;
+const theme = kioskConfig?.design?.theme || 'default';
+---
+
+<Layout title={pageTitle} theme={theme}>
+  <div class="kiosk-app" data-mode="explorer">
+    <header class="app-header">
+      <div class="container header-bar">
+        <div class="brand">
+          {museumInfo?.logo && (<img src={museumInfo.logo} alt={museumInfo.name} class="brand-logo" />)}
+          <div>
+            <div class="brand-title">{museumInfo?.name || 'Museum'}</div>
+            {museumInfo?.untertitel && (<div class="brand-subtitle">{museumInfo.untertitel}</div>)}
+          </div>
+        </div>
+        <nav class="segmented" aria-label="Modi">
+          <a href="/explorer" class="seg-btn active">Entdecken</a>
+          <a href="/slideshow" class="seg-btn">Slideshow</a>
+          <a href="/scan" class="seg-btn">QR Scan</a>
+        </nav>
+        <div></div>
+      </div>
+    </header>
+
+    <main class="kiosk-main container">
+      <div class="toolbar">
+        <div class="filters chips-scroll">
+          <button class="chip active" data-filter="all">Alle</button>
+          <button class="chip" data-filter="highlights">Highlights</button>
+          {kategorien?.map(k => (<button class="chip" data-category={k._id}>{k.titel}</button>))}
+        </div>
+        <div class="search desktop-only">
+          <input id="search-input" class="search-input" type="search" placeholder="Suche Exponate…" autocomplete="off" />
+        </div>
+      </div>
+
+      <div class="exponate-grid">
+        {exponate.map(exponat => (<ExponatCard exponat={exponat} showQR={kioskConfig?.funktionen?.zeige_qr_codes} />))}
+      </div>
+
+      {exponate.length === 0 && (<div class="empty-state"><p>Keine Exponate gefunden</p></div>)}
+    </main>
+  </div>
+
+  <style>
+    .brand-logo { height: 40px; width: auto; object-fit: contain; }
+    .header-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--space-4); }
+    .segmented { display: inline-flex; gap: var(--space-6); }
+    .seg-btn { text-decoration: none; color: var(--muted); font-weight: 700; padding: 6px 0; border-bottom: 2px solid transparent; }
+    .seg-btn.active, .seg-btn:hover { color: var(--text); border-bottom-color: currentColor; }
+
+    .kiosk-main { padding: var(--space-8) 0; }
+    .toolbar { margin-bottom: var(--space-8); display:flex; gap: var(--space-6); justify-content: space-between; align-items: center; flex-wrap: wrap; }
+    .chips-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .chips-scroll::-webkit-scrollbar { display: none; }
+    .chip { border: 0; background: transparent; color: var(--muted); padding: 0; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; }
+    .chip:hover { color: var(--text); }
+    .chip.active { color: var(--text); border-bottom-color: currentColor; }
+    .search { min-width: 260px; }
+    .search-input { width: 100%; border: 0; border-bottom: 1px solid var(--border); padding: 10px 2px; background: transparent; }
+    .exponate-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: clamp(1.5rem, 2.5vw, 2.5rem); }
+  </style>
+
+  <script>
+    // Filtering
+    const chips = document.querySelectorAll('.chip');
+    const cards = Array.from(document.querySelectorAll('.exponat-card'));
+    const input = document.getElementById('search-input');
+    let activeCategory = 'all', onlyHighlights = false, term = '';
+    function applyFilters() {
+      const t = term.trim().toLowerCase();
+      for (const el of cards) {
+        const matchesTerm = !t || el.dataset.search?.includes(t);
+        const matchesCat = activeCategory === 'all' || el.dataset.category === activeCategory;
+        const matchesHL = !onlyHighlights || el.dataset.highlight === 'true';
+        el.style.display = (matchesTerm && matchesCat && matchesHL) ? '' : 'none';
+      }
+    }
+    chips.forEach(chip => chip.addEventListener('click', () => {
+      chips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      onlyHighlights = chip.dataset.filter === 'highlights';
+      activeCategory = chip.dataset.category || (chip.dataset.filter ? 'all' : activeCategory);
+      if (chip.dataset.filter === 'all') { activeCategory = 'all'; onlyHighlights = false; }
+      applyFilters();
+    }));
+    input?.addEventListener('input', (e) => { term = e.target.value || ''; applyFilters(); });
+  </script>
+</Layout>
+
