@@ -11,26 +11,8 @@ const defaultFile = kioskConfig?.konfiguration?.reader_settings?.pdf_url || '';
 ---
 
 <Layout title={pageTitle} theme={theme} idleHome="/">
-  <div class="kiosk-app" data-mode="reader">
-    <header class="app-header">
-      <div class="container header-bar">
-        <div class="brand">
-          {museumInfo?.logo && (<img src={museumInfo.logo} alt={museumInfo.name} class="brand-logo" />)}
-          <div>
-            <div class="brand-title">{museumInfo?.name || 'Museum'}</div>
-            {museumInfo?.untertitel && (<div class="brand-subtitle">{museumInfo.untertitel}</div>)}
-          </div>
-        </div>
-        <nav class="segmented" aria-label="Modi">
-          <a href="/explorer" class="seg-btn">Entdecken</a>
-          <a href="/slideshow" class="seg-btn">Slideshow</a>
-          <a href="/reader" class="seg-btn active">Reader</a>
-        </nav>
-        <div></div>
-      </div>
-    </header>
-
-    <main class="reader-main container" data-default-file={defaultFile}>
+  <div class="reader-app" data-mode="reader">
+    <main class="reader-main" data-default-file={defaultFile}>
       <div class="reader-toolbar">
         <div class="controls-left">
           <button id="prev-page" aria-label="Vorherige Seite">←</button>
@@ -52,18 +34,14 @@ const defaultFile = kioskConfig?.konfiguration?.reader_settings?.pdf_url || '';
   </div>
 
   <style>
-    .header-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--space-4); }
-    .segmented { display: inline-flex; gap: var(--space-6); }
-    .seg-btn { text-decoration: none; color: var(--muted); font-weight: 700; padding: 6px 0; border-bottom: 2px solid transparent; }
-    .seg-btn.active, .seg-btn:hover { color: var(--text); border-bottom-color: currentColor; }
-
-    .reader-main { padding: var(--space-6) 0 var(--space-10); }
-    .reader-toolbar { display:flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: var(--space-4); }
+    .reader-app { min-height: 100vh; background: #fff; }
+    .reader-main { min-height: 100vh; padding: 0; margin: 0; display: grid; grid-template-rows: auto 1fr; }
+    .reader-toolbar { display:flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 8px 12px; border-bottom: 1px solid var(--border); }
     .controls-left, .controls-right { display:flex; align-items:center; gap: .75rem; }
-    .reader-viewport { border: 1px solid var(--border); min-height: 70vh; background: #fff; display:grid; place-items:center; }
-    .reader-frame { width: 100%; height: 80vh; border: 0; }
-    .spread-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); }
-    .spread-grid .reader-frame { height: 80vh; }
+    .reader-viewport { min-height: 0; height: calc(100vh - 42px); background: #fff; display:grid; place-items:center; }
+    .reader-frame { width: 100vw; height: 100%; border: 0; }
+    .spread-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); width: 100vw; height: 100%; }
+    .spread-grid .reader-frame { height: 100%; }
     .page-indicator input { width: 5ch; text-align: right; border: 0; border-bottom: 1px solid var(--border); background: transparent; padding: 2px 4px; }
     .placeholder { color: var(--muted); text-align: center; padding: var(--space-10); }
     @media (max-width: 900px) { .spread { display:none; } }
