@@ -146,6 +146,7 @@ Optional kann per Link/QR-Code direkt auf die Mobile-Seite verwiesen werden.
 - `/explorer` Explorer-Modus: Filter, Suche, Kachel-Übersicht.
 - `/slideshow` Slideshow-Modus: automatische Präsentation.
 - `/scan` Scanner-Modus: QR-Code scannen und Exponat öffnen.
+- `/reader` PDF-Reader: PDF im Kiosk lesen, mit Seiten-/Doppelseiten-Steuerung (`?file=URL`).
 - `/exponat/[id]` Detailseite eines Exponats.
 
 ## 🔐 Umgebungsvariablen
