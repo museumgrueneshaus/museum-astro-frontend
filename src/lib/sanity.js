@@ -146,6 +146,23 @@ export async function getKioskConfig(mac = 'default') {
   return await client.fetch(query, { mac });
 }
 
+// Fetch kiosk config by flexible identifier (MAC, name, or _id)
+export async function getKioskConfigByIdentifier(identifier = 'default') {
+  const query = `*[_type == "kioskConfig" && (mac_adresse == $id || name == $id || _id == $id || name == "Default")] | order(mac_adresse desc) [0] {
+    _id,
+    name,
+    standort,
+    mac_adresse,
+    modus,
+    konfiguration,
+    design,
+    funktionen,
+    aktiv
+  }`;
+
+  return await client.fetch(query, { id: identifier });
+}
+
 export async function getMuseumInfo() {
   const query = `*[_type == "museumInfo"][0] {
     name,

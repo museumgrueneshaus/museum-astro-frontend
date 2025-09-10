@@ -1,0 +1,102 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { getKioskConfigByIdentifier, getMuseumInfo, getExponate } from '../../../lib/sanity';
+
+export async function getStaticPaths() {
+  return [];
+}
+
+const { id } = Astro.params;
+const kioskConfig = await getKioskConfigByIdentifier(id).catch(() => null);
+const museumInfo = await getMuseumInfo().catch(() => ({ name: 'Museum Digital' }));
+
+let exponate = [];
+try {
+  const ss = kioskConfig?.konfiguration?.slideshow_settings;
+  if (ss?.exponate && ss.exponate.length > 0) exponate = ss.exponate;
+  else exponate = await getExponate({ highlight: true, limit: 20 });
+} catch { exponate = []; }
+
+const pageTitle = `${kioskConfig?.name || id} – Slideshow`;
+const theme = kioskConfig?.design?.theme || 'default';
+---
+
+<Layout title={pageTitle} theme={theme}>
+  <div class="kiosk-app" data-kiosk={id}>
+    <header class="app-header">
+      <div class="container header-bar">
+        <div class="brand"><div class="brand-title">{kioskConfig?.name || id}</div></div>
+        <nav class="segmented" aria-label="Modi">
+          <a href={`/kiosk/${id}/explorer`} class="seg-btn">Entdecken</a>
+          <a href={`/kiosk/${id}/slideshow`} class="seg-btn active">Slideshow</a>
+          <a href={`/kiosk/${id}/reader`} class="seg-btn">Reader</a>
+        </nav>
+        <div></div>
+      </div>
+    </header>
+
+    <main class="kiosk-main container">
+      <div class="slideshow-container">
+        <div class="slideshow-track">
+          {exponate.map((exponat, index) => (
+            <div class="slide" data-slide={index}>
+              <div class="slide-image">
+                {exponat.hauptbild && (<img src={exponat.hauptbild} alt={exponat.titel} />)}
+              </div>
+              <div class="slide-info">
+                <h2>{exponat.titel}</h2>
+                {exponat.inventarnummer && (<p class="inv-nr">{exponat.inventarnummer}</p>)}
+                {exponat.kurzbeschreibung && (<p>{exponat.kurzbeschreibung}</p>)}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div class="slideshow-controls">
+          <button class="prev-btn" aria-label="Vorherige Folie">←</button>
+          <button class="play-pause-btn" aria-label="Pause">⏸</button>
+          <button class="next-btn" aria-label="Nächste Folie">→</button>
+        </div>
+        <div class="slideshow-dots">
+          {exponate.map((_, index) => (<span class="dot" data-dot={index}></span>))}
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <style>
+    .header-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+    .segmented { display: inline-flex; gap: var(--space-6); }
+    .seg-btn { text-decoration: none; color: var(--muted); font-weight: 700; padding: 6px 0; border-bottom: 2px solid transparent; }
+    .seg-btn.active, .seg-btn:hover { color: var(--text); border-bottom-color: currentColor; }
+    .kiosk-main { padding: var(--space-8) 0; }
+    .slideshow-container { min-height: 65vh; display: flex; flex-direction: column; align-items: center; }
+    .slideshow-track { position: relative; width: 100%; max-width: 1200px; height: min(70vh, 70vw); }
+    .slide { position: absolute; inset: 0; display: flex; gap: 3rem; align-items: center; opacity: 0; transition: opacity 1s; }
+    .slide.active { opacity: 1; }
+    .slide-image { flex: 1; height: 100%; }
+    .slide-image img { width: 100%; height: 100%; object-fit: contain; }
+    .slide-info { flex: 1; color: var(--text); }
+    .slide-info h2 { font-size: clamp(1.5rem, 3vw, 2.5rem); margin-bottom: 1rem; }
+    .slideshow-controls { display: flex; gap: 1rem; margin-top: 2rem; }
+    .slideshow-controls button { width: 44px; height: 44px; border: 1px solid var(--border); background: transparent; }
+    .slideshow-dots { display: flex; gap: 8px; margin-top: .5rem; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: #cbd5e1; }
+    .dot.active { background: #111827; }
+  </style>
+
+  <script>
+    let slideshowInterval;
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const dots = document.querySelectorAll('.dot');
+    function showSlide(index) { slides.forEach(s => s.classList.remove('active')); dots.forEach(d => d.classList.remove('active')); if (slides[index]) slides[index].classList.add('active'); if (dots[index]) dots[index].classList.add('active'); currentSlide = index; }
+    function nextSlide() { currentSlide = (currentSlide + 1) % (slides.length || 1); showSlide(currentSlide); }
+    function prevSlide() { currentSlide = (currentSlide - 1 + (slides.length || 1)) % (slides.length || 1); showSlide(currentSlide); }
+    function startSlideshow() { if (!slides || slides.length === 0) return; showSlide(0); slideshowInterval = setInterval(nextSlide, 10000); }
+    function stopSlideshow() { clearInterval(slideshowInterval); }
+    document.querySelector('.prev-btn')?.addEventListener('click', () => { stopSlideshow(); prevSlide(); });
+    document.querySelector('.next-btn')?.addEventListener('click', () => { stopSlideshow(); nextSlide(); });
+    document.querySelector('.play-pause-btn')?.addEventListener('click', (e) => { if (slideshowInterval) { stopSlideshow(); e.target.textContent = '▶'; } else { startSlideshow(); e.target.textContent = '⏸'; } });
+    startSlideshow();
+  </script>
+</Layout>

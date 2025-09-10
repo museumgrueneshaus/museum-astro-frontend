@@ -149,6 +149,16 @@ Optional kann per Link/QR-Code direkt auf die Mobile-Seite verwiesen werden.
 - `/reader` PDF-Reader: PDF im Kiosk lesen, mit Seiten-/Doppelseiten-Steuerung (`?file=URL`).
 - `/exponat/[id]` Detailseite eines Exponats.
 
+### Pro-Kiosk (Pi) Routen
+
+Für jede Kiosk-Config/Mac/Name gibt es dedizierte Seiten:
+- `/kiosk/[id]` Übersicht für diese Konfiguration (Preview der Modi)
+- `/kiosk/[id]/explorer` Explorer-Ansicht gemäß dieser Konfiguration
+- `/kiosk/[id]/slideshow` Slideshow gemäß dieser Konfiguration
+- `/kiosk/[id]/reader` PDF-Reader gemäß dieser Konfiguration
+
+Hinweis: `[id]` kann MAC-Adresse, Name oder die Sanity-`_id` der `kioskConfig` sein. Die Seiten lesen `explorer_settings`, `slideshow_settings.exponate` und `reader_settings.pdf_url` direkt aus Sanity.
+
 ## 🔐 Umgebungsvariablen
 
 Beispiel (`.env.example` vorhanden):
