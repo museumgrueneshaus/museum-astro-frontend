@@ -40,12 +40,7 @@ const slide = Array.isArray(slideshowItems) ? slideshowItems[0] : null;
     <div class="mode-label">Slideshow</div>
   </button>
 
-  <button class="mode-card" data-mode="scan" aria-label="Modus QR Scan">
-    <div class="mode-thumb scan">
-      <div class="frame"></div>
-    </div>
-    <div class="mode-label">QR Scan</div>
-  </button>
+  
 </section>
 
 <style>
@@ -59,7 +54,6 @@ const slide = Array.isArray(slideshowItems) ? slideshowItems[0] : null;
   .mode-thumb.explorer .grid-2 > :nth-last-child(-n+2) { border-bottom: 0; }
   .mode-thumb.slideshow { aspect-ratio: 16/9; display: grid; place-items: center; overflow: hidden; }
   .mode-thumb.slideshow .ph { width: 100%; height: 100%; background: #f3f4f6; }
-  .mode-thumb.scan { aspect-ratio: 3/4; background: #0b0f17; }
-  .mode-thumb.scan .frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60%; aspect-ratio: 1; border: 2px solid #fff; }
+  
   @media (max-width: 900px) { .modes-preview { display: none; } }
 </style>

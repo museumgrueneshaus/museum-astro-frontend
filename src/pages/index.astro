@@ -84,7 +84,6 @@ try {
         <nav class="segmented" data-kiosk-modes>
           <button data-mode="explorer" class="seg-btn active">Entdecken</button>
           <button data-mode="slideshow" class="seg-btn">Slideshow</button>
-          <button data-mode="scan" class="seg-btn">QR Scan</button>
         </nav>
 
         <div class="header-actions">
@@ -157,21 +156,7 @@ try {
         </div>
       </section>
 
-      <!-- QR Scanner Mode -->
-      <section class="mode-content scanner-mode" data-mode-content="scan">
-        <div class="scanner-container">
-          <div class="scanner-viewport">
-            <video id="scanner-video"></video>
-            <div class="scanner-overlay">
-              <div class="scanner-frame"></div>
-            </div>
-          </div>
-          <div class="scanner-info">
-            <h2>QR-Code scannen</h2>
-            <p>Halten Sie den QR-Code vor die Kamera</p>
-          </div>
-        </div>
-      </section>
+      
     </main>
 
     <!-- Search overlay (mobile) -->
@@ -196,7 +181,7 @@ try {
     </footer>
 
     <!-- Bottom bar (mobile) -->
-    <BottomBar />
+    
 
     <!-- Idle Overlay -->
     <div class="idle-overlay" id="idle-overlay">
@@ -358,55 +343,7 @@ try {
       background: white;
     }
 
-    /* Scanner Mode */
-    .scanner-container {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .scanner-viewport {
-      position: relative;
-      width: 100%;
-      max-width: 500px;
-      height: 500px;
-    }
-
-    #scanner-video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 15px;
-    }
-
-    .scanner-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-    }
-
-    .scanner-frame {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 250px;
-      height: 250px;
-      border: 3px solid white;
-      border-radius: 15px;
-      animation: pulse 2s infinite;
-    }
-
-    .scanner-info {
-      text-align: center;
-      color: white;
-      margin-top: 2rem;
-    }
+    
 
     /* Footer */
     .footer-info { display: flex; justify-content: space-between; align-items: center; }
