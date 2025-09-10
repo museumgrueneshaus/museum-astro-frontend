@@ -22,20 +22,8 @@ const theme = kioskConfig?.design?.theme || 'default';
 ---
 
 <Layout title={pageTitle} theme={theme} idleHome={`/kiosk/${id}`}>
-  <div class="kiosk-app" data-kiosk={id}>
-    <header class="app-header">
-      <div class="container header-bar">
-        <div class="brand"><div class="brand-title">{kioskConfig?.name || id}</div></div>
-        <nav class="segmented" aria-label="Modi">
-          <a href={`/kiosk/${id}/explorer`} class="seg-btn">Entdecken</a>
-          <a href={`/kiosk/${id}/slideshow`} class="seg-btn active">Slideshow</a>
-          <a href={`/kiosk/${id}/reader`} class="seg-btn">Reader</a>
-        </nav>
-        <div></div>
-      </div>
-    </header>
-
-    <main class="kiosk-main container">
+  <div class="slideshow-app" data-kiosk={id}>
+    <main class="slideshow-main">
       <div class="slideshow-container">
         <div class="slideshow-track">
           {exponate.map((exponat, index) => (
@@ -64,18 +52,15 @@ const theme = kioskConfig?.design?.theme || 'default';
   </div>
 
   <style>
-    .header-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
-    .segmented { display: inline-flex; gap: var(--space-6); }
-    .seg-btn { text-decoration: none; color: var(--muted); font-weight: 700; padding: 6px 0; border-bottom: 2px solid transparent; }
-    .seg-btn.active, .seg-btn:hover { color: var(--text); border-bottom-color: currentColor; }
-    .kiosk-main { padding: var(--space-8) 0; }
-    .slideshow-container { min-height: 65vh; display: flex; flex-direction: column; align-items: center; }
-    .slideshow-track { position: relative; width: 100%; max-width: 1200px; height: min(70vh, 70vw); }
+    .slideshow-app { background: #0b0f17; min-height: 100vh; color: #fff; }
+    .slideshow-main { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+    .slideshow-container { width: 100%; max-width: 1600px; }
+    .slideshow-track { position: relative; width: 100%; height: min(80vh, 70vw); }
     .slide { position: absolute; inset: 0; display: flex; gap: 3rem; align-items: center; opacity: 0; transition: opacity 1s; }
     .slide.active { opacity: 1; }
     .slide-image { flex: 1; height: 100%; }
     .slide-image img { width: 100%; height: 100%; object-fit: contain; }
-    .slide-info { flex: 1; color: var(--text); }
+    .slide-info { flex: 1; color: #fff; }
     .slide-info h2 { font-size: clamp(1.5rem, 3vw, 2.5rem); margin-bottom: 1rem; }
     .slideshow-controls { display: flex; gap: 1rem; margin-top: 2rem; }
     .slideshow-controls button { width: 44px; height: 44px; border: 1px solid var(--border); background: transparent; }
