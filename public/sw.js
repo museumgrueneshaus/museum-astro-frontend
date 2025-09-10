@@ -5,7 +5,7 @@
   - Network-first for navigation + Sanity API with offline fallback
 */
 
-const VERSION = 'v1.0.0';
+const VERSION = 'v1.1.0';
 const SHELL_CACHE = `shell-${VERSION}`;
 const RUNTIME_CACHE = `runtime-${VERSION}`;
 
@@ -105,4 +105,3 @@ self.addEventListener('fetch', (event) => {
     );
   }
 });
-

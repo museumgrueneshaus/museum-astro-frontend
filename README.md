@@ -209,6 +209,12 @@ Dokumenttyp: `kioskConfig`
 - Optional GitHub Actions Workflow: `.github/workflows/netlify-deploy.yml`
   - Secrets benötigt: `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`
 
+### Troubleshooting: Änderungen erscheinen nicht
+
+- Service Worker Cache: Der Kiosk ist als PWA konfiguriert. Hard‑Reload (Cmd/Ctrl+Shift+R) oder in einem privaten Fenster öffnen. Alternativ im Browser unter "Application → Service Workers" die Registrierung aufheben und neu laden. Ich habe die SW‑Version auf `v1.1.0` erhöht, so dass neue Deploys zuverlässig übernommen werden.
+- Netlify Deploys: Prüfe in Netlify unter "Deploys" die letzte Build‑Zeit und Logs. Ist die Seite mit dem richtigen GitHub‑Repo/Branch verknüpft?
+- GitHub Actions: Wenn das Workflow‑Deploy genutzt wird, stelle sicher, dass die Secrets hinterlegt sind und der Workflow auf `main` auslöst.
+
 ## 🔌 Beispiele
 
 - Kiosk‑Übersicht: `/kiosk/AA:BB:CC:DD:EE:FF`
