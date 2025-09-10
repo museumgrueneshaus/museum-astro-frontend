@@ -139,6 +139,84 @@ Aufruf: `https://deine-app.netlify.app/mobile/`
 
 Optional kann per Link/QR-Code direkt auf die Mobile-Seite verwiesen werden.
 
+## 🧭 Seiten & Architektur (aktuell)
+
+- Showcase (Desktop): `/` – minimalistische Startseite mit Vorschau der Modi + Explorer.
+- Mobile: `/mobile` – mobil-optimiert, mit Explorer + QR-Scanner (nur hier).
+- Modus-Seiten (Desktop):
+  - Explorer: `/explorer`
+  - Slideshow: `/slideshow`
+  - Reader (PDF): `/reader`
+- Exponat-Detail: `/exponat/[id]`
+
+### Pro‑Kiosk (Pi) Routen (SSR)
+
+- Übersicht: `/kiosk/[id]` – Vorschau für exakt diese Kiosk‑Konfiguration
+- Explorer: `/kiosk/[id]/explorer`
+- Slideshow: `/kiosk/[id]/slideshow`
+- Reader (PDF): `/kiosk/[id]/reader`
+
+`[id]` kann MAC‑Adresse (z. B. `AA:BB:CC:DD:EE:FF`), der `name` oder die Sanity‑`_id` der `kioskConfig` sein.
+Diese dynamischen Routen funktionieren dank SSR (Netlify Adapter) ohne Vorab‑Generierung.
+
+Hinweis: QR‑Scan ist absichtlich nur auf `/mobile` verfügbar (Kamera‑Zugriff auf Desktop ausgeschaltet).
+
+## 🧩 Sanity → Konfigurations‑Mapping (pro Kiosk)
+
+Dokumenttyp: `kioskConfig`
+
+- `modus`: Startmodus (z. B. `explorer`, `slideshow`)
+- `konfiguration.explorer_settings`
+  - `nur_highlights` (boolean): nur Highlights anzeigen
+  - `kategorien` (array ref): Kategorie‑Filter
+  - `items_pro_seite` (number): Grid‑Größe pro Seite
+- `konfiguration.slideshow_settings`
+  - `exponate` (array ref oder ids): explizite Reihenfolge/Inhalte für Slideshow
+    - Falls leer: Fallback auf Highlights (`getExponate({ highlight: true })`)
+    - Die App dereferenziert Einträge (stellt vollständige Felder inkl. Bild sicher)
+- `konfiguration.reader_settings`
+  - `pdf_url` (string): PDF‑Quelle für `/reader` und `/kiosk/[id]/reader`
+  - URL‑Parameter optional: `?file=URL&page=1&spread=1`
+- `design.theme`: `default`, `dark`, `high-contrast`
+- `funktionen`
+  - `zeige_qr_codes` (Desktop nur Anzeige auf Karten)
+  - `zeige_uhr` (Status Uhr oben rechts)
+
+## 📖 Reader (PDF) – Nutzung
+
+- Standard: konfigurieren via `reader_settings.pdf_url` in der `kioskConfig`.
+- Alternativ per URL: `/reader?file=/docs/katalog.pdf&page=1&spread=1`
+- Spread (Doppelseite) wird ab ~900px Breite aktiv, sofern `spread=1`.
+- Vollbild via Button möglich; Seite wechselt mit ←/→.
+
+## 🧪 Design & UX – Leitlinien
+
+- Minimalistisch, ausstellungstauglich: Weißraum, typografische Hierarchie, Underline‑States.
+- Touch‑Ziele ≥ 48px, klare Fokusringe, keine Hover‑Abhängigkeit.
+- Explorer: 2‑zeilige Titel, 3‑zeilige Kurztexte, kleine Meta (Inv‑Nr, Kategorie) in Small‑Caps.
+- Slideshow: wenig Text (Titel, Inv‑Nr), 8–12s Takt, Fade; Pause bei Interaktion.
+- QR‑Scan: nur mobil; klarer Permission‑Flow, Fallback‑Hinweise.
+
+## 🏗️ Technik – Architektur & Hosting
+
+- Astro + Netlify Adapter (SSR): dynamische Routen (`/kiosk/[id]`, `/exponat/[id]`) werden zur Laufzeit aufgelöst.
+- PWA: App‑Shell wird gecacht (offline.html), Bilder per `stale‑while‑revalidate`, Sanity API network‑first mit Fallback.
+- Sanity Client: CDN aktiv, LQIP genutzt; Responsive Images via URL‑Builder.
+
+### Deployment
+
+- Netlify Git‑Deploy: `netlify.toml` vorhanden
+- Optional GitHub Actions Workflow: `.github/workflows/netlify-deploy.yml`
+  - Secrets benötigt: `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`
+
+## 🔌 Beispiele
+
+- Kiosk‑Übersicht: `/kiosk/AA:BB:CC:DD:EE:FF`
+- Kiosk‑Explorer: `/kiosk/Filiale‑Sued/explorer`
+- Kiosk‑Slideshow (Explizit aus Sanity): `/kiosk/Filiale‑Sued/slideshow`
+- Reader mit PDF aus Config: `/kiosk/Filiale‑Sued/reader`
+- Mobile Scan: `/mobile`
+
 ## 🧭 Seitenübersicht (Routen)
 
 - `/` Showcase (Desktop): Vorschau der Modi + Explorer-Start.
