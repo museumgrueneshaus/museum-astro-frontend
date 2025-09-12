@@ -1,0 +1,377 @@
+
+---
+export interface Props {
+  targetSelector: string; // CSS selector of input to control
+}
+
+const { targetSelector = '#search' } = Astro.props as Props;
+---
+
+<div id="osk-root" class="osk" role="application" aria-label="Onscreen keyboard" hidden data-target-selector={targetSelector}>
+  <div class="osk-inner">
+    <div class="osk-row" data-row="num"></div>
+    <div class="osk-row" data-row="q"></div>
+    <div class="osk-row" data-row="a"></div>
+    <div class="osk-row" data-row="z"></div>
+    <div class="osk-row" data-row="ctl"></div>
+  </div>
+</div>
+
+<style>
+  .osk { 
+    position: fixed; 
+    left: 0; 
+    right: 0; 
+    bottom: 0; 
+    z-index: 60; 
+    background: #ffffff; 
+    border-top: 1px solid #e0e0e0;
+  }
+  
+  /* Dark mode onscreen keyboard */
+  [data-theme="dark"] .osk {
+    background: #333333 !important;
+    border-top: 1px solid #555555 !important;
+  }
+  
+  /* More specific dark mode selector */
+  :root[data-theme="dark"] .osk {
+    background: #333333 !important;
+    border-top: 1px solid #555555 !important;
+  }
+  
+  .osk[hidden] { 
+    display: none !important; 
+  }
+  
+  .osk-inner { 
+    max-width: 100%; 
+    margin: 0 auto; 
+    padding: 40px 60px calc(40px + env(safe-area-inset-bottom, 0px)); 
+    display: grid; 
+    gap: 24px; 
+  }
+  
+  .osk-row { 
+    display: flex; 
+    gap: 20px; 
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  /* Simple approach - just make regular keys look like the working special keys */
+  .osk button.key { 
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    border: none !important; 
+    padding: 0 !important; 
+    margin: 0 !important;
+    display: inline-flex !important; 
+    align-items: center !important; 
+    justify-content: center !important; 
+    user-select: none !important; 
+    cursor: pointer !important; 
+    border-radius: 0 !important;
+    box-sizing: border-box !important;
+    font-family: inherit !important;
+    text-decoration: none !important;
+    outline: none !important;
+    font-size: 32px !important;
+    font-weight: 500 !important;
+    height: 80px !important;
+    width: 80px !important;
+    min-height: 80px !important;
+    min-width: 80px !important;
+    background: var(--bg-alt) !important;
+    color: var(--text) !important;
+  }
+  
+  /* All keys are identical - no special styling for control keys */
+  
+  /* Simple hover states - all keys the same */
+  .osk button.key:hover {
+    background: var(--border) !important;
+  }
+  
+  .osk button.key:active {
+    background: var(--text-dim) !important;
+  }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('OnscreenKeyboard: DOMContentLoaded event fired');
+  const root = document.getElementById('osk-root');
+  if (!root) {
+    console.error('OnscreenKeyboard: root element #osk-root not found');
+    return;
+  }
+  console.log('OnscreenKeyboard: root element found', root);
+
+  // Layouts
+  const layouts = {
+    en: {
+      num: ['1','2','3','4','5','6','7','8','9','0','←'],
+      q:   ['q','w','e','r','t','y','u','i','o','p'],
+      a:   ['a','s','d','f','g','h','j','k','l'],
+      z:   ['⇧','z','x','c','v','b','n','m','.'],
+      ctl: ['.?123','Space','Clear','Enter','✕']
+    },
+    de: {
+      num: ['1','2','3','4','5','6','7','8','9','0','←'],
+      q:   ['q','w','e','r','t','z','u','i','o','p','ü'],
+      a:   ['a','s','d','f','g','h','j','k','l','ö','ä'],
+      z:   ['⇧','y','x','c','v','b','n','m','.','ß'],
+      ctl: ['.?123','Space','Clear','Enter','✕']
+    },
+    sym: {
+      num: ['!','@','#','$','%','^','&','*','(',')','←'],
+      q:   ['-','_','/','\\',':',';','"','+','='],
+      a:   ['?','!','.','\u003C','\u003E','[',']','{','}'],
+      z:   ['⇧','~','`','|','§','±','€','¥','£',':'],
+      ctl: ['ABC','Space','Clear','Enter','✕']
+    }
+  };
+
+  let shift = false;
+  let layer = 'en';
+
+  function getLang() {
+    const attr = document.documentElement.getAttribute('lang');
+    return attr === 'de' ? 'de' : 'en';
+  }
+
+  function getResponsiveSizes() {
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+    
+    // Calculate responsive sizes based on screen dimensions
+    let keySize, fontSize, spaceWidth, wideWidth, ctrlFontSize;
+    
+    if (screenWidth >= 3840) {
+      // Ultra-wide 4K (43" and larger)
+      keySize = 140;
+      fontSize = 48;
+      spaceWidth = 900;
+      wideWidth = 300;
+      ctrlFontSize = 32;
+    } else if (screenWidth >= 2560) {
+      // 4K (27" to 32")
+      keySize = 100;
+      fontSize = 36;
+      spaceWidth = 700;
+      wideWidth = 220;
+      ctrlFontSize = 28;
+    } else if (screenWidth >= 1920) {
+      // Full HD (24" to 27")
+      keySize = 80;
+      fontSize = 32;
+      spaceWidth = 500;
+      wideWidth = 180;
+      ctrlFontSize = 24;
+    } else if (screenWidth >= 1366) {
+      // Laptop screens
+      keySize = 60;
+      fontSize = 24;
+      spaceWidth = 400;
+      wideWidth = 140;
+      ctrlFontSize = 18;
+    } else {
+      // Mobile/tablet
+      keySize = 50;
+      fontSize = 20;
+      spaceWidth = 300;
+      wideWidth = 120;
+      ctrlFontSize = 16;
+    }
+    
+    return { keySize, fontSize, spaceWidth, wideWidth, ctrlFontSize };
+  }
+
+  function buildRows() {
+    if (!root) return;
+    console.log('OnscreenKeyboard: building rows for layer', layer);
+    const current = layer === 'sym' ? layouts.sym : (getLang() === 'de' ? layouts.de : layouts.en);
+    const rows = root.querySelectorAll('.osk-row');
+    const sizes = getResponsiveSizes();
+    
+    rows.forEach((row) => {
+      const key = row.getAttribute('data-row');
+      const keys = current[key || ''];
+      row.innerHTML = '';
+      if (!keys) return;
+      keys.forEach(k => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'key';
+        btn.textContent = k;
+        
+        // Set responsive sizing via JavaScript, colors via CSS
+        btn.style.setProperty('font-size', `${sizes.fontSize}px`, 'important');
+        btn.style.setProperty('height', `${sizes.keySize}px`, 'important');
+        btn.style.setProperty('width', `${sizes.keySize}px`, 'important');
+        btn.style.setProperty('min-height', `${sizes.keySize}px`, 'important');
+        btn.style.setProperty('min-width', `${sizes.keySize}px`, 'important');
+        
+        // ALL keys get the same flat background - no differences
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const bgColor = isDark ? '#000000' : '#f4f4f4'; // Black for dark mode, light grey for light mode
+        const textColor = isDark ? '#ffffff' : '#000000'; // White text for dark mode, black for light mode
+        btn.style.setProperty('background', bgColor, 'important');
+        btn.style.setProperty('background-color', bgColor, 'important');
+        btn.style.setProperty('color', textColor, 'important');
+        btn.style.setProperty('box-shadow', 'none', 'important');
+        btn.style.setProperty('text-shadow', 'none', 'important');
+        
+        // Also set the keyboard background
+        const oskRoot = document.getElementById('osk-root');
+        if (oskRoot) {
+          oskRoot.style.setProperty('background', isDark ? '#333333' : '#ffffff', 'important');
+          oskRoot.style.setProperty('border-top-color', isDark ? '#555555' : '#e0e0e0', 'important');
+        }
+        btn.style.setProperty('filter', 'none', 'important');
+        btn.style.setProperty('border', 'none', 'important');
+        btn.style.setProperty('outline', 'none', 'important');
+        
+        if (k === 'Space') {
+          btn.classList.add('space','ctrl');
+          btn.style.setProperty('width', `${sizes.spaceWidth}px`, 'important');
+          btn.style.setProperty('min-width', `${sizes.spaceWidth}px`, 'important');
+          btn.style.setProperty('max-width', `${sizes.spaceWidth}px`, 'important');
+          btn.style.setProperty('flex-shrink', '0', 'important');
+        }
+        if (k === 'Enter' || k === 'Clear') {
+          btn.classList.add('wide','ctrl');
+          btn.style.setProperty('width', `${sizes.wideWidth}px`, 'important');
+          btn.style.setProperty('min-width', `${sizes.wideWidth}px`, 'important');
+          btn.style.setProperty('max-width', `${sizes.wideWidth}px`, 'important');
+          btn.style.setProperty('flex-shrink', '0', 'important');
+        }
+        if (k === '⇧' || k === '.?123' || k === 'ABC' || k === '✕') {
+          btn.classList.add('ctrl');
+          btn.style.setProperty('font-size', `${sizes.ctrlFontSize}px`, 'important');
+        }
+        
+        // Hover and active states are handled by CSS
+        
+        row.appendChild(btn);
+      });
+    });
+  }
+
+  function applyShift(ch) {
+    if (!shift) return ch;
+    return ch.length === 1 ? ch.toUpperCase() : ch;
+  }
+
+  function insertText(input, text) {
+    const start = input.selectionStart ?? input.value.length;
+    const end = input.selectionEnd ?? input.value.length;
+    const before = input.value.slice(0, start);
+    const after = input.value.slice(end);
+    input.value = before + text + after;
+    const pos = start + text.length;
+    input.setSelectionRange(pos, pos);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  function backspace(input) {
+    const start = input.selectionStart ?? input.value.length;
+    const end = input.selectionEnd ?? input.value.length;
+    if (start === 0 && end === 0) return;
+    if (start !== end) {
+      // delete selection
+      const before = input.value.slice(0, start);
+      const after = input.value.slice(end);
+      input.value = before + after;
+      input.setSelectionRange(start, start);
+    } else {
+      const s = Math.max(0, start - 1);
+      input.value = input.value.slice(0, s) + input.value.slice(end);
+      input.setSelectionRange(s, s);
+    }
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  function focusTarget() {
+    const selector = root?.dataset.targetSelector;
+    if (!selector) return null;
+    const el = document.querySelector(selector);
+    return el || null;
+  }
+
+  function show() {
+    console.log('OnscreenKeyboard: showing keyboard');
+    root?.removeAttribute('hidden');
+  }
+  function hide() {
+    root?.setAttribute('hidden','');
+  }
+
+  function handleKeyPress(label) {
+    const target = focusTarget();
+    if (!target) return;
+    if (label === '✕') { hide(); target.blur(); return; }
+    if (label === '←') { backspace(target); return; }
+    if (label === 'Clear') { target.value = ''; target.dispatchEvent(new Event('input', { bubbles: true })); return; }
+    if (label === 'Enter') { target.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); target.blur(); hide(); return; }
+    if (label === '⇧') { shift = !shift; return; }
+    if (label === '.?123') { layer = 'sym'; buildRows(); return; }
+    if (label === 'ABC') { layer = getLang(); buildRows(); return; }
+    if (label === 'Space') { insertText(target, ' '); return; }
+
+    const out = applyShift(label);
+    insertText(target, out);
+    if (shift) shift = false; // one-shot
+  }
+
+  function wireEvents() {
+    if (!root) return;
+    console.log('OnscreenKeyboard: wiring events');
+    root.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+    });
+    root.addEventListener('click', (e) => {
+      const btn = e.target.closest('.key');
+      if (!btn) return;
+      handleKeyPress(btn.textContent || '');
+    });
+
+    const ensureFocusHandlers = () => {
+      const input = focusTarget();
+      if (!input) {
+        setTimeout(ensureFocusHandlers, 100);
+        return;
+      }
+      input.addEventListener('focus', () => { 
+        console.log('OnscreenKeyboard: input focused, showing keyboard');
+        layer = getLang(); 
+        buildRows(); 
+        show(); 
+      });
+      input.addEventListener('blur', (ev) => {
+        const r = root?.getBoundingClientRect();
+        const x = ev.pageX || 0, y = ev.pageY || 0;
+        if (r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
+          setTimeout(() => input.focus(), 0);
+          return;
+        }
+        hide();
+      });
+    };
+
+    ensureFocusHandlers();
+    const mo = new MutationObserver(() => { if (!root?.hasAttribute('hidden')) { layer = getLang(); buildRows(); } });
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+  }
+
+  buildRows();
+  wireEvents();
+  
+  // Make keyboard responsive to window resize
+  window.addEventListener('resize', () => {
+    buildRows();
+  });
+});
+</script>

@@ -58,8 +58,8 @@ export async function getExponate(options = {}) {
     untertitel,
     kurzbeschreibung,
     beschreibung,
-    hauptbild{..., asset->{_id, metadata{lqip}}},
-    bilder[]{..., asset->{_id, metadata{lqip}}},
+    hauptbild{..., asset->{_id, metadata{lqip, dimensions}}},
+    bilder[]{..., asset->{_id, metadata{lqip, dimensions}}},
     "kategorie": kategorie->{_id, titel, slug, icon, farbe},
     datierung,
     herstellung,
@@ -69,6 +69,8 @@ export async function getExponate(options = {}) {
     ist_highlight,
     reihenfolge,
     qr_code,
+    hat_led_licht,
+    led_position,
     audio,
     video,
     dokumente
@@ -85,8 +87,8 @@ export async function getExponat(id) {
     untertitel,
     kurzbeschreibung,
     beschreibung,
-    hauptbild{..., asset->{_id, metadata{lqip}}},
-    bilder[]{..., asset->{_id, metadata{lqip}}},
+    hauptbild{..., asset->{_id, metadata{lqip, dimensions}}},
+    bilder[]{..., asset->{_id, metadata{lqip, dimensions}}},
     "kategorie": kategorie->{_id, titel, slug, icon, farbe},
     datierung,
     herstellung,
@@ -96,6 +98,8 @@ export async function getExponat(id) {
     ist_highlight,
     reihenfolge,
     qr_code,
+    hat_led_licht,
+    led_position,
     audio,
     video,
     dokumente
@@ -127,8 +131,8 @@ export async function getExponateByIds(ids = []) {
     untertitel,
     kurzbeschreibung,
     beschreibung,
-    hauptbild{..., asset->{_id, metadata{lqip}}},
-    bilder[]{..., asset->{_id, metadata{lqip}}},
+    hauptbild{..., asset->{_id, metadata{lqip, dimensions}}},
+    bilder[]{..., asset->{_id, metadata{lqip, dimensions}}},
     "kategorie": kategorie->{_id, titel, slug, icon, farbe},
     datierung,
     herstellung,
@@ -187,6 +191,7 @@ export async function getKioskConfigByIdentifier(identifier = 'default') {
     konfiguration,
     design,
     funktionen,
+    mqtt,
     aktiv
   }`;
 

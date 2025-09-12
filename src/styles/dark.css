@@ -1,0 +1,58 @@
+:root[data-theme='dark'] {
+  --bg: #141414;
+  --bg-alt: #1F1F1F;
+  --text: #FFFFFF;
+  --text-dim: #A3A3A3;
+  --border: #333333;
+  --primary: #E50914;
+  --primary-acc: #B81D24;
+  --shadow: none;
+}
+
+[data-theme='dark'] .search-input {
+  color: #fff;
+  border-bottom-color: #fff;
+}
+
+[data-theme='dark'] .search-input::placeholder {
+  color: #A3A3A3;
+}
+
+[data-theme='dark'] .lang-btn, [data-theme='dark'] .theme-btn, [data-theme='dark'] .help-btn {
+  color: #fff;
+}
+
+[data-theme='dark'] .filter-check .box {
+  border-color: #fff;
+}
+
+[data-theme='dark'] .filter-check input:checked + .box {
+  background: #fff !important;
+  border-color: #fff;
+}
+
+[data-theme='dark'] .filter-check input:checked + .box::after {
+  border-right-color: #141414;
+  border-bottom-color: #141414;
+}
+
+[data-theme='dark'] .filter-check .label {
+  color: #fff;
+}
+
+[data-theme='dark'] .modal-content {
+  background: #1F1F1F;
+  color: #fff;
+}
+
+[data-theme='dark'] .modal-info-container {
+  color: #fff;
+}
+
+[data-theme='dark'] #modal-title, [data-theme='dark'] #modal-subtitle {
+  text-shadow: none;
+}
+
+[data-theme='dark'] .meta-item strong {
+  color: #E50914;
+}

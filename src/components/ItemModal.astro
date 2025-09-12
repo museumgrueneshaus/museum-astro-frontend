@@ -1,0 +1,348 @@
+---
+export interface Props {
+  item: {
+    title: string;
+    subtitle?: string;
+    image?: string;
+    inventarnummer?: string;
+    kurzbeschreibung?: string;
+    beschreibung?: string;
+    datierung?: string;
+    herstellung?: string;
+    physisch?: string;
+    organisation?: string;
+    tags?: string[];
+    kategorieTitel?: string;
+  };
+  isOpen: boolean;
+}
+
+const { item, isOpen } = Astro.props;
+---
+
+<div id="item-modal" class="modal" data-open={isOpen} role="dialog" aria-modal="true" aria-label="Item Details">
+  <div class="modal-backdrop" data-modal-close></div>
+  <div class="modal-content">
+    <button class="modal-close" data-modal-close aria-label="Schließen">✕</button>
+    
+    <div class="modal-body">
+      <div class="modal-image">
+        <img src={item.image || '/placeholder.jpg'} alt={item.title} />
+      </div>
+      
+      <div class="modal-info">
+        <h2 class="modal-title">{item.title}</h2>
+        {item.subtitle && <h3 class="modal-subtitle">{item.subtitle}</h3>}
+        
+        <div class="modal-metadata">
+          {item.inventarnummer && (
+            <div class="metadata-item">
+              <span class="metadata-label">Inventarnummer:</span>
+              <span class="metadata-value">{item.inventarnummer}</span>
+            </div>
+          )}
+          
+          {item.datierung && (
+            <div class="metadata-item">
+              <span class="metadata-label">Datierung:</span>
+              <span class="metadata-value">{item.datierung}</span>
+            </div>
+          )}
+          
+          {item.herstellung && (
+            <div class="metadata-item">
+              <span class="metadata-label">Material/Technik:</span>
+              <span class="metadata-value">{item.herstellung}</span>
+            </div>
+          )}
+          
+          {item.physisch && (
+            <div class="metadata-item">
+              <span class="metadata-label">Maße:</span>
+              <span class="metadata-value">{item.physisch}</span>
+            </div>
+          )}
+          
+          {item.organisation && (
+            <div class="metadata-item">
+              <span class="metadata-label">Sammlung:</span>
+              <span class="metadata-value">{item.organisation}</span>
+            </div>
+          )}
+          
+          {item.kategorieTitel && (
+            <div class="metadata-item">
+              <span class="metadata-label">Kategorie:</span>
+              <span class="metadata-value">{item.kategorieTitel}</span>
+            </div>
+          )}
+        </div>
+        
+        {item.kurzbeschreibung && (
+          <div class="modal-description">
+            <h4>Beschreibung</h4>
+            <p>{item.kurzbeschreibung}</p>
+          </div>
+        )}
+        
+        {item.tags && item.tags.length > 0 && (
+          <div class="modal-tags">
+            <h4>Tags</h4>
+            <div class="tags-list">
+              {item.tags.map(tag => (
+                <span class="tag">{tag}</span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  
+  .modal[data-open="true"] {
+    display: flex;
+  }
+  
+  .modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+  }
+  
+  .modal-content {
+    position: relative;
+    background: var(--bg);
+    border-radius: 12px;
+    max-width: 900px;
+    max-height: 90vh;
+    width: 100%;
+    overflow: hidden;
+    box-shadow: none;
+  }
+  
+  .modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    transition: background-color 0.2s ease;
+  }
+  
+  .modal-close:hover {
+    background: rgba(0, 0, 0, 0.7);
+  }
+  
+  .modal-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    max-height: 90vh;
+    overflow: hidden;
+  }
+  
+  .modal-image {
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    min-height: 400px;
+  }
+  
+  .modal-image img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+  }
+  
+  .modal-info {
+    padding: 40px;
+    overflow-y: auto;
+    max-height: 90vh;
+  }
+  
+  .modal-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  
+  .modal-subtitle {
+    font-size: 18px;
+    font-weight: 400;
+    margin: 0 0 24px 0;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+  
+  .modal-metadata {
+    margin-bottom: 32px;
+  }
+  
+  .metadata-item {
+    display: flex;
+    margin-bottom: 12px;
+    gap: 12px;
+  }
+  
+  .metadata-label {
+    font-weight: 600;
+    color: var(--text-dim);
+    min-width: 140px;
+    flex-shrink: 0;
+  }
+  
+  .metadata-value {
+    color: var(--text);
+    flex: 1;
+  }
+  
+  .modal-description {
+    margin-bottom: 24px;
+  }
+  
+  .modal-description h4 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    color: var(--text);
+  }
+  
+  .modal-description p {
+    margin: 0;
+    line-height: 1.6;
+    color: var(--text);
+  }
+  
+  .modal-tags h4 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    color: var(--text);
+  }
+  
+  .tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .tag {
+    background: var(--bg-alt);
+    color: var(--text);
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  
+  /* Mobile responsive */
+  @media (max-width: 768px) {
+    .modal {
+      padding: 10px;
+    }
+    
+    .modal-body {
+      grid-template-columns: 1fr;
+      max-height: 95vh;
+    }
+    
+    .modal-image {
+      min-height: 250px;
+      padding: 20px;
+    }
+    
+    .modal-info {
+      padding: 20px;
+    }
+    
+    .modal-title {
+      font-size: 24px;
+    }
+    
+    .metadata-item {
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .metadata-label {
+      min-width: auto;
+    }
+  }
+  
+  /* Dark theme */
+  [data-theme="dark"] .modal-image {
+    background: #1a1a1a;
+  }
+</style>
+
+<script>
+  // Modal functionality
+  document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('item-modal');
+    const closeButtons = document.querySelectorAll('[data-modal-close]');
+    
+    function closeModal() {
+      if (modal) {
+        modal.setAttribute('data-open', 'false');
+        // Remove from DOM after animation
+        setTimeout(() => {
+          modal.remove();
+        }, 300);
+      }
+    }
+    
+    closeButtons.forEach(btn => {
+      btn.addEventListener('click', closeModal);
+    });
+    
+    // Close on backdrop click
+    modal?.addEventListener('click', (e) => {
+      if (e.target === modal || e.target.classList.contains('modal-backdrop')) {
+        closeModal();
+      }
+    });
+    
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal?.getAttribute('data-open') === 'true') {
+        closeModal();
+      }
+    });
+  });
+</script>
+

@@ -1,0 +1,73 @@
+---
+export interface Props {
+  title: string;
+  subtitle?: string;
+  image?: string;
+  href?: string;
+  ratio?: string; // default 1/1 square frame
+  colors?: string[]; // optional right-side indicator colors
+}
+
+const { title, subtitle = '', image = '/placeholder.jpg', href = '#', ratio = '1 / 1', colors = [] } = Astro.props as Props;
+
+function barStyle(cols: string[]) {
+  if (!cols || cols.length === 0) return undefined;
+  const safe = cols.map(c => (c?.startsWith('#') ? c : `#${c || '000000'}`));
+  if (safe.length === 1) return `background:${safe[0]}`;
+  const step = 100 / safe.length;
+  const stops = safe.map((c, i) => `${c} ${Math.round(i*step)}% ${Math.round((i+1)*step)}%`).join(',');
+  return `background: linear-gradient(to bottom, ${stops})`;
+}
+---
+
+<a class="gcard touchable" href={href} aria-label={title} style={`--ratio:${ratio}` }>
+  <div class="media">
+    <img src={image} alt={title} loading="lazy" decoding="async" />
+  </div>
+  <div class="caption">
+    <div class="title">{title}</div>
+    {subtitle && (<div class="subtitle">{subtitle}</div>)}
+  </div>
+</a>
+
+<style>
+  .gcard { display:block; color:inherit; text-decoration:none; }
+  .media { position: relative; z-index: 0; background: var(--bg); aspect-ratio: var(--ratio, 1 / 1); overflow:hidden; padding: 0; }
+  .media img { width:100%; height:100%; object-fit: contain; object-position: left top; display:block; }
+  .caption { position: relative; z-index: 2; margin-top: 6px; text-align: left; }
+  .title { font-weight: 700 !important; font-size: 18px !important; line-height: 1.15; }
+  .subtitle { font-style: italic; opacity:.85; margin-top: 2px; font-size: 14px !important; line-height: 1.2; }
+</style>
+
+<script>
+  // Adjust captions for all cards without relying on currentScript
+  (function initGalleryCaptions(){
+    const GAP = 6; // desired gap between image bottom and caption
+    const cards = Array.from(document.querySelectorAll('.gcard'))
+      .filter(el => !el.hasAttribute('data-cap-init')) as HTMLElement[];
+
+    for (const root of cards) {
+      root.setAttribute('data-cap-init', '');
+      const media = root.querySelector('.media') as HTMLElement | null;
+      const img = root.querySelector('img') as HTMLImageElement | null;
+      const caption = root.querySelector('.caption') as HTMLElement | null;
+      if (!media || !img || !caption) continue;
+
+      const update = () => {
+        const box = media.getBoundingClientRect();
+        const natW = img.naturalWidth || 0;
+        const natH = img.naturalHeight || 0;
+        if (!natW || !natH || box.width === 0 || box.height === 0) return;
+        const scale = Math.min(box.width / natW, box.height / natH);
+        const renderH = natH * scale;
+        const freeBelow = Math.max(0, box.height - renderH);
+        // Negative margin pulls caption up into the container to sit under the image
+        caption.style.marginTop = `${Math.round(GAP - freeBelow)}px`;
+      };
+
+      if (img.complete) requestAnimationFrame(update);
+      else img.addEventListener('load', () => requestAnimationFrame(update), { once: true });
+      window.addEventListener('resize', update);
+    }
+  })();
+</script>
