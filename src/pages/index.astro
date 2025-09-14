@@ -8,7 +8,7 @@ import mqttClient from '../lib/mqtt.js';
 
 let items = [];
 try {
-  const exps = await getExponate({ limit: 12 });
+  const exps = await getExponate({ limit: 50 });
   items = exps.map((ex) => ({
     id: ex._id,
     title: ex.titel,
@@ -446,13 +446,19 @@ function chipStyle(hex) {
       border-radius: 50% !important; 
       width: 4rem !important; 
       height: 4rem !important; 
-      font-size: 128px !important; 
+      font-size: 2rem !important; 
       font-weight: 900 !important;
       cursor: pointer !important; 
       z-index: 102 !important; 
       display: flex !important; 
       align-items: center !important; 
       justify-content: center !important; 
+      transition: all 0.3s ease !important;
+    }
+    
+    .fullscreen-close-btn:hover {
+      background: rgba(0,0,0,0.9) !important;
+      transform: scale(1.1) !important;
     }
     
     /* Show button in normal modal mode too */
@@ -460,29 +466,19 @@ function chipStyle(hex) {
       display: flex !important;
     }
     
-    /* Even more specific selector */
-    #modal #fullscreen-close-btn { 
-      font-size: 128px !important; 
-      font-weight: 900 !important;
-    }
-    
-    /* Most specific selector possible */
-    #modal.modal-overlay #fullscreen-close-btn.fullscreen-close-btn { 
-      font-size: 128px !important; 
-      font-weight: 900 !important;
-    }
+    /* Fullscreen close button styling is handled above */
     
     .magnifying-glass {
       position: fixed;
-      border: 4px solid #fff;
+      border: 6px solid #fff;
       border-radius: 50%;
       cursor: grab;
-      width: 250px;
-      height: 250px;
+      width: 350px;
+      height: 350px;
       transform: translate(-50%, -50%);
       pointer-events: auto;
       overflow: hidden;
-      box-shadow: none;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
       background-repeat: no-repeat;
       background-size: cover;
       z-index: 103;
@@ -827,7 +823,7 @@ function chipStyle(hex) {
 
       const magnifyingGlass = document.getElementById('magnifying-glass');
       const magnifierBtn = document.getElementById('magnifier-btn');
-      const MAGNIFICATION_FACTOR = 4; // 4x magnification for better detail
+      const MAGNIFICATION_FACTOR = 8; // 8x magnification for much better detail
       let isDragging = false;
       let dragOffset = { x: 0, y: 0 };
       let magnifierActive = false;
@@ -836,6 +832,7 @@ function chipStyle(hex) {
         console.log('Showing magnifying glass');
         magnifyingGlass.hidden = false;
         magnifyingGlass.style.display = 'block';
+        magnifyingGlass.style.opacity = '1';
         
         // Position magnifying glass in center initially
         const imageRect = modalImage.getBoundingClientRect();
@@ -861,9 +858,18 @@ function chipStyle(hex) {
           console.log('Activating magnifier');
           showMagnifyingGlass();
           magnifierBtn.classList.add('active');
+          // Add smooth animation
+          magnifyingGlass.style.opacity = '0';
+          magnifyingGlass.style.display = 'block';
+          setTimeout(() => {
+            magnifyingGlass.style.opacity = '1';
+          }, 10);
         } else {
           console.log('Deactivating magnifier');
-          hideMagnifyingGlass();
+          magnifyingGlass.style.opacity = '0';
+          setTimeout(() => {
+            hideMagnifyingGlass();
+          }, 200);
           magnifierBtn.classList.remove('active');
         }
       }
@@ -903,40 +909,51 @@ function chipStyle(hex) {
         
         if (isCurrentlyFullscreen) {
           // Exit fullscreen
+          console.log('Exiting fullscreen mode');
           modal.classList.remove('modal-fullscreen');
           const closeBtn = document.getElementById('fullscreen-close-btn');
           closeBtn.hidden = true;
-          closeBtn.innerHTML = '<i data-lucide="x"></i>'; // X for normal modal
-          lucide.createIcons();
-          magnifyingGlass.hidden = true;
           
-          // Remove magnifying glass event listeners
-          modalImage.removeEventListener('mousemove', updateMagnifyingGlass);
-          modalImage.removeEventListener('touchmove', updateMagnifyingGlass);
-          modalImage.removeEventListener('mouseenter', showMagnifyingGlass);
-          modalImage.removeEventListener('mouseleave', hideMagnifyingGlass);
-          modalImage.removeEventListener('touchstart', showMagnifyingGlass);
-          modalImage.removeEventListener('touchend', hideMagnifyingGlass);
+          // Hide magnifying glass if active
+          if (magnifierActive) {
+            hideMagnifyingGlass();
+            magnifierActive = false;
+            magnifierBtn.classList.remove('active');
+          }
+          
+          // Reset image size
+          modalImage.style.width = '';
+          modalImage.style.height = '';
+          
         } else {
           // Enter fullscreen
+          console.log('Entering fullscreen mode');
           modal.classList.add('modal-fullscreen');
           const closeBtn = document.getElementById('fullscreen-close-btn');
           closeBtn.hidden = false;
           closeBtn.innerHTML = '<i data-lucide="arrow-left"></i>'; // Return arrow for fullscreen
           lucide.createIcons();
           
-          // Force button styling with JavaScript
-          closeBtn.style.setProperty('font-size', '128px', 'important');
-          closeBtn.style.setProperty('font-weight', '900', 'important');
+          // Button styling is handled by CSS
           
-          // Magnifying glass will be controlled by button, not mouse following
+          // Hide magnifying glass when entering fullscreen
+          if (magnifierActive) {
+            hideMagnifyingGlass();
+            magnifierActive = false;
+            magnifierBtn.classList.remove('active');
+          }
         }
       }
 
       const fullscreenCloseBtn = document.getElementById('fullscreen-close-btn');
       fullscreenCloseBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        closeModal();
+        // Only exit fullscreen, don't close modal
+        if (modal.classList.contains('modal-fullscreen')) {
+          toggleFakeFullscreen();
+        } else {
+          closeModal();
+        }
       });
       
 
