@@ -374,7 +374,13 @@ function chipStyle(hex) {
       color: #000000;
     }
     
+    /* Light mode selected filter links - keep colored underlines */
     :root:not([data-theme="dark"]) .filter-link.selected .label {
+      /* Don't override text-decoration-color - let category colors show through */
+    }
+    
+    /* Only override for "Alles" button in light mode */
+    :root:not([data-theme="dark"]) #f-all.filter-link.selected .label {
       text-decoration-color: #000000;
     }
     .help-btn { appearance:none; border:0; background:transparent; color: var(--text); cursor:pointer; font-weight: 900 !important; font-size: 26px; display:inline-flex; align-items:center; justify-content:center; width: 56px; height: 56px; border-radius: 50%; line-height: 1; flex: 0 0 auto; order: 4; }
