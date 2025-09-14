@@ -642,8 +642,9 @@ function chipStyle(hex) {
           
           // Add click outside to close functionality
           modalClickHandler = (e) => {
-            // Only close if clicking on the modal backdrop, not on content or buttons
-            if (e.target === modal || e.target.classList.contains('modal-backdrop')) {
+            // Close if clicking anywhere except on buttons
+            const isButton = e.target.closest('button') || e.target.closest('.modal-buttons');
+            if (!isButton) {
               closeModal();
             }
           };
