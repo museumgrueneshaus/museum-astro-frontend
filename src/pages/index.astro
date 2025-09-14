@@ -757,6 +757,8 @@ function chipStyle(hex) {
       
       // Initialize MQTT client
       try {
+        // Import the function dynamically to avoid build issues
+        const { getKioskConfigByIdentifier } = await import('../lib/sanity.js');
         const kioskConfig = await getKioskConfigByIdentifier('default');
         if (kioskConfig?.mqtt) {
           await mqttClient.initialize(kioskConfig.mqtt);
@@ -848,7 +850,8 @@ function chipStyle(hex) {
           
           modalMetadata.innerHTML = metadataHtml;
 
-          const transitionName = `gallery-item-${item.dataset.id}`;
+          // Use a unique transition name to avoid conflicts
+          const transitionName = `gallery-item-${item.dataset.id}-${Date.now()}`;
           console.log('Setting view-transition-name on open:', transitionName);
           modalImage.style.viewTransitionName = transitionName;
           image.style.viewTransitionName = transitionName;
@@ -949,7 +952,8 @@ function chipStyle(hex) {
           if (hammer) { hammer.destroy(); hammer = null; }
 
           const image = activeItem.querySelector('img');
-          const transitionName = `gallery-item-${activeItem.dataset.id}`;
+          // Use a unique transition name to avoid conflicts
+          const transitionName = `gallery-item-${activeItem.dataset.id}-${Date.now()}`;
           
           const cleanup = () => {
               console.log('Cleaning up view-transition-name');
