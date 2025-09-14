@@ -3,12 +3,20 @@ import Layout from '../layouts/Layout.astro';
 import '../styles/grid.css';
 import GalleryCard from '../components/GalleryCard.astro';
 import OnscreenKeyboard from '../components/OnscreenKeyboard.astro';
-import { getKategorien, getExponate, urlFor, getKioskConfigByIdentifier } from '../lib/sanity';
+import { getKategorien, getExponatePaginated, getExponateCount, urlFor, getKioskConfigByIdentifier } from '../lib/sanity';
 import mqttClient from '../lib/mqtt.js';
 
+// Initial load - only first batch
 let items = [];
+let totalItems = 0;
+let currentOffset = 0;
+const ITEMS_PER_PAGE = 12;
+
 try {
-  const exps = await getExponate({ limit: 50 });
+  // Load first batch
+  const exps = await getExponatePaginated({ limit: ITEMS_PER_PAGE, offset: 0 });
+  totalItems = await getExponateCount();
+  
   items = exps.map((ex) => ({
     id: ex._id,
     title: ex.titel,
@@ -28,7 +36,12 @@ try {
     tags: ex.tags || [],
     ist_highlight: ex.ist_highlight || false,
   }));
-} catch {}
+  
+  currentOffset = ITEMS_PER_PAGE;
+  console.log(`Loaded ${items.length} items, total available: ${totalItems}`);
+} catch (error) {
+  console.error('Error loading initial items:', error);
+}
 
 const kategorien = await getKategorien().catch(() => []);
 
@@ -107,12 +120,23 @@ function chipStyle(hex) {
         </div>
       </div>
 
-      <div class="gallery-grid">
+      <div class="gallery-grid" id="gallery-grid">
         {items.map((it) => (
           <div class="gitem" data-id={it.id} data-category={it.categoryId || ''} data-title={it.title} data-subtitle={it.subtitle || ''} data-image={it.image} data-image-hd={it.imageHd} data-inventarnummer={it.inventarnummer} data-kurzbeschreibung={it.kurzbeschreibung} data-beschreibung={it.beschreibung} data-datierung={JSON.stringify(it.datierung)} data-herstellung={JSON.stringify(it.herstellung)} data-physisch={JSON.stringify(it.physisch)} data-organisation={it.organisation} data-tags={JSON.stringify(it.tags)} data-hat-led-licht={it.hatLedLicht || false} data-led-position={JSON.stringify(it.ledPosition)} data-ist-highlight={it.ist_highlight || false}>
             <GalleryCard title={it.title} subtitle={it.subtitle} image={it.image} ratio={it.ratio} />
           </div>
         ))}
+      </div>
+      
+      <!-- Loading spinner -->
+      <div id="loading-spinner" class="loading-spinner" hidden>
+        <div class="spinner"></div>
+        <p>Lade weitere Exponate...</p>
+      </div>
+      
+      <!-- End of content indicator -->
+      <div id="end-of-content" class="end-of-content" hidden>
+        <p>Alle Exponate wurden geladen</p>
       </div>
     </section>
   </main>
@@ -199,6 +223,50 @@ function chipStyle(hex) {
     }
     
     /* Badge always looks the same - flat and minimalistic */
+    
+    /* Loading spinner styles */
+    .loading-spinner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      margin: 2rem 0;
+    }
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #333;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 1rem;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .loading-spinner p {
+      color: var(--text);
+      font-size: 1rem;
+      margin: 0;
+    }
+    
+    .end-of-content {
+      text-align: center;
+      padding: 2rem;
+      margin: 2rem 0;
+    }
+    
+    .end-of-content p {
+      color: var(--text);
+      font-size: 1rem;
+      margin: 0;
+      opacity: 0.6;
+    }
     .header-wrap { position: sticky; top: calc(env(safe-area-inset-top, 0px)); z-index: 20; background: var(--bg-alt); padding: var(--space-3) 0; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); }
     :root[data-theme="dark"] .header-wrap { background: #000000; }
     .search-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; row-gap: var(--space-3); }
@@ -470,15 +538,15 @@ function chipStyle(hex) {
     
     .magnifying-glass {
       position: fixed;
-      border: 6px solid #fff;
+      border: 4px solid #fff;
       border-radius: 50%;
       cursor: grab;
-      width: 350px;
-      height: 350px;
+      width: 280px;
+      height: 280px;
       transform: translate(-50%, -50%);
       pointer-events: auto;
       overflow: hidden;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
       background-repeat: no-repeat;
       background-size: cover;
       z-index: 103;
@@ -741,7 +809,10 @@ function chipStyle(hex) {
             }
           };
 
-          fullscreenBtn.addEventListener('click', () => {
+          // Remove existing event listener to prevent duplicates
+          fullscreenBtn.removeEventListener('click', toggleFakeFullscreen);
+          fullscreenBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             toggleFakeFullscreen();
           });
 
@@ -823,7 +894,7 @@ function chipStyle(hex) {
 
       const magnifyingGlass = document.getElementById('magnifying-glass');
       const magnifierBtn = document.getElementById('magnifier-btn');
-      const MAGNIFICATION_FACTOR = 8; // 8x magnification for much better detail
+      const MAGNIFICATION_FACTOR = 2.5; // 2.5x magnification for better detail without being too strong
       let isDragging = false;
       let dragOffset = { x: 0, y: 0 };
       let magnifierActive = false;
@@ -961,6 +1032,13 @@ function chipStyle(hex) {
       magnifierBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         toggleMagnifier();
+      });
+      
+      // Fullscreen button event listener (outside of openModal to ensure it always works)
+      fullscreenBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        console.log('Fullscreen button clicked');
+        toggleFakeFullscreen();
       });
 
       // Lightbulb button event listener
@@ -1433,5 +1511,163 @@ function chipStyle(hex) {
       // Magnifying glass logic (reuses magnifyingGlass and MAGNIFICATION_FACTOR declared above)
 
       // Magnifying glass event listeners are handled in toggleFakeFullscreen()
+      
+      // Lazy Loading System
+      let isLoading = false;
+      let hasMoreItems = true;
+      const loadingSpinner = document.getElementById('loading-spinner');
+      const endOfContent = document.getElementById('end-of-content');
+      const galleryGrid = document.getElementById('gallery-grid');
+      
+      // Intersection Observer for infinite scroll
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && !isLoading && hasMoreItems) {
+            loadMoreItems();
+          }
+        });
+      }, {
+        rootMargin: '100px' // Start loading 100px before reaching the bottom
+      });
+      
+      // Observe the loading spinner
+      if (loadingSpinner) {
+        observer.observe(loadingSpinner);
+      }
+      
+      async function loadMoreItems() {
+        if (isLoading || !hasMoreItems) return;
+        
+        isLoading = true;
+        loadingSpinner.hidden = false;
+        
+        try {
+          console.log(`Loading more items from offset ${currentOffset}`);
+          
+          // Get current filter state
+          const selectedCats = Array.from(catFilters).filter((i) => i.classList.contains('selected')).map((i) => i.getAttribute('data-category'));
+          const allSelected = allFilter?.classList.contains('selected') || false;
+          const ledSelected = ledFilter?.classList.contains('selected') || false;
+          const searchTerm = searchInput?.value.toLowerCase().trim() || '';
+          
+          // Build filter options
+          let filterOptions = { limit: ITEMS_PER_PAGE, offset: currentOffset };
+          
+          if (!allSelected && selectedCats.length > 0) {
+            filterOptions.categories = selectedCats;
+          }
+          
+          // Fetch more items from Sanity
+          const response = await fetch('/api/load-more-items', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(filterOptions)
+          });
+          
+          if (!response.ok) {
+            throw new Error('Failed to load more items');
+          }
+          
+          const newItems = await response.json();
+          
+          if (newItems.length === 0) {
+            hasMoreItems = false;
+            loadingSpinner.hidden = true;
+            endOfContent.hidden = false;
+            return;
+          }
+          
+          // Add new items to the gallery
+          newItems.forEach(item => {
+            const itemElement = createGalleryItem(item);
+            galleryGrid.appendChild(itemElement);
+          });
+          
+          // Update offset
+          currentOffset += newItems.length;
+          
+          // Re-apply filters and search to new items
+          applyFiltersWithSearch();
+          
+          console.log(`Loaded ${newItems.length} more items. Total loaded: ${currentOffset}`);
+          
+        } catch (error) {
+          console.error('Error loading more items:', error);
+        } finally {
+          isLoading = false;
+          loadingSpinner.hidden = true;
+        }
+      }
+      
+      function createGalleryItem(item) {
+        const div = document.createElement('div');
+        div.className = 'gitem';
+        div.setAttribute('data-id', item.id);
+        div.setAttribute('data-category', item.categoryId || '');
+        div.setAttribute('data-title', item.title);
+        div.setAttribute('data-subtitle', item.subtitle || '');
+        div.setAttribute('data-image', item.image);
+        div.setAttribute('data-image-hd', item.imageHd);
+        div.setAttribute('data-inventarnummer', item.inventarnummer);
+        div.setAttribute('data-kurzbeschreibung', item.kurzbeschreibung);
+        div.setAttribute('data-beschreibung', item.beschreibung);
+        div.setAttribute('data-datierung', JSON.stringify(item.datierung));
+        div.setAttribute('data-herstellung', JSON.stringify(item.herstellung));
+        div.setAttribute('data-physisch', JSON.stringify(item.physisch));
+        div.setAttribute('data-organisation', item.organisation);
+        div.setAttribute('data-tags', JSON.stringify(item.tags));
+        div.setAttribute('data-hat-led-licht', item.hatLedLicht || false);
+        div.setAttribute('data-led-position', JSON.stringify(item.ledPosition));
+        div.setAttribute('data-ist-highlight', item.ist_highlight || false);
+        
+        // Create the gallery card content
+        div.innerHTML = `
+          <div class="gallery-card">
+            <div class="gallery-card-image">
+              <img src="${item.image}" alt="${item.title}" loading="lazy" />
+            </div>
+            <div class="gallery-card-content">
+              <h3>${item.title}</h3>
+              ${item.subtitle ? `<p>${item.subtitle}</p>` : ''}
+            </div>
+          </div>
+        `;
+        
+        // Add click event listener
+        div.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (activeItem === div && !modal.hidden) {
+            closeModal();
+          } else {
+            openModal(div);
+          }
+        });
+        
+        return div;
+      }
+      
+      // Reset lazy loading when filters change
+      function resetLazyLoading() {
+        currentOffset = 0;
+        hasMoreItems = true;
+        isLoading = false;
+        loadingSpinner.hidden = true;
+        endOfContent.hidden = true;
+      }
+      
+      // Override the existing filter functions to reset lazy loading
+      const originalApplyFiltersWithSearch = applyFiltersWithSearch;
+      applyFiltersWithSearch = function() {
+        resetLazyLoading();
+        originalApplyFiltersWithSearch();
+      };
+      
+      const originalPerformSearch = performSearch;
+      performSearch = function() {
+        resetLazyLoading();
+        originalPerformSearch();
+      };
   </script>
 </Layout>
