@@ -697,6 +697,11 @@ function chipStyle(hex) {
               return;
             }
             
+            // Don't close if we're dragging the magnifying glass
+            if (isDragging) {
+              return;
+            }
+            
             // Close if clicking anywhere except on buttons (except close button)
             const isButton = e.target.closest('button');
             const isCloseButton = e.target.closest('.modal-close');
@@ -1172,8 +1177,10 @@ function chipStyle(hex) {
     // Initialize highlight badges
     cards.forEach(el => {
       const isHighlight = el.getAttribute('data-ist-highlight') === 'true';
+      console.log('Checking highlight for:', el.getAttribute('data-title'), 'isHighlight:', isHighlight);
       if (isHighlight) {
         el.classList.add('highlight');
+        console.log('Added highlight class to:', el.getAttribute('data-title'));
       }
     });
 
