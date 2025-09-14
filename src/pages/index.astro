@@ -82,7 +82,7 @@ function chipStyle(hex) {
               </button>
 
               {kategorien?.map(k => (
-                <button class="filter-link cat-filter" data-category={k._id} style={chipStyle(k.farbe)}>
+                <button class="filter-link cat-filter" data-category={k._id} data-color={k.farbe}>
                   <span class="label">{k.titel}</span>
                 </button>
               ))}
@@ -223,6 +223,11 @@ function chipStyle(hex) {
       text-decoration: underline;
       text-underline-offset: 4px;
       text-decoration-thickness: 2px;
+    }
+    
+    /* Category-specific colored underlines */
+    .filter-link.cat-filter.selected .label {
+      text-decoration-color: var(--category-color, #000000);
     }
     
     /* Make "Alles" label more prominent */
@@ -1144,6 +1149,14 @@ function chipStyle(hex) {
 
     // Initialize with "All" selected
     allFilter?.classList.add('selected');
+    
+    // Set category colors for underlines
+    catFilters.forEach(filter => {
+      const color = filter.getAttribute('data-color');
+      if (color) {
+        filter.style.setProperty('--category-color', color);
+      }
+    });
 
     // Search functionality
     const searchInput = document.getElementById('search');
