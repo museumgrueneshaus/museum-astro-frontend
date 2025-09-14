@@ -576,7 +576,6 @@ function chipStyle(hex) {
 
       let activeItem = null;
       let hammer;
-      let modalClickHandler = null;
 
       function openModal(item) {
         try {
@@ -640,15 +639,7 @@ function chipStyle(hex) {
           // Show the close button in normal modal mode
           document.getElementById('fullscreen-close-btn').hidden = false;
           
-          // Add click outside to close functionality
-          modalClickHandler = (e) => {
-            // Close if clicking anywhere except on buttons
-            const isButton = e.target.closest('button') || e.target.closest('.modal-buttons');
-            if (!isButton) {
-              closeModal();
-            }
-          };
-          modal.addEventListener('click', modalClickHandler);
+          // No need for click outside to close since we have toggle behavior
           
           // Magnifying glass will be controlled by button, not mouse following
 
@@ -721,11 +712,7 @@ function chipStyle(hex) {
               modal.hidden = true;
               document.documentElement.style.overflow = '';
               
-              // Remove click outside event listener
-              if (modalClickHandler) {
-                modal.removeEventListener('click', modalClickHandler);
-                modalClickHandler = null;
-              }
+              // No click outside event listener to remove
               
               // Reset lightbulb button state
               const lightbulbBtn = document.getElementById('lightbulb-btn');
@@ -979,7 +966,12 @@ function chipStyle(hex) {
       galleryItems.forEach(item => {
         item.addEventListener('click', (e) => {
           e.preventDefault();
-          openModal(item);
+          // Toggle behavior: if same item is already open, close it; otherwise open it
+          if (activeItem === item && !modal.hidden) {
+            closeModal();
+          } else {
+            openModal(item);
+          }
         });
       });
 
