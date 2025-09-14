@@ -72,25 +72,19 @@ function chipStyle(hex) {
               <i data-lucide="help-circle"></i>
             </button>
 
-            <div class="filters-checks" aria-label="Filter">
-              <label class="filter-check">
-                <input type="checkbox" id="f-all" />
-                <span class="box" aria-hidden="true"></span>
+            <div class="filters-links" aria-label="Filter">
+              <button class="filter-link" id="f-all" data-filter="all">
                 <span class="label">Alles</span>
-              </label>
+              </button>
               
-              <label class="filter-check">
-                <input type="checkbox" id="f-led" class="led-filter" data-filter="led" />
-                <span class="box" aria-hidden="true"></span>
+              <button class="filter-link" id="f-led" class="led-filter" data-filter="led">
                 <span class="label">Mit LED-Licht</span>
-              </label>
+              </button>
 
               {kategorien?.map(k => (
-                <label class="filter-check">
-                  <input type="checkbox" class="cat-filter" data-category={k._id} />
-                  <span class="box" style={chipStyle(k.farbe)} aria-hidden="true"></span>
+                <button class="filter-link cat-filter" data-category={k._id} style={chipStyle(k.farbe)}>
                   <span class="label">{k.titel}</span>
-                </label>
+                </button>
               ))}
             </div>
           </div>
@@ -173,36 +167,81 @@ function chipStyle(hex) {
     .gallery-grid { margin-top: var(--space-4); display:grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 40px; }
     @media (min-width: 900px){ .gallery-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
     @media (min-width: 1280px){ .gallery-grid { grid-template-columns: repeat(5, minmax(0,1fr)); } }
+    
+    /* Gallery item highlight overlay */
+    .gitem {
+      position: relative;
+      transition: all 0.3s ease;
+    }
+    
+    .gitem::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.1);
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 8px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    .gitem.selected::before {
+      opacity: 1;
+    }
+    
+    /* Light mode highlight */
+    :root:not([data-theme="dark"]) .gitem::before {
+      background: rgba(0, 0, 0, 0.1);
+      border-color: rgba(0, 0, 0, 0.3);
+    }
     .header-wrap { position: sticky; top: calc(env(safe-area-inset-top, 0px)); z-index: 20; background: var(--bg-alt); padding: var(--space-3) 0; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); }
     :root[data-theme="dark"] .header-wrap { background: #000000; }
     .search-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; row-gap: var(--space-3); }
-    .filters-checks { display: flex; gap: 12px 20px; justify-content: flex-start; flex-wrap: wrap; row-gap: 8px; align-items: center; flex: 1 1 auto; order: 2; }
-    .filter-check { display: inline-flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
-    .filter-check input { position: absolute; opacity: 0; pointer-events: none; }
-    .filter-check .box { position: relative; width: 28px; height: 28px; background: transparent !important; border: 2px solid var(--border); display: inline-block; }
-    .filter-check input:checked + .box { background: white !important; border-color: white; border-width: 2px; }
-    .filter-check input:checked + .box::after { content: ''; position: absolute; left: 50%; top: 50%; width: 8px; height: 14px; border-right: 3px solid var(--bg); border-bottom: 3px solid var(--bg); transform: translate(-50%, -60%) rotate(45deg); }
-    .filter-check .label { color: var(--text); font-weight: 500 !important; font-size: 18px !important; }
+    .filters-links { display: flex; gap: 12px 20px; justify-content: flex-start; flex-wrap: wrap; row-gap: 8px; align-items: center; flex: 1 1 auto; order: 2; }
+    .filter-link { 
+      appearance: none; 
+      border: none; 
+      background: transparent; 
+      cursor: pointer; 
+      user-select: none; 
+      padding: 8px 12px; 
+      border-radius: 4px; 
+      transition: all 0.2s ease;
+    }
+    .filter-link .label { 
+      color: var(--text); 
+      font-weight: 500 !important; 
+      font-size: 16px !important; 
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    
+    /* Selected state - underline */
+    .filter-link.selected .label {
+      text-decoration: underline;
+      text-underline-offset: 4px;
+      text-decoration-thickness: 2px;
+    }
     
     /* Make "Alles" label more prominent */
-    #f-all + .box + .label {
+    #f-all .label {
       font-weight: 700 !important;
     }
     
-    /* Light mode filter checkboxes */
-    :root:not([data-theme="dark"]) .filter-check .box {
-      background: transparent !important;
-      border: 2px solid #000000 !important;
+    /* Hover effect */
+    .filter-link:hover .label {
+      opacity: 0.7;
     }
     
-    :root:not([data-theme="dark"]) .filter-check input:checked + .box {
-      background: #000000 !important;
-      border-color: #000000 !important;
+    /* Light mode filter links */
+    :root:not([data-theme="dark"]) .filter-link .label {
+      color: #000000;
     }
     
-    :root:not([data-theme="dark"]) .filter-check input:checked + .box::after {
-      border-right-color: #ffffff !important;
-      border-bottom-color: #ffffff !important;
+    :root:not([data-theme="dark"]) .filter-link.selected .label {
+      text-decoration-color: #000000;
     }
     .help-btn { appearance:none; border:0; background:transparent; color: var(--text); cursor:pointer; font-weight: 900 !important; font-size: 26px; display:inline-flex; align-items:center; justify-content:center; width: 56px; height: 56px; border-radius: 50%; line-height: 1; flex: 0 0 auto; order: 4; }
     .theme-btn { appearance:none; border:0; background:transparent; color: var(--text); cursor:pointer; font-weight: 900 !important; font-size: 26px; display:inline-flex; align-items:center; justify-content:center; width: 56px; height: 56px; border-radius: 50%; line-height: 1; flex: 0 0 auto; order: 3; }
@@ -1021,23 +1060,23 @@ function chipStyle(hex) {
       langBtns.forEach(b => b.addEventListener('click', () => setLang(b.getAttribute('data-lang') || 'de')));
 
       // Filter logic
-    const catChecks = document.querySelectorAll('.cat-filter');
-    const ledCheck = document.getElementById('f-led');
-    const allCheck = document.getElementById('f-all');
+    const catFilters = document.querySelectorAll('.cat-filter');
+    const ledFilter = document.getElementById('f-led');
+    const allFilter = document.getElementById('f-all');
     const cards = Array.from(document.querySelectorAll('.gallery-grid [data-category]'));
 
     function applyFilters() {
-      const selectedCats = Array.from(catChecks).filter((i) => i.checked).map((i) => i.getAttribute('data-category'));
-      const allChecked = allCheck?.checked || false;
-      const ledChecked = ledCheck?.checked || false;
+      const selectedCats = Array.from(catFilters).filter((i) => i.classList.contains('selected')).map((i) => i.getAttribute('data-category'));
+      const allSelected = allFilter?.classList.contains('selected') || false;
+      const ledSelected = ledFilter?.classList.contains('selected') || false;
       
       for (const el of cards) {
         const cat = el.getAttribute('data-category');
         const hasLed = el.getAttribute('data-hat-led-licht') === 'true';
         
         let matchCat;
-        if (allChecked) {
-          // When "All" is checked, show everything (including items without category)
+        if (allSelected) {
+          // When "All" is selected, show everything (including items without category)
           matchCat = true;
         } else if (selectedCats.length === 0) {
           // When no categories are selected, show nothing
@@ -1049,7 +1088,7 @@ function chipStyle(hex) {
         
         // LED filter
         let matchLed = true;
-        if (ledChecked) {
+        if (ledSelected) {
           matchLed = hasLed;
         }
         
@@ -1057,26 +1096,54 @@ function chipStyle(hex) {
       }
     }
     
-    function syncAllCheck() {
-      const allCatsChecked = Array.from(catChecks).every((i) => i.checked);
-      const anyCatsChecked = Array.from(catChecks).some((i) => i.checked);
+    function syncAllFilter() {
+      const allCatsSelected = Array.from(catFilters).every((i) => i.classList.contains('selected'));
+      const anyCatsSelected = Array.from(catFilters).some((i) => i.classList.contains('selected'));
       
-      if (allCheck) {
-        // "All" should be checked if all categories are checked, or if no categories are checked (showing everything)
-        allCheck.checked = allCatsChecked || (!anyCatsChecked && allCheck.checked);
+      if (allFilter) {
+        // "All" should be selected if all categories are selected, or if no categories are selected (showing everything)
+        if (allCatsSelected || (!anyCatsSelected && !ledFilter?.classList.contains('selected'))) {
+          allFilter.classList.add('selected');
+        } else {
+          allFilter.classList.remove('selected');
+        }
       }
     }
 
-    allCheck?.addEventListener('change', () => {
-      const checked = allCheck.checked;
-      catChecks.forEach((c) => { c.checked = checked; });
+    // Filter click handlers
+    allFilter?.addEventListener('click', () => {
+      const isSelected = allFilter.classList.contains('selected');
+      if (isSelected) {
+        // Deselect all
+        allFilter.classList.remove('selected');
+        catFilters.forEach((c) => c.classList.remove('selected'));
+        ledFilter?.classList.remove('selected');
+      } else {
+        // Select all
+        allFilter.classList.add('selected');
+        catFilters.forEach((c) => c.classList.add('selected'));
+        ledFilter?.classList.remove('selected');
+      }
       applyFiltersWithSearch();
     });
 
-    catChecks.forEach((c) => c.addEventListener('change', () => { syncAllCheck(); applyFiltersWithSearch(); }));
-    ledCheck?.addEventListener('change', applyFiltersWithSearch);
+    catFilters.forEach((c) => c.addEventListener('click', () => {
+      c.classList.toggle('selected');
+      syncAllFilter();
+      applyFiltersWithSearch();
+    }));
 
-    syncAllCheck();
+    ledFilter?.addEventListener('click', () => {
+      ledFilter.classList.toggle('selected');
+      if (ledFilter.classList.contains('selected')) {
+        allFilter?.classList.remove('selected');
+      }
+      syncAllFilter();
+      applyFiltersWithSearch();
+    });
+
+    // Initialize with "All" selected
+    allFilter?.classList.add('selected');
 
     // Search functionality
     const searchInput = document.getElementById('search');
@@ -1110,14 +1177,14 @@ function chipStyle(hex) {
           tags.includes(searchTerm);
         
         // Get current filter state
-        const selectedCats = Array.from(catChecks).filter((i) => i.checked).map((i) => i.getAttribute('data-category'));
-        const allChecked = allCheck?.checked || false;
-        const ledChecked = ledCheck?.checked || false;
+        const selectedCats = Array.from(catFilters).filter((i) => i.classList.contains('selected')).map((i) => i.getAttribute('data-category'));
+        const allSelected = allFilter?.classList.contains('selected') || false;
+        const ledSelected = ledFilter?.classList.contains('selected') || false;
         const cat = el.getAttribute('data-category');
         const hasLed = el.getAttribute('data-hat-led-licht') === 'true';
         
         let matchCat;
-        if (allChecked) {
+        if (allSelected) {
           matchCat = true;
         } else if (selectedCats.length === 0) {
           matchCat = false;
@@ -1127,12 +1194,19 @@ function chipStyle(hex) {
         
         // LED filter
         let matchLed = true;
-        if (ledChecked) {
+        if (ledSelected) {
           matchLed = hasLed;
         }
         
         // Show item only if it matches search, category, and LED filters
         el.style.display = (matchesSearch && matchCat && matchLed) ? '' : 'none';
+        
+        // Add highlight class for selected items
+        if (matchesSearch && matchCat && matchLed) {
+          el.classList.add('selected');
+        } else {
+          el.classList.remove('selected');
+        }
       }
     }
     
@@ -1141,9 +1215,9 @@ function chipStyle(hex) {
     
     // Update filter logic to also consider search
     function applyFiltersWithSearch() {
-      const selectedCats = Array.from(catChecks).filter((i) => i.checked).map((i) => i.getAttribute('data-category'));
-      const allChecked = allCheck?.checked || false;
-      const ledChecked = ledCheck?.checked || false;
+      const selectedCats = Array.from(catFilters).filter((i) => i.classList.contains('selected')).map((i) => i.getAttribute('data-category'));
+      const allSelected = allFilter?.classList.contains('selected') || false;
+      const ledSelected = ledFilter?.classList.contains('selected') || false;
       const searchTerm = searchInput?.value.toLowerCase().trim() || '';
       
       for (const el of cards) {
@@ -1151,7 +1225,7 @@ function chipStyle(hex) {
         const hasLed = el.getAttribute('data-hat-led-licht') === 'true';
         let matchCat;
         
-        if (allChecked) {
+        if (allSelected) {
           matchCat = true;
         } else if (selectedCats.length === 0) {
           matchCat = false;
@@ -1161,7 +1235,7 @@ function chipStyle(hex) {
         
         // LED filter
         let matchLed = true;
-        if (ledChecked) {
+        if (ledSelected) {
           matchLed = hasLed;
         }
         
@@ -1190,6 +1264,13 @@ function chipStyle(hex) {
           tags.includes(searchTerm);
         
         el.style.display = (matchCat && matchLed && matchesSearch) ? '' : 'none';
+        
+        // Add highlight class for selected items
+        if (matchCat && matchLed && matchesSearch) {
+          el.classList.add('selected');
+        } else {
+          el.classList.remove('selected');
+        }
       }
     }
   
