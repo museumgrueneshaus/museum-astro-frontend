@@ -108,7 +108,7 @@ function chipStyle(hex) {
 
       <div class="gallery-grid">
         {items.map((it) => (
-          <div class="gitem" data-id={it.id} data-category={it.categoryId || ''} data-title={it.title} data-subtitle={it.subtitle || ''} data-image={it.image} data-image-hd={it.imageHd} data-inventarnummer={it.inventarnummer} data-kurzbeschreibung={it.kurzbeschreibung} data-beschreibung={it.beschreibung} data-datierung={JSON.stringify(it.datierung)} data-herstellung={JSON.stringify(it.herstellung)} data-physisch={JSON.stringify(it.physisch)} data-organisation={it.organisation} data-tags={JSON.stringify(it.tags)} data-hat-led-licht={it.hatLedLicht || false} data-led-position={JSON.stringify(it.ledPosition)}>
+          <div class="gitem" data-id={it.id} data-category={it.categoryId || ''} data-title={it.title} data-subtitle={it.subtitle || ''} data-image={it.image} data-image-hd={it.imageHd} data-inventarnummer={it.inventarnummer} data-kurzbeschreibung={it.kurzbeschreibung} data-beschreibung={it.beschreibung} data-datierung={JSON.stringify(it.datierung)} data-herstellung={JSON.stringify(it.herstellung)} data-physisch={JSON.stringify(it.physisch)} data-organisation={it.organisation} data-tags={JSON.stringify(it.tags)} data-hat-led-licht={it.hatLedLicht || false} data-led-position={JSON.stringify(it.ledPosition)} data-ist-highlight={it.ist_highlight || false}>
             <GalleryCard title={it.title} subtitle={it.subtitle} image={it.image} ratio={it.ratio} />
           </div>
         ))}
@@ -168,34 +168,36 @@ function chipStyle(hex) {
     @media (min-width: 900px){ .gallery-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
     @media (min-width: 1280px){ .gallery-grid { grid-template-columns: repeat(5, minmax(0,1fr)); } }
     
-    /* Gallery item highlight overlay */
+    /* Gallery item highlight badge */
     .gitem {
       position: relative;
       transition: all 0.3s ease;
     }
     
-    .gitem::before {
-      content: '';
+    .gitem::after {
+      content: 'HIGHLIGHT';
       position: absolute;
-      inset: 0;
-      background: rgba(255, 255, 255, 0.1);
-      border: 3px solid rgba(255, 255, 255, 0.3);
-      border-radius: 8px;
+      top: 10px;
+      left: 10px;
+      background: #e0e0e0;
+      color: #333333;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: 0;
+      letter-spacing: 0.3px;
       opacity: 0;
       transition: opacity 0.3s ease;
       pointer-events: none;
-      z-index: 1;
+      z-index: 2;
+      text-transform: uppercase;
     }
     
-    .gitem.selected::before {
+    .gitem.highlight::after {
       opacity: 1;
     }
     
-    /* Light mode highlight */
-    :root:not([data-theme="dark"]) .gitem::before {
-      background: rgba(0, 0, 0, 0.1);
-      border-color: rgba(0, 0, 0, 0.3);
-    }
+    /* Badge always looks the same - flat and minimalistic */
     .header-wrap { position: sticky; top: calc(env(safe-area-inset-top, 0px)); z-index: 20; background: var(--bg-alt); padding: var(--space-3) 0; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); }
     :root[data-theme="dark"] .header-wrap { background: #000000; }
     .search-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; row-gap: var(--space-3); }
@@ -1159,6 +1161,14 @@ function chipStyle(hex) {
         filter.style.setProperty('--category-color', color);
       }
     });
+    
+    // Initialize highlight badges
+    cards.forEach(el => {
+      const isHighlight = el.getAttribute('data-ist-highlight') === 'true';
+      if (isHighlight) {
+        el.classList.add('highlight');
+      }
+    });
 
     // Search functionality
     const searchInput = document.getElementById('search');
@@ -1216,11 +1226,12 @@ function chipStyle(hex) {
         // Show item only if it matches search, category, and LED filters
         el.style.display = (matchesSearch && matchCat && matchLed) ? '' : 'none';
         
-        // Add highlight class for selected items
-        if (matchesSearch && matchCat && matchLed) {
-          el.classList.add('selected');
+        // Add highlight class for items marked as highlights
+        const isHighlight = el.getAttribute('data-ist-highlight') === 'true';
+        if (isHighlight) {
+          el.classList.add('highlight');
         } else {
-          el.classList.remove('selected');
+          el.classList.remove('highlight');
         }
       }
     }
@@ -1280,11 +1291,12 @@ function chipStyle(hex) {
         
         el.style.display = (matchCat && matchLed && matchesSearch) ? '' : 'none';
         
-        // Add highlight class for selected items
-        if (matchCat && matchLed && matchesSearch) {
-          el.classList.add('selected');
+        // Add highlight class for items marked as highlights
+        const isHighlight = el.getAttribute('data-ist-highlight') === 'true';
+        if (isHighlight) {
+          el.classList.add('highlight');
         } else {
-          el.classList.remove('selected');
+          el.classList.remove('highlight');
         }
       }
     }
