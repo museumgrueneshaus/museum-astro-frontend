@@ -692,6 +692,11 @@ function chipStyle(hex) {
           
           // Add click to close functionality - close on any click except buttons
           modalClickHandler = (e) => {
+            // Don't close if magnifier is active
+            if (magnifierActive) {
+              return;
+            }
+            
             // Close if clicking anywhere except on buttons (except close button)
             const isButton = e.target.closest('button');
             const isCloseButton = e.target.closest('.modal-close');
