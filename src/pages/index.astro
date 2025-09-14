@@ -850,6 +850,10 @@ function chipStyle(hex) {
           
           modalMetadata.innerHTML = metadataHtml;
 
+          // Clear any existing transition names first
+          modalImage.style.viewTransitionName = '';
+          image.style.viewTransitionName = '';
+          
           // Use a unique transition name to avoid conflicts
           const transitionName = `gallery-item-${item.dataset.id}-${Date.now()}`;
           console.log('Setting view-transition-name on open:', transitionName);
@@ -887,17 +891,8 @@ function chipStyle(hex) {
           
           // Magnifying glass will be controlled by button, not mouse following
 
-          if (!document.startViewTransition) {
-            animate(modal, { opacity: [0, 1] }, { duration: 0.3 });
-            return;
-          }
-
-          const transition = document.startViewTransition(() => {});
-
-          transition.ready.then(() => {
-            animate(modal.querySelector(".modal-backdrop"), { opacity: [0, 1] }, { duration: 0.5, easing: "ease-in-out" });
-            animate(modal.querySelector(".modal-content"), { transform: ["scale(0.95)", "scale(1)"], opacity: [0, 1] }, { duration: 0.5, easing: "ease-in-out" });
-          });
+          // Use simple animation instead of View Transition API to avoid conflicts
+          animate(modal, { opacity: [0, 1] }, { duration: 0.3 });
 
           const hdLoader = new Image();
           hdLoader.src = hdImage;
@@ -952,8 +947,6 @@ function chipStyle(hex) {
           if (hammer) { hammer.destroy(); hammer = null; }
 
           const image = activeItem.querySelector('img');
-          // Use a unique transition name to avoid conflicts
-          const transitionName = `gallery-item-${activeItem.dataset.id}-${Date.now()}`;
           
           const cleanup = () => {
               console.log('Cleaning up view-transition-name');
@@ -978,11 +971,14 @@ function chipStyle(hex) {
                 highlightBtn.classList.remove('active');
                 highlightBtn.hidden = true;
               }
+              
+              // Clear all view transition names
               if (modalImage) {
                 modalImage.style.viewTransitionName = '';
                 modalImage.style.transform = 'scale(1)';
               }
               if (image) image.style.viewTransitionName = '';
+              
               // Close magnifying glass when modal closes
               if (magnifierActive) {
                 hideMagnifyingGlass();
@@ -992,17 +988,8 @@ function chipStyle(hex) {
               activeItem = null;
           }
 
-          if (!document.startViewTransition) {
-            animate(modal, { opacity: [1, 0] }, { duration: 0.3 }).finished.then(cleanup);
-            return;
-          }
-
-          if (modalImage) modalImage.style.viewTransitionName = transitionName;
-          if (image) image.style.viewTransitionName = transitionName;
-
-          const transition = document.startViewTransition(() => {});
-
-          transition.finished.finally(cleanup);
+          // Use simple animation instead of View Transition API to avoid conflicts
+          animate(modal, { opacity: [1, 0] }, { duration: 0.3 }).finished.then(cleanup);
         } catch (e) {
           console.error('Error in closeModal:', e);
         }
