@@ -576,6 +576,7 @@ function chipStyle(hex) {
 
       let activeItem = null;
       let hammer;
+      let modalClickHandler = null;
 
       function openModal(item) {
         try {
@@ -639,7 +640,18 @@ function chipStyle(hex) {
           // Show the close button in normal modal mode
           document.getElementById('fullscreen-close-btn').hidden = false;
           
-          // No need for click outside to close since we have toggle behavior
+          // Add click to close functionality - close on any click except buttons
+          modalClickHandler = (e) => {
+            // Close if clicking anywhere except on buttons (except close button)
+            const isButton = e.target.closest('button');
+            const isCloseButton = e.target.closest('.modal-close');
+            
+            // Don't close if clicking on any button (including close button)
+            if (!isButton) {
+              closeModal();
+            }
+          };
+          modal.addEventListener('click', modalClickHandler);
           
           // Magnifying glass will be controlled by button, not mouse following
 
@@ -712,7 +724,11 @@ function chipStyle(hex) {
               modal.hidden = true;
               document.documentElement.style.overflow = '';
               
-              // No click outside event listener to remove
+              // Remove click event listener
+              if (modalClickHandler) {
+                modal.removeEventListener('click', modalClickHandler);
+                modalClickHandler = null;
+              }
               
               // Reset lightbulb button state
               const lightbulbBtn = document.getElementById('lightbulb-btn');
@@ -976,11 +992,6 @@ function chipStyle(hex) {
       });
 
       modalClose.addEventListener('click', closeModal);
-      modal.addEventListener('click', (e) => {
-        if (e.target.classList.contains('modal-backdrop')) {
-          closeModal();
-        }
-      });
 
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && !modal.hidden) {
