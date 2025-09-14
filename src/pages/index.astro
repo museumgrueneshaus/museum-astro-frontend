@@ -17,25 +17,77 @@ try {
   const exps = await getExponatePaginated({ limit: ITEMS_PER_PAGE, offset: 0 });
   totalItems = await getExponateCount();
   
-  items = exps.map((ex) => ({
-    id: ex._id,
-    title: ex.titel,
-    subtitle: ex.untertitel || '',
-    image: ex.hauptbild ? urlFor(ex.hauptbild).width(1600).height(undefined).auto('format').url() : '/placeholder.jpg',
-    imageHd: ex.hauptbild ? urlFor(ex.hauptbild).width(3000).height(undefined).auto('format').url() : '/placeholder.jpg',
-    ratio: '1 / 1',
-    colors: ex.kategorie?.farbe ? [ex.kategorie.farbe] : [],
-    categoryId: ex.kategorie?._id,
-    inventarnummer: ex.inventarnummer,
-    kurzbeschreibung: ex.kurzbeschreibung,
-    beschreibung: ex.beschreibung,
-    datierung: ex.datierung,
-    herstellung: ex.herstellung,
-    physisch: ex.physisch,
-    organisation: ex.organisation,
-    tags: ex.tags || [],
-    ist_highlight: ex.ist_highlight || false,
-  }));
+  // Function to get appropriate placeholder image based on title
+  function getPlaceholderImage(title) {
+    const titleLower = title.toLowerCase();
+    
+    if (titleLower.includes('römisch') || titleLower.includes('amphore')) {
+      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Roman pottery
+    } else if (titleLower.includes('jugendstil') || titleLower.includes('brosche')) {
+      return 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1600&h=1600&fit=crop&crop=center'; // Art Nouveau jewelry
+    } else if (titleLower.includes('mittelalter') || titleLower.includes('schwert')) {
+      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Medieval sword
+    } else if (titleLower.includes('barock') || titleLower.includes('uhr')) {
+      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Baroque clock
+    } else if (titleLower.includes('keltisch') || titleLower.includes('torques')) {
+      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Celtic jewelry
+    } else if (titleLower.includes('ägyptisch') || titleLower.includes('mumie')) {
+      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Egyptian artifacts
+    } else if (titleLower.includes('meteorit')) {
+      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Meteorite
+    } else if (titleLower.includes('bauhaus') || titleLower.includes('lampe')) {
+      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Bauhaus lamp
+    } else if (titleLower.includes('industriell') || titleLower.includes('dampfmaschine')) {
+      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Industrial machinery
+    } else if (titleLower.includes('expressionistisch') || titleLower.includes('gemälde')) {
+      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Expressionist painting
+    } else if (titleLower.includes('moderne') || titleLower.includes('skulptur')) {
+      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Modern sculpture
+    } else if (titleLower.includes('chinesisch') || titleLower.includes('porzellan')) {
+      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Chinese porcelain
+    } else if (titleLower.includes('wikinger') || titleLower.includes('schmuck')) {
+      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Viking jewelry
+    } else if (titleLower.includes('art deco') || titleLower.includes('vase')) {
+      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Art Deco vase
+    } else if (titleLower.includes('fossil') || titleLower.includes('ammonit')) {
+      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Fossil
+    } else if (titleLower.includes('prähistorisch') || titleLower.includes('faustkeil')) {
+      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Prehistoric tool
+    } else if (titleLower.includes('gotisch') || titleLower.includes('skulptur')) {
+      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Gothic sculpture
+    } else if (titleLower.includes('biedermeier') || titleLower.includes('sekretär')) {
+      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Biedermeier furniture
+    } else if (titleLower.includes('renaissance')) {
+      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Renaissance art
+    } else if (titleLower.includes('tongefäße')) {
+      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Pottery
+    } else {
+      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Default museum artifact
+    }
+  }
+
+  items = exps.map((ex) => {
+    const placeholderImage = getPlaceholderImage(ex.titel);
+    return {
+      id: ex._id,
+      title: ex.titel,
+      subtitle: ex.untertitel || '',
+      image: ex.hauptbild ? urlFor(ex.hauptbild).width(1600).height(undefined).auto('format').url() : placeholderImage,
+      imageHd: ex.hauptbild ? urlFor(ex.hauptbild).width(3000).height(undefined).auto('format').url() : placeholderImage,
+      ratio: '1 / 1',
+      colors: ex.kategorie?.farbe ? [ex.kategorie.farbe] : [],
+      categoryId: ex.kategorie?._id,
+      inventarnummer: ex.inventarnummer,
+      kurzbeschreibung: ex.kurzbeschreibung,
+      beschreibung: ex.beschreibung,
+      datierung: ex.datierung,
+      herstellung: ex.herstellung,
+      physisch: ex.physisch,
+      organisation: ex.organisation,
+      tags: ex.tags || [],
+      ist_highlight: ex.ist_highlight || false,
+    };
+  });
   
   currentOffset = ITEMS_PER_PAGE;
   console.log(`Loaded ${items.length} items, total available: ${totalItems}`);
@@ -170,6 +222,9 @@ function chipStyle(hex) {
           </button>
           <button id="lightbulb-btn" class="lightbulb-btn" aria-label="Information">
             <span class="material-icons">lightbulb</span>
+          </button>
+          <button id="highlight-btn" class="highlight-btn" aria-label="Highlight" hidden>
+            <span class="material-icons">star</span>
           </button>
         </div>
         <div class="modal-info-container">
@@ -451,6 +506,52 @@ function chipStyle(hex) {
       background: rgba(255, 215, 0, 0.1) !important;
     }
     
+    .highlight-btn { 
+      background: transparent !important; 
+      border: none !important; 
+      color: white; 
+      cursor: pointer; 
+      z-index: 2; 
+      padding: 0 !important; 
+      width: 40px; 
+      height: 40px; 
+      border-radius: 50% !important;
+      display: grid; 
+      place-items: center; 
+      visibility: visible !important;
+      transition: all 0.3s ease;
+      box-shadow: none !important;
+      outline: none !important;
+      overflow: visible !important;
+      margin: 2px;
+    }
+    
+    .highlight-btn .material-icons { 
+      color: #ffd700; 
+      font-size: 24px !important; 
+      transition: all 0.3s ease;
+    }
+    
+    .highlight-btn.active .material-icons {
+      color: #ffd700 !important;
+      filter: drop-shadow(0 0 8px #ffd700) drop-shadow(0 0 16px #ffd700);
+      transform: scale(1.1);
+    }
+    
+    .highlight-btn.active {
+      background: rgba(255, 215, 0, 0.1) !important;
+    }
+    
+    /* Light mode highlight button */
+    :root:not([data-theme="dark"]) .highlight-btn .material-icons {
+      color: #ffd700 !important;
+    }
+    
+    :root:not([data-theme="dark"]) .highlight-btn.active .material-icons {
+      color: #ffd700 !important;
+      filter: drop-shadow(0 0 8px #ffd700) drop-shadow(0 0 16px #ffd700);
+    }
+    
     /* Light mode button styles */
     :root:not([data-theme="dark"]) .fullscreen-btn svg,
     :root:not([data-theme="dark"]) .magnifier-btn svg {
@@ -730,6 +831,18 @@ function chipStyle(hex) {
           if (lightbulbBtn) {
             lightbulbBtn.style.display = hasLedLicht ? 'grid' : 'none';
           }
+          
+          // Show/hide highlight button based on highlight status
+          const highlightBtn = document.getElementById('highlight-btn');
+          const isHighlight = item.dataset.istHighlight === 'true';
+          if (highlightBtn) {
+            highlightBtn.hidden = !isHighlight;
+            if (isHighlight) {
+              highlightBtn.classList.add('active');
+            } else {
+              highlightBtn.classList.remove('active');
+            }
+          }
 
           let metadataHtml = '';
           if (inventarnummer) metadataHtml += `<div class="meta-item"><strong>Inventarnr.:</strong> <span>${inventarnummer}</span></div>`;
@@ -861,6 +974,13 @@ function chipStyle(hex) {
               const lightbulbBtn = document.getElementById('lightbulb-btn');
               if (lightbulbBtn) {
                 lightbulbBtn.classList.remove('active');
+              }
+              
+              // Reset highlight button state
+              const highlightBtn = document.getElementById('highlight-btn');
+              if (highlightBtn) {
+                highlightBtn.classList.remove('active');
+                highlightBtn.hidden = true;
               }
               if (modalImage) {
                 modalImage.style.viewTransitionName = '';
@@ -1076,6 +1196,31 @@ function chipStyle(hex) {
         } else {
           console.log('MQTT not enabled - LED strip command not sent');
         }
+      });
+      
+      // Highlight button event listener
+      const highlightBtn = document.getElementById('highlight-btn');
+      highlightBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        
+        // Get current exhibit data from modal
+        const modalTitle = document.getElementById('modal-title')?.textContent || '';
+        const modalImage = document.getElementById('modal-image');
+        const exhibitId = modalImage?.getAttribute('data-exhibit-id') || '';
+        
+        console.log(`Highlight button clicked for exhibit: ${modalTitle} (ID: ${exhibitId})`);
+        
+        // Toggle highlight visual state
+        highlightBtn.classList.toggle('active');
+        
+        // Here you could add functionality to:
+        // - Add to favorites
+        // - Mark as special interest
+        // - Send analytics data
+        // - etc.
+        
+        const isActive = highlightBtn.classList.contains('active');
+        console.log(`Highlight ${isActive ? 'activated' : 'deactivated'} for exhibit:`, modalTitle);
       });
 
       // Make magnifying glass draggable
