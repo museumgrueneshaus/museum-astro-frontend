@@ -79,6 +79,94 @@ export async function getExponate(options = {}) {
   return await client.fetch(query, params);
 }
 
+// New function for paginated loading
+export async function getExponatePaginated(options = {}) {
+  const { 
+    highlight = false, 
+    categories = [], 
+    limit = 12,
+    offset = 0,
+    category = null 
+  } = options;
+
+  let query = '*[_type == "exponat"';
+  const params = {};
+
+  if (highlight) {
+    query += ' && ist_highlight == true';
+  }
+
+  if (category) {
+    query += ' && kategorie._ref == $category';
+    params.category = category;
+  }
+
+  if (categories && categories.length > 0) {
+    query += ' && kategorie._ref in $categories';
+    params.categories = categories;
+  }
+
+  query += '] | order(reihenfolge asc, _createdAt desc)';
+  query += `[${offset}...${offset + limit}]`;
+
+  query += `{
+    _id,
+    inventarnummer,
+    titel,
+    untertitel,
+    kurzbeschreibung,
+    beschreibung,
+    hauptbild{..., asset->{_id, metadata{lqip, dimensions}}},
+    bilder[]{..., asset->{_id, metadata{lqip, dimensions}}},
+    "kategorie": kategorie->{_id, titel, slug, icon, farbe},
+    datierung,
+    herstellung,
+    physisch,
+    organisation,
+    tags,
+    ist_highlight,
+    reihenfolge,
+    qr_code,
+    hat_led_licht,
+    led_position,
+    audio,
+    video,
+    dokumente
+  }`;
+
+  return await client.fetch(query, params);
+}
+
+// Get total count of items
+export async function getExponateCount(options = {}) {
+  const { 
+    highlight = false, 
+    categories = [], 
+    category = null 
+  } = options;
+
+  let query = 'count(*[_type == "exponat"';
+  const params = {};
+
+  if (highlight) {
+    query += ' && ist_highlight == true';
+  }
+
+  if (category) {
+    query += ' && kategorie._ref == $category';
+    params.category = category;
+  }
+
+  if (categories && categories.length > 0) {
+    query += ' && kategorie._ref in $categories';
+    params.categories = categories;
+  }
+
+  query += '])';
+
+  return await client.fetch(query, params);
+}
+
 export async function getExponat(id) {
   const query = `*[_type == "exponat" && _id == $id][0]{
     _id,
