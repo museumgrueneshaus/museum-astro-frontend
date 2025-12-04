@@ -9,6 +9,7 @@ let videos = [];
 let audioVolume = 70;
 let audioMuted = false;
 let showSubtitles = false;
+let loopPlaylist = true;
 
 try {
   config = await getKioskConfig(id);
@@ -22,6 +23,9 @@ try {
 
     // Get subtitle setting
     showSubtitles = config?.konfiguration?.video_settings?.zeige_untertitel === true;
+
+    // Get loop setting
+    loopPlaylist = config?.konfiguration?.video_settings?.loop !== false;
 
     // Convert Sanity playlist to video format
     const playlist = config?.konfiguration?.video_settings?.playlist || [];
@@ -262,9 +266,10 @@ try {
 
       <div class="status" id="status">Loading...</div>
 
-      <script define:vars={{ videos, audioVolume, audioMuted, showSubtitles }}>
+      <script define:vars={{ videos, audioVolume, audioMuted, showSubtitles, loopPlaylist }}>
         console.log('Videos data:', videos);
         console.log('Show subtitles:', showSubtitles);
+        console.log('Loop playlist:', loopPlaylist);
         videos.forEach((v, i) => {
           console.log(`Video ${i+1}: ${v.title}, Subtitles: ${v.subtitles || 'none'}`);
         });
@@ -401,7 +406,12 @@ try {
 
         async function playMedia(index) {
           if (index >= videos.length) {
-            index = 0; // Loop
+            if (loopPlaylist) {
+              index = 0; // Loop back to start
+            } else {
+              log('Playlist beendet - Loop deaktiviert');
+              return; // Stop playback
+            }
           }
           if (index < 0) {
             index = videos.length - 1;
