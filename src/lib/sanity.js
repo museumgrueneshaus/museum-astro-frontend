@@ -8,7 +8,7 @@ const dataset = import.meta.env.PUBLIC_SANITY_DATASET || 'production';
 export const client = createClient({
   projectId,
   dataset,
-  useCdn: true, // Use CDN for better performance
+  useCdn: false, // Disable CDN to avoid cache issues during development
   apiVersion: '2024-01-01',
 });
 
@@ -252,40 +252,6 @@ export async function getKategorien() {
   return await client.fetch(query);
 }
 
-export async function getKioskConfig(mac = 'default') {
-  const query = `*[_type == "kioskConfig" && (mac_adresse == $mac || name == "Default")] | order(mac_adresse desc) [0] {
-    _id,
-    name,
-    standort,
-    mac_adresse,
-    modus,
-    konfiguration,
-    design,
-    funktionen,
-    aktiv
-  }`;
-
-  return await client.fetch(query, { mac });
-}
-
-// Fetch kiosk config by flexible identifier (MAC, name, or _id)
-export async function getKioskConfigByIdentifier(identifier = 'default') {
-  const query = `*[_type == "kioskConfig" && (mac_adresse == $id || name == $id || _id == $id || name == "Default")] | order(mac_adresse desc) [0] {
-    _id,
-    name,
-    standort,
-    mac_adresse,
-    modus,
-    konfiguration,
-    design,
-    funktionen,
-    mqtt,
-    aktiv
-  }`;
-
-  return await client.fetch(query, { id: identifier });
-}
-
 export async function getMuseumInfo() {
   const query = `*[_type == "museumInfo"][0] {
     name,
@@ -302,10 +268,162 @@ export async function getMuseumInfo() {
   return await client.fetch(query);
 }
 
+// Ausstellungen
+export async function getAusstellungen(options = {}) {
+  const { featured = false, aktiv = true } = options;
+
+  let filters = [];
+
+  if (featured) {
+    filters.push('ist_featured == true');
+  }
+
+  if (aktiv) {
+    filters.push('veroeffentlichung.status in ["veroeffentlicht", "vorbereitung"]');
+  }
+
+  const filterString = filters.length > 0 ? ' && ' + filters.join(' && ') : '';
+
+  const query = `*[_type == "ausstellung"${filterString}] | order(reihenfolge asc, _createdAt desc) {
+    _id,
+    titel,
+    untertitel,
+    slug,
+    kurzbeschreibung,
+    titelbild{..., asset->{_id, metadata{lqip, dimensions}}},
+    zeitraum,
+    ist_featured,
+    reihenfolge,
+    veroeffentlichung,
+    "exponatCount": count(exponate)
+  }`;
+
+  return await client.fetch(query);
+}
+
+export async function getAusstellung(id) {
+  const query = `*[_type == "ausstellung" && (_id == $id || slug.current == $id)][0]{
+    _id,
+    titel,
+    untertitel,
+    slug,
+    kurzbeschreibung,
+    beschreibung,
+    titelbild{..., asset->{_id, metadata{lqip, dimensions}}},
+    galerie[]{..., asset->{_id, metadata{lqip, dimensions}}},
+    videos,
+    dokumente,
+    "exponate": exponate[]->{
+      _id,
+      inventarnummer,
+      titel,
+      untertitel,
+      kurzbeschreibung,
+      hauptbild{..., asset->{_id, metadata{lqip, dimensions}}},
+      "kategorie": kategorie->{_id, titel, slug, icon, farbe},
+      ist_highlight,
+      reihenfolge
+    },
+    "highlight_exponate": highlight_exponate[]->{
+      _id,
+      inventarnummer,
+      titel,
+      untertitel,
+      kurzbeschreibung,
+      beschreibung,
+      hauptbild{..., asset->{_id, metadata{lqip, dimensions}}},
+      bilder[]{..., asset->{_id, metadata{lqip, dimensions}}},
+      "kategorie": kategorie->{_id, titel, slug, icon, farbe},
+      datierung,
+      herstellung,
+      physisch,
+      tags,
+      ist_highlight
+    },
+    "kategorien": kategorien[]->{_id, titel, slug, icon, farbe},
+    zeitraum,
+    organisation,
+    veranstaltungen,
+    tags,
+    ist_featured,
+    reihenfolge,
+    veroeffentlichung
+  }`;
+
+  return await client.fetch(query, { id });
+}
+
+// Kiosk Config
+export async function getKioskConfig(identifier) {
+  // identifier can be: MAC address, IP address, name, or _id
+  const query = `*[_type == "kioskConfig" && (
+    _id == $identifier ||
+    name == $identifier ||
+    mac_adresse == $identifier ||
+    ip_adresse == $identifier
+  ) && aktiv == true][0]{
+    _id,
+    name,
+    standort,
+    modus,
+    konfiguration{
+      video_settings{
+        playlist[]{
+          typ,
+          video{
+            asset->{
+              _id,
+              url,
+              originalFilename,
+              size,
+              mimeType
+            }
+          },
+          video_url,
+          bild{
+            asset->{
+              _id,
+              url,
+              metadata{lqip, dimensions}
+            }
+          },
+          untertitel{
+            asset->{
+              _id,
+              url
+            }
+          },
+          dauer,
+          titel,
+          beschreibung
+        },
+        loop,
+        shuffle,
+        zeige_overlay,
+        overlay_position,
+        uebergang,
+        audio,
+        zeige_untertitel
+      }
+    },
+    design,
+    funktionen
+  }`;
+
+  return await client.fetch(query, { identifier });
+}
+
+// Get file URL helper
+export function fileUrl(ref) {
+  if (!ref || !ref.asset) return null;
+  const [_file, id, extension] = ref.asset._ref.split('-');
+  return `https://cdn.sanity.io/files/${projectId}/${dataset}/${id}.${extension}`;
+}
+
 // Real-time subscription (for live updates)
 export function subscribeToExponate(callback) {
   const query = '*[_type == "exponat"]';
-  
+
   return client.listen(query).subscribe(update => {
     callback(update);
   });
