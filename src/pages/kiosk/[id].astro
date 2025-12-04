@@ -8,6 +8,7 @@ let error = null;
 let videos = [];
 let audioVolume = 70;
 let audioMuted = false;
+let showSubtitles = false;
 
 try {
   config = await getKioskConfig(id);
@@ -18,6 +19,9 @@ try {
     const audioSettings = config?.konfiguration?.video_settings?.audio || {};
     audioVolume = audioSettings.lautstaerke || 70;
     audioMuted = audioSettings.stumm === true;
+
+    // Get subtitle setting
+    showSubtitles = config?.konfiguration?.video_settings?.zeige_untertitel === true;
 
     // Convert Sanity playlist to video format
     const playlist = config?.konfiguration?.video_settings?.playlist || [];
@@ -248,7 +252,7 @@ try {
             <h2 id="title">Video Title</h2>
             <div id="function" class="function"></div>
           </div>
-          <!-- <div id="subtitles" class="subtitles"></div> -->
+          <div id="subtitles" class="subtitles" style="display:none;"></div>
         </div>
       </div>
 
@@ -258,8 +262,9 @@ try {
 
       <div class="status" id="status">Loading...</div>
 
-      <script define:vars={{ videos, audioVolume, audioMuted }}>
+      <script define:vars={{ videos, audioVolume, audioMuted, showSubtitles }}>
         console.log('Videos data:', videos);
+        console.log('Show subtitles:', showSubtitles);
         videos.forEach((v, i) => {
           console.log(`Video ${i+1}: ${v.title}, Subtitles: ${v.subtitles || 'none'}`);
         });
@@ -298,7 +303,7 @@ try {
 
         // Setup subtitle display from TextTrack
         function setupSubtitleDisplay(videoElement) {
-          if (!videoElement.textTracks || videoElement.textTracks.length === 0) {
+          if (!showSubtitles || !videoElement.textTracks || videoElement.textTracks.length === 0) {
             subtitlesEl.style.display = 'none';
             return;
           }
