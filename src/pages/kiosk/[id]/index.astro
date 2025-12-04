@@ -6,10 +6,10 @@ export async function getStaticPaths() {
   // Build-time: do not pre-generate kiosk pages (identifier list unknown/offline)
   return [];
 }
-import { getKioskConfigByIdentifier, getExponate, getMuseumInfo } from '../../../lib/sanity';
+import { getKioskConfig, getExponate, getMuseumInfo } from '../../../lib/sanity';
 
 const { id } = Astro.params;
-const kioskConfig = await getKioskConfigByIdentifier(id).catch(() => null);
+const kioskConfig = await getKioskConfig(id).catch(() => null);
 const museumInfo = await getMuseumInfo().catch(() => ({ name: 'Museum Digital' }));
 
 let explorerPreview = [];

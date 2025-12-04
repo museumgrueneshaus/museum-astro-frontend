@@ -5,10 +5,10 @@ import ExponatCard from '../../../components/ExponatCard.astro';
 export async function getStaticPaths() {
   return [];
 }
-import { getKioskConfigByIdentifier, getMuseumInfo, getKategorien, getExponate } from '../../../lib/sanity';
+import { getKioskConfig, getMuseumInfo, getKategorien, getExponate } from '../../../lib/sanity';
 
 const { id } = Astro.params;
-const kioskConfig = await getKioskConfigByIdentifier(id).catch(() => null);
+const kioskConfig = await getKioskConfig(id).catch(() => null);
 const museumInfo = await getMuseumInfo().catch(() => ({ name: 'Museum Digital' }));
 const kategorien = await getKategorien().catch(() => []);
 

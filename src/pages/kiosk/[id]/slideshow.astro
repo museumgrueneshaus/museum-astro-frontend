@@ -1,13 +1,13 @@
 ---
 import Layout from '../../../layouts/Layout.astro';
-import { getKioskConfigByIdentifier, getMuseumInfo, getExponate, getExponateByIds } from '../../../lib/sanity';
+import { getKioskConfig, getMuseumInfo, getExponate, getExponateByIds } from '../../../lib/sanity';
 
 export async function getStaticPaths() {
   return [];
 }
 
 const { id } = Astro.params;
-const kioskConfig = await getKioskConfigByIdentifier(id).catch(() => null);
+const kioskConfig = await getKioskConfig(id).catch(() => null);
 const museumInfo = await getMuseumInfo().catch(() => ({ name: 'Museum Digital' }));
 
 let exponate = [];
