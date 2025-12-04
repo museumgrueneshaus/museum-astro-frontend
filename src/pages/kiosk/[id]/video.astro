@@ -244,8 +244,8 @@ try {
       </div>
 
       <div class="container" id="container">
-        <video id="media1" playsinline webkit-playsinline></video>
-        <video id="media2" playsinline webkit-playsinline></video>
+        <video id="media1" playsinline webkit-playsinline preload="auto"></video>
+        <video id="media2" playsinline webkit-playsinline preload="auto"></video>
         <img id="img1" style="display:none;" />
         <img id="img2" style="display:none;" />
       </div>
@@ -334,6 +334,8 @@ try {
         async function loadMedia(mediaElement, videoData) {
           return new Promise((resolve, reject) => {
             if (videoData.typ === 'video') {
+              // Enable preload for faster startup
+              mediaElement.preload = 'auto';
               mediaElement.src = videoData.url;
               // Start first video muted for autoplay, then unmute
               mediaElement.muted = firstPlay ? true : audioMuted;
@@ -378,8 +380,9 @@ try {
 
               mediaElement.load();
 
-              mediaElement.addEventListener('canplay', () => {
-                log(`Video ${currentIndex + 1} ready`);
+              // Use loadedmetadata instead of canplay for faster startup
+              mediaElement.addEventListener('loadedmetadata', () => {
+                log(`Video ${currentIndex + 1} metadata loaded`);
                 resolve();
               }, { once: true });
 
