@@ -384,8 +384,12 @@ try {
               }, { once: true });
 
               mediaElement.addEventListener('error', (e) => {
-                log(`Video error: ${e.message}`);
-                reject(e);
+                const errorMsg = mediaElement.error ?
+                  `Video error code ${mediaElement.error.code}: ${mediaElement.error.message}` :
+                  'Video error (unknown)';
+                log(errorMsg);
+                console.error('Video element error:', mediaElement.error, 'URL:', videoData.url);
+                reject(new Error(errorMsg));
               }, { once: true });
             } else {
               // Image
