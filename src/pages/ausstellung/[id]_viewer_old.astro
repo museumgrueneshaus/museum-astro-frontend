@@ -1,0 +1,1288 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/grid.css';
+import GalleryCard from '../../components/GalleryCard.astro';
+import OnscreenKeyboard from '../../components/OnscreenKeyboard.astro';
+import { getKategorien, getAusstellung, urlFor, getKioskConfigByIdentifier } from '../../lib/sanity';
+import mqttClient from '../../lib/mqtt.js';
+
+const { id } = Astro.params;
+const ausstellung = await getAusstellung(id);
+
+if (!ausstellung) {
+  return Astro.redirect('/404');
+}
+
+let items = [];
+try {
+  // Load exponate from this ausstellung
+  const exps = ausstellung.exponate || [];
+  items = exps.map((ex) => ({
+    id: ex._id,
+    title: ex.titel,
+    subtitle: ex.untertitel || '',
+    image: ex.hauptbild ? urlFor(ex.hauptbild).width(1600).height(undefined).auto('format').url() : '/placeholder.jpg',
+    imageHd: ex.hauptbild ? urlFor(ex.hauptbild).width(3000).height(undefined).auto('format').url() : '/placeholder.jpg',
+    ratio: '1 / 1',
+    colors: ex.kategorie?.farbe ? [ex.kategorie.farbe] : [],
+    categoryId: ex.kategorie?._id,
+    inventarnummer: ex.inventarnummer,
+    kurzbeschreibung: ex.kurzbeschreibung,
+    beschreibung: ex.beschreibung,
+    datierung: ex.datierung,
+    herstellung: ex.herstellung,
+    physisch: ex.physisch,
+    organisation: ex.organisation,
+    tags: ex.tags || [],
+    hatLedLicht: ex.hat_led_licht,
+    ledPosition: ex.led_position,
+  }));
+} catch {}
+
+const kategorien = ausstellung.kategorien || [];
+
+function chipStyle(hex) {
+  if (!hex) hex = '#374151';
+  let c = hex.toString();
+  if (!c.startsWith('#')) c = `#${c}`;
+  let r = 55, g = 65, b = 81;
+  try {
+    const v = c.slice(1);
+    r = parseInt(v.substring(0,2), 16);
+    g = parseInt(v.substring(2,4), 16);
+    b = parseInt(v.substring(4,6), 16);
+  } catch {}
+  const srgb = [r,g,b].map(v => {
+    v /= 255;
+    return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4);
+  });
+  const L = 0.2126*srgb[0] + 0.7152*srgb[1] + 0.0722*srgb[2];
+  const text = L > 0.5 ? '#111' : '#fff';
+  return `background:${c};color:${text}`;
+}
+---
+
+<Layout title={ausstellung.titel} theme="light">
+  <main class="blank">
+    <section class="container">
+      <h1 class="sr-only">Start</h1>
+
+      <div class="header-wrap">
+        <div class="container">
+          <div class="search-row">
+            <label for="search" class="sr-only">Suche</label>
+            <input id="search" class="search-input" type="search" placeholder="Suche Exponate…" autocomplete="off" />
+            <button id="theme-btn" class="theme-btn" aria-label="Toggle Theme"></button>
+            <div class="lang-switch" role="group" aria-label="Sprache">
+              <button type="button" class="lang-btn" data-lang="de">DE</button>
+              <span aria-hidden="true">/</span>
+              <button type="button" class="lang-btn" data-lang="en">EN</button>
+            </div>
+            <button id="help-btn" class="help-btn" aria-haspopup="dialog" aria-controls="help-overlay" aria-label="Hilfe">
+              <i data-lucide="help-circle"></i>
+            </button>
+
+            <div class="filters-checks" aria-label="Filter">
+              <label class="filter-check">
+                <input type="checkbox" id="f-all" />
+                <span class="box" aria-hidden="true"></span>
+                <span class="label">Alles</span>
+              </label>
+              
+              <label class="filter-check">
+                <input type="checkbox" id="f-led" class="led-filter" data-filter="led" />
+                <span class="box" aria-hidden="true"></span>
+                <span class="label">Mit LED-Licht</span>
+              </label>
+
+              {kategorien?.map(k => (
+                <label class="filter-check">
+                  <input type="checkbox" class="cat-filter" data-category={k._id} />
+                  <span class="box" style={chipStyle(k.farbe)} aria-hidden="true"></span>
+                  <span class="label">{k.titel}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="help-overlay" class="help-overlay" role="dialog" aria-modal="true" aria-label="Hilfe" hidden>
+        <div class="help-panel container">
+          <div class="help-header">
+            <strong>Hilfe</strong>
+            <button id="help-close" class="help-close" aria-label="Schließen">
+              <i data-lucide="x"></i>
+            </button>
+          </div>
+          <div class="help-content">
+            <p>Suche links: Tippen Sie, um Exponate zu finden. Kategorien rechts: Wischen/Tippen, um zu filtern.</p>
+            <p>Diese Hilfe ist ein Platzhalter; Inhalte folgen.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="gallery-grid">
+        {items.map((it) => (
+          <div class="gitem" data-id={it.id} data-category={it.categoryId || ''} data-title={it.title} data-subtitle={it.subtitle || ''} data-image={it.image} data-image-hd={it.imageHd} data-inventarnummer={it.inventarnummer} data-kurzbeschreibung={it.kurzbeschreibung} data-beschreibung={it.beschreibung} data-datierung={JSON.stringify(it.datierung)} data-herstellung={JSON.stringify(it.herstellung)} data-physisch={JSON.stringify(it.physisch)} data-organisation={it.organisation} data-tags={JSON.stringify(it.tags)} data-hat-led-licht={it.hatLedLicht || false} data-led-position={JSON.stringify(it.ledPosition)}>
+            <GalleryCard title={it.title} subtitle={it.subtitle} image={it.image} ratio={it.ratio} />
+          </div>
+        ))}
+      </div>
+    </section>
+  </main>
+  <OnscreenKeyboard targetSelector="#search" />
+
+  <!-- Inactivity overlay -->
+  <div id="inactivity-overlay" class="inactivity-overlay" hidden>
+    <div class="inactivity-content">
+      <div class="touch-icon">
+        <span class="material-icons">touch_app</span>
+      </div>
+      <h2 class="magic-text">Bitte Bildschirm berühren</h2>
+      <p class="magic-text-subtitle">Please touch the screen</p>
+    </div>
+  </div>
+
+  <div id="modal" class="modal-overlay" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-content-wrapper">
+      <div class="modal-content">
+        <div class="modal-image-container">
+          <img id="modal-image" src="" alt="" />
+          <div id="magnifying-glass" class="magnifying-glass" hidden></div>
+        </div>
+        <div class="modal-buttons">
+          <button id="fullscreen-btn" class="fullscreen-btn" aria-label="Vollbild">
+            <i data-lucide="maximize"></i>
+          </button>
+          <button id="magnifier-btn" class="magnifier-btn" aria-label="Lupe">
+            <i data-lucide="search"></i>
+          </button>
+          <button id="lightbulb-btn" class="lightbulb-btn" aria-label="Information">
+            <span class="material-icons">lightbulb</span>
+          </button>
+        </div>
+        <div class="modal-info-container">
+          <h2 id="modal-title"></h2>
+          <p id="modal-subtitle"></p>
+          <div id="modal-metadata"></div>
+        </div>
+      </div>
+    </div>
+    <button class="modal-close" aria-label="Schließen">
+      <i data-lucide="x"></i>
+    </button>
+    <button id="fullscreen-close-btn" class="fullscreen-close-btn" aria-label="Vollbild schließen" hidden>
+      <i data-lucide="x"></i>
+    </button>
+  </div>
+
+  <style>
+    .blank { height: 100vh; width: 100vw; background: var(--bg); padding: var(--space-4) 0 var(--space-8); overflow-x: hidden; }
+    .gallery-grid { margin-top: var(--space-4); display:grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 40px; }
+    @media (min-width: 900px){ .gallery-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+    @media (min-width: 1280px){ .gallery-grid { grid-template-columns: repeat(5, minmax(0,1fr)); } }
+    .header-wrap { position: sticky; top: calc(env(safe-area-inset-top, 0px)); z-index: 20; background: var(--bg-alt); padding: var(--space-3) 0; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); }
+    :root[data-theme="dark"] .header-wrap { background: #000000; }
+    .search-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; row-gap: var(--space-3); }
+    .filters-checks { display: flex; gap: 12px 20px; justify-content: flex-start; flex-wrap: wrap; row-gap: 8px; align-items: center; flex: 1 1 auto; order: 2; }
+    .filter-check { display: inline-flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
+    .filter-check input { position: absolute; opacity: 0; pointer-events: none; }
+    .filter-check .box { position: relative; width: 28px; height: 28px; background: transparent !important; border: 2px solid var(--border); display: inline-block; }
+    .filter-check input:checked + .box { background: white !important; border-color: white; border-width: 2px; }
+    .filter-check input:checked + .box::after { content: ''; position: absolute; left: 50%; top: 50%; width: 8px; height: 14px; border-right: 3px solid var(--bg); border-bottom: 3px solid var(--bg); transform: translate(-50%, -60%) rotate(45deg); }
+    .filter-check .label { color: var(--text); font-weight: 500 !important; font-size: 18px !important; }
+    
+    /* Make "Alles" label more prominent */
+    #f-all + .box + .label {
+      font-weight: 700 !important;
+    }
+    
+    /* Light mode filter checkboxes */
+    :root:not([data-theme="dark"]) .filter-check .box {
+      background: transparent !important;
+      border: 2px solid #000000 !important;
+    }
+    
+    :root:not([data-theme="dark"]) .filter-check input:checked + .box {
+      background: #000000 !important;
+      border-color: #000000 !important;
+    }
+    
+    :root:not([data-theme="dark"]) .filter-check input:checked + .box::after {
+      border-right-color: #ffffff !important;
+      border-bottom-color: #ffffff !important;
+    }
+    .help-btn { appearance:none; border:0; background:transparent; color: var(--text); cursor:pointer; font-weight: 900 !important; font-size: 26px; display:inline-flex; align-items:center; justify-content:center; width: 56px; height: 56px; border-radius: 50%; line-height: 1; flex: 0 0 auto; order: 4; }
+    .theme-btn { appearance:none; border:0; background:transparent; color: var(--text); cursor:pointer; font-weight: 900 !important; font-size: 26px; display:inline-flex; align-items:center; justify-content:center; width: 56px; height: 56px; border-radius: 50%; line-height: 1; flex: 0 0 auto; order: 3; }
+    .search-input { width: 100%; flex: 1 0 100%; order: 1; border: 0; border-bottom: 2px solid var(--border); background: transparent; color: var(--text); padding: 12px 14px; font: inherit; outline: none; border-radius: 0; font-size: 22px !important; min-width: 220px; }
+    .lang-switch { display: inline-flex; align-items: center; gap: 8px; order: 3; margin-left: auto; }
+    .lang-btn { appearance: none; border: 0; background: transparent; color: var(--text); cursor: pointer; font-size: 18px !important; font-weight: 500 !important; padding: 4px 6px; }
+    .lang-btn.active { font-weight: 900 !important; text-decoration: underline; text-underline-offset: 3px; }
+    .help-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); backdrop-filter: blur(2px); z-index: 40; display: grid; place-items: start center; padding-top: calc(60px + env(safe-area-inset-top, 0px)); }
+    .help-panel { background: var(--bg); border:1px solid var(--border); color: var(--text); max-width: 720px; width: calc(100vw - 32px); padding: var(--space-3); }
+    .help-header { display:flex; justify-content: space-between; align-items:center; margin-bottom: var(--space-2); }
+    .help-close { appearance:none; border:1px solid var(--border); background:transparent; color:var(--text-dim); padding: 6px 10px; cursor:pointer; }
+    
+    /* New Modal Styles */
+    .modal-overlay { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 1rem; }
+    .modal-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); }
+    
+    /* Light mode overlay - lighter backdrop */
+    :root:not([data-theme="dark"]) .modal-backdrop {
+      background: rgba(255, 255, 255, 0.8);
+    }
+    .modal-content-wrapper { position: relative; z-index: 1; width: 100%; max-width: 1200px; max-height: 90vh; overflow: visible; }
+    .modal-content { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr auto; gap: 3rem; color: white; border-radius: 0; overflow: visible; background: transparent; border: none; }
+    
+    /* Light mode modal styles */
+    :root:not([data-theme="dark"]) .modal-content {
+      background: #fff;
+      color: #000;
+    }
+    
+    .modal-image-container { grid-column: 1; grid-row: 1; }
+    .modal-buttons { grid-column: 1; grid-row: 2; }
+    .modal-info-container { grid-column: 2; grid-row: 1 / 3; }
+    .modal-image-container { 
+      position: relative; 
+      width: 100%; 
+      height: 100%; 
+      display: flex; 
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-image-container img {
+      max-width: 75vh;
+      max-height: 75vh;
+      object-fit: contain;
+      display: block;
+    }
+    
+    .modal-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      padding: 1rem;
+      background: transparent;
+      border: none;
+      margin: 0;
+      overflow: visible;
+    }
+    
+    .fullscreen-btn { 
+      background: transparent; 
+      border: none; 
+      color: white; 
+      cursor: pointer; 
+      z-index: 2; 
+      padding: 0; 
+      width: 40px; 
+      height: 40px; 
+      display: grid; 
+      place-items: center; 
+      visibility: visible !important;
+    }
+    .fullscreen-btn svg { 
+      stroke: white; 
+      width: 24px; 
+      height: 24px; 
+    }
+    .magnifier-btn { 
+      background: transparent; 
+      border: none; 
+      color: white; 
+      cursor: pointer; 
+      z-index: 2; 
+      padding: 0; 
+      width: 40px; 
+      height: 40px; 
+      display: grid; 
+      place-items: center; 
+      visibility: visible !important;
+    }
+    .magnifier-btn svg { 
+      stroke: white; 
+      width: 24px; 
+      height: 24px; 
+    }
+    .lightbulb-btn { 
+      background: transparent !important; 
+      border: none !important; 
+      color: white; 
+      cursor: pointer; 
+      z-index: 2; 
+      padding: 0 !important; 
+      width: 40px; 
+      height: 40px; 
+      border-radius: 50% !important;
+      display: grid; 
+      place-items: center; 
+      visibility: visible !important;
+      transition: background 0.3s ease;
+      box-shadow: none !important;
+      outline: none !important;
+      overflow: visible !important;
+      margin: 2px;
+    }
+    .lightbulb-btn .material-icons { 
+      color: white; 
+      font-size: 24px !important; 
+      transition: all 0.3s ease;
+    }
+    
+    .lightbulb-btn.active .material-icons {
+      color: #ffd700 !important; /* Gold color when active */
+      filter: drop-shadow(0 0 8px #ffd700) drop-shadow(0 0 16px #ffd700);
+      transform: scale(1.1);
+    }
+    
+    .lightbulb-btn.active {
+      background: rgba(255, 215, 0, 0.1) !important;
+    }
+    
+    /* Light mode button styles */
+    :root:not([data-theme="dark"]) .fullscreen-btn svg,
+    :root:not([data-theme="dark"]) .magnifier-btn svg {
+      stroke: #000;
+    }
+    
+    :root:not([data-theme="dark"]) .lightbulb-btn .material-icons {
+      color: #000 !important;
+    }
+    
+    /* Light mode active lightbulb */
+    :root:not([data-theme="dark"]) .lightbulb-btn.active .material-icons {
+      color: #ffd700 !important;
+      filter: drop-shadow(0 0 8px #ffd700) drop-shadow(0 0 16px #ffd700);
+    }
+    
+    /* Light mode close buttons */
+    :root:not([data-theme="dark"]) .modal-close {
+      background: transparent !important;
+      color: #000 !important;
+    }
+    
+    :root:not([data-theme="dark"]) .fullscreen-close-btn {
+      background: transparent !important;
+      color: #000 !important;
+    }
+    .magnifier-btn.active { background: rgba(255,255,255,0.2); }
+    #modal-image { 
+      object-fit: contain; 
+      position: relative;
+    }
+    
+    .modal-info-container { padding: 2rem; overflow-y: auto; }
+    .modal-overlay.modal-fullscreen .modal-info-container { display: none; }
+    .modal-overlay.modal-fullscreen .modal-close { display: none; }
+        .modal-overlay.modal-fullscreen .modal-image-container {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 101 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+    }
+    .modal-overlay.modal-fullscreen #modal-image {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: contain !important;
+    }
+    .modal-overlay.modal-fullscreen .fullscreen-btn { display: none; }
+    .modal-overlay.modal-fullscreen .modal-close { display: none; }
+    .modal-overlay .modal-close { display: none; }
+    .fullscreen-close-btn { 
+      position: fixed !important; 
+      top: 2rem !important; 
+      right: 2rem !important; 
+      background: rgba(0,0,0,0.8) !important; 
+      color: white !important; 
+      border: none !important; 
+      border-radius: 50% !important; 
+      width: 4rem !important; 
+      height: 4rem !important; 
+      font-size: 128px !important; 
+      font-weight: 900 !important;
+      cursor: pointer !important; 
+      z-index: 102 !important; 
+      display: flex !important; 
+      align-items: center !important; 
+      justify-content: center !important; 
+    }
+    
+    /* Show button in normal modal mode too */
+    .modal-overlay:not(.modal-fullscreen) .fullscreen-close-btn {
+      display: flex !important;
+    }
+    
+    /* Even more specific selector */
+    #modal #fullscreen-close-btn { 
+      font-size: 128px !important; 
+      font-weight: 900 !important;
+    }
+    
+    /* Most specific selector possible */
+    #modal.modal-overlay #fullscreen-close-btn.fullscreen-close-btn { 
+      font-size: 128px !important; 
+      font-weight: 900 !important;
+    }
+    
+    .magnifying-glass {
+      position: fixed;
+      border: 4px solid #fff;
+      border-radius: 50%;
+      cursor: grab;
+      width: 250px;
+      height: 250px;
+      transform: translate(-50%, -50%);
+      pointer-events: auto;
+      overflow: hidden;
+      box-shadow: none;
+      background-repeat: no-repeat;
+      background-size: cover;
+      z-index: 103;
+      display: none; /* Hidden by default */
+      transition: opacity 0.2s ease;
+      user-select: none;
+      background-color: rgba(255, 255, 255, 0.1); /* Fallback background */
+    }
+    
+    .magnifying-glass:active {
+      cursor: grabbing;
+    }
+    
+    #modal-title { font-size: 32px !important; font-weight: 900; text-shadow: none; }
+    #modal-subtitle { font-size: 1.2rem; opacity: 0.8; margin-bottom: 1.5rem; text-shadow: none; }
+    #modal-metadata { display: grid; gap: 1rem; }
+    .meta-item { display: grid; grid-template-columns: 100px 1fr; gap: 1rem; }
+    .meta-item strong { font-weight: 600; }
+    .modal-close { position: absolute; top: 1rem; right: 1rem; z-index: 2; background: rgba(0, 0, 0, 0.5); color: white; border: none; border-radius: 50%; width: 2.5rem; height: 2.5rem; font-size: 1.5rem; cursor: pointer; }
+    
+    /* Inactivity overlay */
+    .inactivity-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 200;
+      display: grid;
+      place-items: center;
+      backdrop-filter: blur(10px);
+    }
+    
+    .inactivity-content {
+      text-align: center;
+      color: white;
+      padding: 2rem;
+    }
+    
+    .inactivity-content h2 {
+      font-size: 4rem !important;
+      font-weight: 700 !important;
+      margin-bottom: 2rem;
+    }
+    
+    /* Override global font-size for inactivity overlay */
+    #inactivity-overlay .inactivity-content h2 {
+      font-size: 4rem !important;
+      font-weight: 700 !important;
+    }
+    
+    .magic-text-subtitle {
+      font-size: 2rem !important;
+      font-weight: 400 !important;
+      opacity: 0.8;
+      margin-top: 0.5rem;
+    }
+    
+    .inactivity-content p {
+      font-size: 1.5rem;
+      opacity: 0.8;
+    }
+    
+    /* Subtle glow effect - more noticeable but professional */
+    .magic-text {
+      color: white;
+      animation: subtleGlow 2s ease-in-out infinite;
+    }
+    
+    .magic-text-subtitle {
+      color: white;
+      animation: subtleGlow 2s ease-in-out infinite;
+    }
+    
+    .touch-icon {
+      animation: subtleGlow 2s ease-in-out infinite;
+    }
+    
+    .touch-icon .material-icons {
+      font-size: 180px !important;
+      color: white;
+    }
+    
+    @keyframes subtleGlow {
+      0% {
+        opacity: 0.5;
+      }
+      50% {
+        opacity: 0.75;
+      }
+      100% {
+        opacity: 0.5;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .modal-content { 
+        grid-template-columns: 1fr; 
+        grid-template-rows: auto auto auto;
+      }
+      .modal-image-container { grid-column: 1; grid-row: 1; }
+      .modal-buttons { grid-column: 1; grid-row: 2; }
+      .modal-info-container { 
+        grid-column: 1; 
+        grid-row: 3; 
+        padding: 1.5rem; 
+      }
+    }
+  </style>
+  <script>
+    import { animate } from "motion";
+    import Hammer from 'hammerjs';
+    
+    // Initialize Lucide icons and MQTT
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+      
+      // Initialize MQTT client
+      try {
+        const kioskConfig = await getKioskConfigByIdentifier('default');
+        if (kioskConfig?.mqtt) {
+          await mqttClient.initialize(kioskConfig.mqtt);
+          console.log('MQTT client initialized:', mqttClient.isMQTTEnabled());
+        } else {
+          console.log('No MQTT configuration found');
+        }
+      } catch (error) {
+        console.error('Failed to initialize MQTT:', error);
+      }
+    });
+
+    
+      const modal = document.getElementById('modal');
+      const modalImage = document.getElementById('modal-image');
+      const modalTitle = document.getElementById('modal-title');
+      const modalSubtitle = document.getElementById('modal-subtitle');
+      const modalMetadata = document.getElementById('modal-metadata');
+      const modalClose = document.querySelector('.modal-close');
+      const fullscreenBtn = document.getElementById('fullscreen-btn');
+      const galleryItems = document.querySelectorAll('.gitem');
+
+      let activeItem = null;
+      let hammer;
+
+      function openModal(item) {
+        try {
+          activeItem = item;
+          const image = item.querySelector('img');
+          const title = item.dataset.title;
+          const subtitle = item.dataset.subtitle;
+          const hdImage = item.dataset.imageHd;
+          const inventarnummer = item.dataset.inventarnummer;
+          const kurzbeschreibung = item.dataset.kurzbeschreibung;
+          const beschreibung = item.dataset.beschreibung;
+          const datierung = JSON.parse(item.dataset.datierung || '{}');
+          const herstellung = JSON.parse(item.dataset.herstellung || '{}');
+          const physisch = JSON.parse(item.dataset.physisch || '{}');
+          const organisation = item.dataset.organisation;
+          const tags = JSON.parse(item.dataset.tags || '[]');
+
+          modalImage.src = image.src;
+          modalTitle.textContent = title;
+          modalSubtitle.textContent = subtitle;
+          
+          // Set data attributes for MQTT/LED functionality
+          modalImage.setAttribute('data-exhibit-id', item.dataset.id);
+          modalImage.setAttribute('data-inventarnummer', inventarnummer);
+          modalImage.setAttribute('data-category', item.dataset.category);
+          
+          // Store LED position data for MQTT
+          const ledPosition = item.dataset.ledPosition ? JSON.parse(item.dataset.ledPosition) : null;
+          const hasLedLicht = item.dataset.hatLedLicht === 'true';
+          if (ledPosition) {
+            modalImage.setAttribute('data-led-position', JSON.stringify(ledPosition));
+          }
+          modalImage.setAttribute('data-has-led-licht', hasLedLicht);
+          
+          // Show/hide lightbulb button based on LED availability
+          const lightbulbBtn = document.getElementById('lightbulb-btn');
+          if (lightbulbBtn) {
+            lightbulbBtn.style.display = hasLedLicht ? 'grid' : 'none';
+          }
+
+          let metadataHtml = '';
+          if (inventarnummer) metadataHtml += `<div class="meta-item"><strong>Inventarnr.:</strong> <span>${inventarnummer}</span></div>`;
+          if (datierung?.jahr_text) metadataHtml += `<div class="meta-item"><strong>Datierung:</strong> <span>${datierung.jahr_text}</span></div>`;
+          if (herstellung?.material) metadataHtml += `<div class="meta-item"><strong>Material:</strong> <span>${herstellung.material}</span></div>`;
+          if (physisch?.masse) metadataHtml += `<div class="meta-item"><strong>Maße:</strong> <span>${physisch.masse}</span></div>`;
+          if (organisation) metadataHtml += `<div class="meta-item"><strong>Sammlung:</strong> <span>${organisation}</span></div>`;
+          if (kurzbeschreibung) metadataHtml += `<div class="meta-item"><strong>Info:</strong> <span>${kurzbeschreibung}</span></div>`;
+          if (beschreibung) metadataHtml += `<div class="meta-item"><strong>Beschreibung:</strong> <span>${beschreibung}</span></div>`;
+          if (tags.length > 0) metadataHtml += `<div class="meta-item"><strong>Tags:</strong> <span>${tags.join(', ')}</span></div>`;
+          
+          modalMetadata.innerHTML = metadataHtml;
+
+          const transitionName = `gallery-item-${item.dataset.id}`;
+          console.log('Setting view-transition-name on open:', transitionName);
+          modalImage.style.viewTransitionName = transitionName;
+          image.style.viewTransitionName = transitionName;
+
+          modal.hidden = false;
+          document.documentElement.style.overflow = 'hidden';
+          
+          // Show the close button in normal modal mode
+          document.getElementById('fullscreen-close-btn').hidden = false;
+          
+          // Magnifying glass will be controlled by button, not mouse following
+
+          if (!document.startViewTransition) {
+            animate(modal, { opacity: [0, 1] }, { duration: 0.3 });
+            return;
+          }
+
+          const transition = document.startViewTransition(() => {});
+
+          transition.ready.then(() => {
+            animate(modal.querySelector(".modal-backdrop"), { opacity: [0, 1] }, { duration: 0.5, easing: "ease-in-out" });
+            animate(modal.querySelector(".modal-content"), { transform: ["scale(0.95)", "scale(1)"], opacity: [0, 1] }, { duration: 0.5, easing: "ease-in-out" });
+          });
+
+          const hdLoader = new Image();
+          hdLoader.src = hdImage;
+          hdLoader.onload = () => { 
+            modalImage.src = hdImage; 
+            const img = new Image();
+            img.src = hdImage;
+            img.onload = () => {
+              const ratio = img.width / img.height;
+              if (ratio > 1) {
+                modalImage.style.width = '75vh';
+                modalImage.style.height = 'auto';
+              } else {
+                modalImage.style.height = '75vh';
+                modalImage.style.width = 'auto';
+              }
+            }
+          };
+
+          fullscreenBtn.addEventListener('click', () => {
+            toggleFakeFullscreen();
+          });
+
+          // Touch gestures
+          const mc = new Hammer.Manager(modal);
+          mc.add(new Hammer.Pinch());
+          mc.add(new Hammer.Swipe({ direction: Hammer.DIRECTION_DOWN }));
+
+          let scale = 1;
+          mc.on('pinch', (ev) => {
+            scale = Math.max(0.5, Math.min(scale * ev.scale, 3));
+            modalImage.style.transform = `scale(${scale})`;
+          });
+
+          mc.on('swipedown', closeModal);
+          hammer = mc;
+        } catch (e) {
+          console.error('Error in openModal:', e);
+        }
+      }
+
+      function closeModal() {
+        try {
+          if (modal.classList.contains('modal-fullscreen')) {
+            toggleFakeFullscreen();
+            return;
+          }
+          if (!activeItem) return;
+          if (hammer) { hammer.destroy(); hammer = null; }
+
+          const image = activeItem.querySelector('img');
+          const transitionName = `gallery-item-${activeItem.dataset.id}`;
+          
+          const cleanup = () => {
+              console.log('Cleaning up view-transition-name');
+              modal.hidden = true;
+              document.documentElement.style.overflow = '';
+              
+              // Reset lightbulb button state
+              const lightbulbBtn = document.getElementById('lightbulb-btn');
+              if (lightbulbBtn) {
+                lightbulbBtn.classList.remove('active');
+              }
+              if (modalImage) {
+                modalImage.style.viewTransitionName = '';
+                modalImage.style.transform = 'scale(1)';
+              }
+              if (image) image.style.viewTransitionName = '';
+              // Close magnifying glass when modal closes
+              if (magnifierActive) {
+                hideMagnifyingGlass();
+                magnifierActive = false;
+                magnifierBtn.classList.remove('active');
+              }
+              activeItem = null;
+          }
+
+          if (!document.startViewTransition) {
+            animate(modal, { opacity: [1, 0] }, { duration: 0.3 }).finished.then(cleanup);
+            return;
+          }
+
+          if (modalImage) modalImage.style.viewTransitionName = transitionName;
+          if (image) image.style.viewTransitionName = transitionName;
+
+          const transition = document.startViewTransition(() => {});
+
+          transition.finished.finally(cleanup);
+        } catch (e) {
+          console.error('Error in closeModal:', e);
+        }
+      }
+
+      const magnifyingGlass = document.getElementById('magnifying-glass');
+      const magnifierBtn = document.getElementById('magnifier-btn');
+      const MAGNIFICATION_FACTOR = 4; // 4x magnification for better detail
+      let isDragging = false;
+      let dragOffset = { x: 0, y: 0 };
+      let magnifierActive = false;
+
+      function showMagnifyingGlass() {
+        console.log('Showing magnifying glass');
+        magnifyingGlass.hidden = false;
+        magnifyingGlass.style.display = 'block';
+        
+        // Position magnifying glass in center initially
+        const imageRect = modalImage.getBoundingClientRect();
+        const centerX = imageRect.left + imageRect.width / 2;
+        const centerY = imageRect.top + imageRect.height / 2;
+        
+        magnifyingGlass.style.left = centerX + 'px';
+        magnifyingGlass.style.top = centerY + 'px';
+        magnifyingGlass.style.position = 'fixed';
+        
+        console.log('Positioned at:', centerX, centerY);
+        updateMagnifyingGlassContent();
+      }
+
+      function hideMagnifyingGlass() {
+        magnifyingGlass.hidden = true;
+      }
+
+      function toggleMagnifier() {
+        console.log('Toggle magnifier clicked, current state:', magnifierActive);
+        magnifierActive = !magnifierActive;
+        if (magnifierActive) {
+          console.log('Activating magnifier');
+          showMagnifyingGlass();
+          magnifierBtn.classList.add('active');
+        } else {
+          console.log('Deactivating magnifier');
+          hideMagnifyingGlass();
+          magnifierBtn.classList.remove('active');
+        }
+      }
+
+      function updateMagnifyingGlassContent() {
+        if (!modalImage.src || magnifyingGlass.hidden) return;
+        
+        const imageRect = modalImage.getBoundingClientRect();
+        const glassRect = magnifyingGlass.getBoundingClientRect();
+        
+        // Calculate the center point of the magnifying glass relative to the image
+        const glassCenterX = glassRect.left + glassRect.width / 2;
+        const glassCenterY = glassRect.top + glassRect.height / 2;
+        
+        // Calculate position relative to image (where the glass is pointing)
+        const offsetX = glassCenterX - imageRect.left;
+        const offsetY = glassCenterY - imageRect.top;
+        
+        // Set background image
+        magnifyingGlass.style.backgroundImage = `url('${modalImage.src}')`;
+        
+        // Calculate the background position to show the magnified area
+        // We need to offset the background so the magnified area appears in the center of the glass
+        const bgX = offsetX * MAGNIFICATION_FACTOR - (glassRect.width / 2);
+        const bgY = offsetY * MAGNIFICATION_FACTOR - (glassRect.height / 2);
+        
+        magnifyingGlass.style.backgroundSize = `${imageRect.width * MAGNIFICATION_FACTOR}px ${imageRect.height * MAGNIFICATION_FACTOR}px`;
+        magnifyingGlass.style.backgroundPosition = `${-bgX}px ${-bgY}px`;
+        
+        console.log('Magnifying at:', offsetX, offsetY, 'Background pos:', -bgX, -bgY);
+      }
+
+      // removed duplicate updateMagnifyingGlass here (kept the later definition)
+
+      function toggleFakeFullscreen() {
+        const isCurrentlyFullscreen = modal.classList.contains('modal-fullscreen');
+        
+        if (isCurrentlyFullscreen) {
+          // Exit fullscreen
+          modal.classList.remove('modal-fullscreen');
+          const closeBtn = document.getElementById('fullscreen-close-btn');
+          closeBtn.hidden = true;
+          closeBtn.innerHTML = '<i data-lucide="x"></i>'; // X for normal modal
+          lucide.createIcons();
+          magnifyingGlass.hidden = true;
+          
+          // Remove magnifying glass event listeners
+          modalImage.removeEventListener('mousemove', updateMagnifyingGlass);
+          modalImage.removeEventListener('touchmove', updateMagnifyingGlass);
+          modalImage.removeEventListener('mouseenter', showMagnifyingGlass);
+          modalImage.removeEventListener('mouseleave', hideMagnifyingGlass);
+          modalImage.removeEventListener('touchstart', showMagnifyingGlass);
+          modalImage.removeEventListener('touchend', hideMagnifyingGlass);
+        } else {
+          // Enter fullscreen
+          modal.classList.add('modal-fullscreen');
+          const closeBtn = document.getElementById('fullscreen-close-btn');
+          closeBtn.hidden = false;
+          closeBtn.innerHTML = '<i data-lucide="arrow-left"></i>'; // Return arrow for fullscreen
+          lucide.createIcons();
+          
+          // Force button styling with JavaScript
+          closeBtn.style.setProperty('font-size', '128px', 'important');
+          closeBtn.style.setProperty('font-weight', '900', 'important');
+          
+          // Magnifying glass will be controlled by button, not mouse following
+        }
+      }
+
+      const fullscreenCloseBtn = document.getElementById('fullscreen-close-btn');
+      fullscreenCloseBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeModal();
+      });
+      
+
+      // Magnifier button event listener
+      magnifierBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleMagnifier();
+      });
+
+      // Lightbulb button event listener
+      const lightbulbBtn = document.getElementById('lightbulb-btn');
+      lightbulbBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        
+        // Get current exhibit data from modal
+        const modalTitle = document.getElementById('modal-title')?.textContent || '';
+        const modalSubtitle = document.getElementById('modal-subtitle')?.textContent || '';
+        const modalImage = document.getElementById('modal-image');
+        const exhibitId = modalImage?.getAttribute('data-exhibit-id') || '';
+        
+        // Get LED position data
+        const ledPositionData = modalImage?.getAttribute('data-led-position');
+        const ledPosition = ledPositionData ? JSON.parse(ledPositionData) : null;
+        
+        const exhibitData = {
+          id: exhibitId,
+          title: modalTitle,
+          subtitle: modalSubtitle,
+          inventarnummer: modalImage?.getAttribute('data-inventarnummer') || '',
+          categoryId: modalImage?.getAttribute('data-category') || '',
+          led_position: ledPosition
+        };
+        
+        // Toggle lightbulb visual state
+        lightbulbBtn.classList.toggle('active');
+        
+        // Send MQTT command to ESP32 LED strip
+        if (mqttClient.isMQTTEnabled()) {
+          const isActive = lightbulbBtn.classList.contains('active');
+          mqttClient.publishLightbulbEvent(exhibitData, isActive ? 'clicked' : 'deactivated');
+          console.log(`LED strip ${isActive ? 'activated' : 'deactivated'} for exhibit:`, exhibitData.title);
+        } else {
+          console.log('MQTT not enabled - LED strip command not sent');
+        }
+      });
+
+      // Make magnifying glass draggable
+      magnifyingGlass.addEventListener('mousedown', (e) => {
+        if (!magnifierActive) return;
+        e.preventDefault();
+        isDragging = true;
+        const rect = magnifyingGlass.getBoundingClientRect();
+        // Fix cursor jumping by calculating offset from center
+        dragOffset.x = e.clientX - (rect.left + rect.width / 2);
+        dragOffset.y = e.clientY - (rect.top + rect.height / 2);
+        magnifyingGlass.style.cursor = 'grabbing';
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (!isDragging || !magnifierActive) return;
+        e.preventDefault();
+        const x = e.clientX - dragOffset.x;
+        const y = e.clientY - dragOffset.y;
+        magnifyingGlass.style.left = x + 'px';
+        magnifyingGlass.style.top = y + 'px';
+        updateMagnifyingGlassContent();
+      });
+
+      document.addEventListener('mouseup', () => {
+        if (isDragging) {
+          isDragging = false;
+          magnifyingGlass.style.cursor = 'grab';
+        }
+      });
+
+      // Touch support for mobile
+      magnifyingGlass.addEventListener('touchstart', (e) => {
+        if (!magnifierActive) return;
+        e.preventDefault();
+        isDragging = true;
+        const rect = magnifyingGlass.getBoundingClientRect();
+        // Fix cursor jumping by calculating offset from center
+        dragOffset.x = e.touches[0].clientX - (rect.left + rect.width / 2);
+        dragOffset.y = e.touches[0].clientY - (rect.top + rect.height / 2);
+      });
+
+      document.addEventListener('touchmove', (e) => {
+        if (!isDragging || !magnifierActive) return;
+        e.preventDefault();
+        const x = e.touches[0].clientX - dragOffset.x;
+        const y = e.touches[0].clientY - dragOffset.y;
+        magnifyingGlass.style.left = x + 'px';
+        magnifyingGlass.style.top = y + 'px';
+        updateMagnifyingGlassContent();
+      });
+
+      document.addEventListener('touchend', () => {
+        if (isDragging) {
+          isDragging = false;
+        }
+      });
+
+      galleryItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.preventDefault();
+          openModal(item);
+        });
+      });
+
+      modalClose.addEventListener('click', closeModal);
+      modal.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal-backdrop')) {
+          closeModal();
+        }
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !modal.hidden) {
+          closeModal();
+        }
+      });
+
+      // Help overlay logic
+      const helpBtn = document.getElementById('help-btn');
+      const helpOverlay = document.getElementById('help-overlay');
+      const helpClose = document.getElementById('help-close');
+      const openHelp = () => { helpOverlay?.removeAttribute('hidden'); };
+      const closeHelp = () => { helpOverlay?.setAttribute('hidden',''); };
+      helpBtn?.addEventListener('click', openHelp);
+      helpClose?.addEventListener('click', closeHelp);
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeHelp(); });
+
+      // Language switcher logic
+      const langBtns = Array.from(document.querySelectorAll('.lang-btn')) as HTMLButtonElement[];
+      const setLang = (lng) => {
+        try { localStorage.setItem('lang', lng); } catch {}
+        document.documentElement.setAttribute('lang', lng);
+        langBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-lang') === lng));
+      };
+      const savedLang = (typeof localStorage !== 'undefined' && localStorage.getItem('lang')) || 'de';
+      setLang(savedLang);
+      langBtns.forEach(b => b.addEventListener('click', () => setLang(b.getAttribute('data-lang') || 'de')));
+
+      // Filter logic
+    const catChecks = document.querySelectorAll('.cat-filter');
+    const ledCheck = document.getElementById('f-led');
+    const allCheck = document.getElementById('f-all');
+    const cards = Array.from(document.querySelectorAll('.gallery-grid [data-category]'));
+
+    function applyFilters() {
+      const selectedCats = Array.from(catChecks).filter((i) => i.checked).map((i) => i.getAttribute('data-category'));
+      const allChecked = allCheck?.checked || false;
+      const ledChecked = ledCheck?.checked || false;
+      
+      for (const el of cards) {
+        const cat = el.getAttribute('data-category');
+        const hasLed = el.getAttribute('data-hat-led-licht') === 'true';
+        
+        let matchCat;
+        if (allChecked) {
+          // When "All" is checked, show everything (including items without category)
+          matchCat = true;
+        } else if (selectedCats.length === 0) {
+          // When no categories are selected, show nothing
+          matchCat = false;
+        } else {
+          // When specific categories are selected, match those categories
+          matchCat = selectedCats.includes(cat || '');
+        }
+        
+        // LED filter
+        let matchLed = true;
+        if (ledChecked) {
+          matchLed = hasLed;
+        }
+        
+        el.style.display = (matchCat && matchLed) ? '' : 'none';
+      }
+    }
+    
+    function syncAllCheck() {
+      const allCatsChecked = Array.from(catChecks).every((i) => i.checked);
+      const anyCatsChecked = Array.from(catChecks).some((i) => i.checked);
+      
+      if (allCheck) {
+        // "All" should be checked if all categories are checked, or if no categories are checked (showing everything)
+        allCheck.checked = allCatsChecked || (!anyCatsChecked && allCheck.checked);
+      }
+    }
+
+    allCheck?.addEventListener('change', () => {
+      const checked = allCheck.checked;
+      catChecks.forEach((c) => { c.checked = checked; });
+      applyFiltersWithSearch();
+    });
+
+    catChecks.forEach((c) => c.addEventListener('change', () => { syncAllCheck(); applyFiltersWithSearch(); }));
+    ledCheck?.addEventListener('change', applyFiltersWithSearch);
+
+    syncAllCheck();
+
+    // Search functionality
+    const searchInput = document.getElementById('search');
+    
+    function performSearch() {
+      const searchTerm = searchInput?.value.toLowerCase().trim() || '';
+      
+      for (const el of cards) {
+        // Get all data attributes and their values
+        const title = el.getAttribute('data-title')?.toLowerCase() || '';
+        const subtitle = el.getAttribute('data-subtitle')?.toLowerCase() || '';
+        const inventarnummer = el.getAttribute('data-inventarnummer')?.toLowerCase() || '';
+        const kurzbeschreibung = el.getAttribute('data-kurzbeschreibung')?.toLowerCase() || '';
+        const beschreibung = el.getAttribute('data-beschreibung')?.toLowerCase() || '';
+        const datierung = el.getAttribute('data-datierung')?.toLowerCase() || '';
+        const herstellung = el.getAttribute('data-herstellung')?.toLowerCase() || '';
+        const physisch = el.getAttribute('data-physisch')?.toLowerCase() || '';
+        const organisation = el.getAttribute('data-organisation')?.toLowerCase() || '';
+        const tags = el.getAttribute('data-tags')?.toLowerCase() || '';
+        
+        const matchesSearch = !searchTerm || 
+          title.includes(searchTerm) || 
+          subtitle.includes(searchTerm) || 
+          inventarnummer.includes(searchTerm) ||
+          kurzbeschreibung.includes(searchTerm) ||
+          beschreibung.includes(searchTerm) ||
+          datierung.includes(searchTerm) ||
+          herstellung.includes(searchTerm) ||
+          physisch.includes(searchTerm) ||
+          organisation.includes(searchTerm) ||
+          tags.includes(searchTerm);
+        
+        // Get current filter state
+        const selectedCats = Array.from(catChecks).filter((i) => i.checked).map((i) => i.getAttribute('data-category'));
+        const allChecked = allCheck?.checked || false;
+        const ledChecked = ledCheck?.checked || false;
+        const cat = el.getAttribute('data-category');
+        const hasLed = el.getAttribute('data-hat-led-licht') === 'true';
+        
+        let matchCat;
+        if (allChecked) {
+          matchCat = true;
+        } else if (selectedCats.length === 0) {
+          matchCat = false;
+        } else {
+          matchCat = selectedCats.includes(cat || '');
+        }
+        
+        // LED filter
+        let matchLed = true;
+        if (ledChecked) {
+          matchLed = hasLed;
+        }
+        
+        // Show item only if it matches search, category, and LED filters
+        el.style.display = (matchesSearch && matchCat && matchLed) ? '' : 'none';
+      }
+    }
+    
+    // Add search event listener
+    searchInput?.addEventListener('input', performSearch);
+    
+    // Update filter logic to also consider search
+    function applyFiltersWithSearch() {
+      const selectedCats = Array.from(catChecks).filter((i) => i.checked).map((i) => i.getAttribute('data-category'));
+      const allChecked = allCheck?.checked || false;
+      const ledChecked = ledCheck?.checked || false;
+      const searchTerm = searchInput?.value.toLowerCase().trim() || '';
+      
+      for (const el of cards) {
+        const cat = el.getAttribute('data-category');
+        const hasLed = el.getAttribute('data-hat-led-licht') === 'true';
+        let matchCat;
+        
+        if (allChecked) {
+          matchCat = true;
+        } else if (selectedCats.length === 0) {
+          matchCat = false;
+        } else {
+          matchCat = selectedCats.includes(cat || '');
+        }
+        
+        // LED filter
+        let matchLed = true;
+        if (ledChecked) {
+          matchLed = hasLed;
+        }
+        
+        // Check search match - search through ALL metadata
+        const title = el.getAttribute('data-title')?.toLowerCase() || '';
+        const subtitle = el.getAttribute('data-subtitle')?.toLowerCase() || '';
+        const inventarnummer = el.getAttribute('data-inventarnummer')?.toLowerCase() || '';
+        const kurzbeschreibung = el.getAttribute('data-kurzbeschreibung')?.toLowerCase() || '';
+        const beschreibung = el.getAttribute('data-beschreibung')?.toLowerCase() || '';
+        const datierung = el.getAttribute('data-datierung')?.toLowerCase() || '';
+        const herstellung = el.getAttribute('data-herstellung')?.toLowerCase() || '';
+        const physisch = el.getAttribute('data-physisch')?.toLowerCase() || '';
+        const organisation = el.getAttribute('data-organisation')?.toLowerCase() || '';
+        const tags = el.getAttribute('data-tags')?.toLowerCase() || '';
+        
+        const matchesSearch = !searchTerm || 
+          title.includes(searchTerm) || 
+          subtitle.includes(searchTerm) || 
+          inventarnummer.includes(searchTerm) ||
+          kurzbeschreibung.includes(searchTerm) ||
+          beschreibung.includes(searchTerm) ||
+          datierung.includes(searchTerm) ||
+          herstellung.includes(searchTerm) ||
+          physisch.includes(searchTerm) ||
+          organisation.includes(searchTerm) ||
+          tags.includes(searchTerm);
+        
+        el.style.display = (matchCat && matchLed && matchesSearch) ? '' : 'none';
+      }
+    }
+  
+    // Inactivity timer and auto-return functionality
+    let inactivityTimer;
+    let inactivityOverlayTimer;
+    const INACTIVITY_DELAY = 5000; // 5 seconds to show overlay (for testing)
+    const AUTO_RETURN_DELAY = 60000; // 60 seconds total to auto-return (for testing)
+    
+    const inactivityOverlay = document.getElementById('inactivity-overlay');
+    
+    function resetInactivityTimer() {
+      // Clear existing timers
+      clearTimeout(inactivityTimer);
+      clearTimeout(inactivityOverlayTimer);
+      
+      // Hide overlay if visible
+      if (inactivityOverlay) {
+        inactivityOverlay.hidden = true;
+      }
+      
+      // Set timer to show overlay after 30 seconds of inactivity
+      inactivityTimer = setTimeout(() => {
+        if (inactivityOverlay) {
+          inactivityOverlay.hidden = false;
+        }
+        
+        // Set timer to auto-return after additional 90 seconds (total 2 minutes)
+        inactivityOverlayTimer = setTimeout(() => {
+          autoReturnToDefault();
+        }, AUTO_RETURN_DELAY - INACTIVITY_DELAY);
+        
+      }, INACTIVITY_DELAY);
+    }
+    
+    function autoReturnToDefault() {
+      // Close any open modals
+      if (modal && !modal.hidden) {
+        closeModal();
+      }
+      
+      // Clear search
+      if (searchInput) {
+        searchInput.value = '';
+      }
+      
+      // Reset filters to "All"
+      if (allCheck) {
+        allCheck.checked = true;
+        catChecks.forEach((c) => { c.checked = true; });
+        if (ledCheck) {
+          ledCheck.checked = false;
+        }
+        applyFiltersWithSearch();
+      }
+      
+      // Keep inactivity overlay visible (don't hide it)
+      // The overlay should stay visible until user interacts
+      
+      // Reset timer to show overlay again after the delay
+      resetInactivityTimer();
+    }
+    
+    // Add event listeners for user activity
+    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    activityEvents.forEach(event => {
+      document.addEventListener(event, resetInactivityTimer, true);
+    });
+    
+    // Start the inactivity timer
+    resetInactivityTimer();
+  
+      // Theme switcher
+      const themeBtn = document.getElementById('theme-btn');
+      const setDarkTheme = () => {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+        themeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
+        console.log('Setting theme to dark');
+      };
+      const setLightTheme = () => {
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+        themeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>';
+        console.log('Setting theme to light');
+      };
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        setDarkTheme();
+      } else {
+        setLightTheme();
+      }
+      themeBtn.addEventListener('click', () => {
+        const currentTheme = localStorage.getItem('theme');
+        if (currentTheme === 'dark') {
+          setLightTheme();
+        } else {
+          setDarkTheme();
+        }
+      });
+
+      // Magnifying glass logic (reuses magnifyingGlass and MAGNIFICATION_FACTOR declared above)
+
+      // Magnifying glass event listeners are handled in toggleFakeFullscreen()
+  </script>
+</Layout>

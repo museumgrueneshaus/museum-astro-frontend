@@ -1,0 +1,670 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getKioskConfig, urlFor, fileUrl } from '../../lib/sanity';
+
+const { id } = Astro.params;
+
+// Try to get kiosk config by identifier (MAC, IP, name, or ID)
+let config = null;
+let error = null;
+
+try {
+  config = await getKioskConfig(id);
+
+  if (!config) {
+    error = `Kiosk "${id}" nicht gefunden oder deaktiviert`;
+  }
+} catch (e) {
+  error = `Fehler beim Laden der Kiosk-Konfiguration: ${e.message}`;
+}
+
+// Process playlist items
+let playlist = [];
+if (config?.konfiguration?.video_settings?.playlist) {
+  playlist = config.konfiguration.video_settings.playlist.map((item, index) => {
+    let url = null;
+
+    if (item.typ === 'video') {
+      // Priority: 1. External URL, 2. Sanity video file
+      if (item.video_url) {
+        url = item.video_url;
+      } else if (item.video?.asset?.url) {
+        url = item.video.asset.url;
+      }
+    } else if (item.typ === 'image') {
+      // Priority: 1. Sanity image, 2. External URL
+      if (item.bild?.asset?.url) {
+        url = item.bild.asset.url;
+      } else {
+        url = urlFor(item.bild).width(1920).height(1080).auto('format').url();
+      }
+    }
+
+    return {
+      id: `item-${index}`,
+      typ: item.typ,
+      url,
+      dauer: item.dauer || (item.typ === 'image' ? 10 : null),
+      titel: item.titel,
+      beschreibung: item.beschreibung,
+    };
+  }).filter(item => item.url); // Only items with valid URLs
+}
+
+const settings = config?.konfiguration?.video_settings || {};
+const loop = settings.loop !== false;
+const shuffle = settings.shuffle === true;
+const zeige_overlay = settings.zeige_overlay !== false;
+const overlay_position = settings.overlay_position || 'bottom-left';
+const uebergang = settings.uebergang || 'fade';
+const audio_volume = settings.audio?.lautstaerke || 70;
+const audio_muted = settings.audio?.stumm === true;
+
+// Shuffle playlist if enabled
+if (shuffle && playlist.length > 0) {
+  playlist = playlist.sort(() => Math.random() - 0.5);
+}
+---
+
+<Layout title={config?.name || 'Video Player'} theme="dark">
+  {error ? (
+    <main class="error-screen">
+      <div class="error-content">
+        <h1>⚠️</h1>
+        <p>{error}</p>
+        <p class="hint">Verfügbare Identifier: MAC-Adresse, IP-Adresse, Name, oder ID</p>
+      </div>
+    </main>
+  ) : playlist.length === 0 ? (
+    <main class="error-screen">
+      <div class="error-content">
+        <h1>📹</h1>
+        <p>Keine Videos in der Playlist</p>
+        <p class="hint">Bitte füge Videos im Sanity Studio hinzu</p>
+      </div>
+    </main>
+  ) : (
+    <main class="video-player">
+      {/* Video Container */}
+      <div class="player-container" id="player-container">
+        {/* Video/Image elements will be created dynamically */}
+      </div>
+
+      {/* Overlay */}
+      {zeige_overlay && (
+        <div class="info-overlay" id="info-overlay" data-position={overlay_position}>
+          <h2 class="overlay-title" id="overlay-title"></h2>
+          <p class="overlay-description" id="overlay-description"></p>
+        </div>
+      )}
+
+      {/* Progress Indicator */}
+      <div class="progress-indicator" id="progress-indicator">
+        <span class="current-item" id="current-index">1</span>
+        <span class="separator">/</span>
+        <span class="total-items" id="total-items">{playlist.length}</span>
+      </div>
+
+      {/* Debug Info (optional) */}
+      {import.meta.env.DEV && (
+        <div class="debug-info">
+          <p>Kiosk: {config.name}</p>
+          <p>Items: {playlist.length}</p>
+          <p>Loop: {loop ? 'Yes' : 'No'}</p>
+          <p>Shuffle: {shuffle ? 'Yes' : 'No'}</p>
+        </div>
+      )}
+
+      {/* Start Overlay for Safari */}
+      <div class="start-overlay" id="start-overlay">
+        <div class="start-content">
+          <h1>▶</h1>
+          <p>Klicke um zu starten</p>
+        </div>
+      </div>
+    </main>
+  )}
+
+  <style>
+    :root {
+      --overlay-padding: 32px;
+      --transition-duration: 1s;
+    }
+
+    .error-screen {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      color: #fff;
+    }
+
+    .error-content {
+      text-align: center;
+      max-width: 600px;
+      padding: 40px;
+    }
+
+    .error-content h1 {
+      font-size: 120px !important;
+      margin: 0 0 20px;
+    }
+
+    .error-content p {
+      font-size: 24px !important;
+      margin: 10px 0;
+    }
+
+    .error-content .hint {
+      font-size: 16px !important;
+      opacity: 0.6;
+      margin-top: 30px;
+    }
+
+    .video-player {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+      background: #000;
+    }
+
+    .player-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .media-item {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      opacity: 0;
+      transition: opacity var(--transition-duration) ease-in-out;
+    }
+
+    .media-item.active {
+      opacity: 1;
+      z-index: 1;
+    }
+
+    .media-item.fade-out {
+      opacity: 0;
+      z-index: 0;
+    }
+
+    .info-overlay {
+      position: absolute;
+      z-index: 10;
+      padding: var(--overlay-padding);
+      background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+      color: #fff;
+      max-width: 800px;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .info-overlay.visible {
+      opacity: 1;
+    }
+
+    .info-overlay[data-position="bottom-left"] {
+      bottom: 0;
+      left: 0;
+    }
+
+    .info-overlay[data-position="bottom-right"] {
+      bottom: 0;
+      right: 0;
+      text-align: right;
+    }
+
+    .info-overlay[data-position="top-left"] {
+      top: 0;
+      left: 0;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+    }
+
+    .info-overlay[data-position="top-right"] {
+      top: 0;
+      right: 0;
+      text-align: right;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+    }
+
+    .overlay-title {
+      font-size: 42px !important;
+      font-weight: 700 !important;
+      margin: 0 0 12px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+
+    .overlay-description {
+      font-size: 20px !important;
+      line-height: 1.5;
+      margin: 0;
+      opacity: 0.9;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    }
+
+    .progress-indicator {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 20;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(8px);
+      padding: 12px 20px;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 18px !important;
+      font-weight: 600 !important;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .separator {
+      margin: 0 6px;
+      opacity: 0.5;
+    }
+
+    .debug-info {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      z-index: 30;
+      background: rgba(255,0,0,0.8);
+      color: #fff;
+      padding: 10px;
+      font-size: 12px !important;
+      font-family: monospace;
+      border-radius: 4px;
+    }
+
+    .debug-info p {
+      margin: 4px 0;
+    }
+
+    .start-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: opacity 0.5s ease;
+    }
+
+    .start-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .start-content {
+      text-align: center;
+      color: #fff;
+    }
+
+    .start-content h1 {
+      font-size: 120px !important;
+      margin: 0 0 20px;
+      animation: pulse 2s infinite;
+    }
+
+    .start-content p {
+      font-size: 24px !important;
+      opacity: 0.8;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.1); opacity: 0.8; }
+    }
+
+    /* Raspberry Pi optimizations */
+    @media (max-width: 1920px) {
+      :root {
+        --overlay-padding: 24px;
+      }
+
+      .overlay-title {
+        font-size: 36px !important;
+      }
+
+      .overlay-description {
+        font-size: 18px !important;
+      }
+    }
+
+    /* Hide cursor after inactivity */
+    body.hide-cursor {
+      cursor: none;
+    }
+  </style>
+
+  <script define:vars={{ playlist, loop, uebergang, zeige_overlay, audio_volume, audio_muted }}>
+    let currentIndex = 0;
+    let currentMedia = null;
+    let isPlaying = false;
+    let imageTimer = null;
+
+    const container = document.getElementById('player-container');
+    const overlay = document.getElementById('info-overlay');
+    const overlayTitle = document.getElementById('overlay-title');
+    const overlayDescription = document.getElementById('overlay-description');
+    const currentIndexEl = document.getElementById('current-index');
+
+    // Hide cursor after 3 seconds of inactivity
+    let cursorTimeout;
+    document.addEventListener('mousemove', () => {
+      document.body.classList.remove('hide-cursor');
+      clearTimeout(cursorTimeout);
+      cursorTimeout = setTimeout(() => {
+        document.body.classList.add('hide-cursor');
+      }, 3000);
+    });
+
+    function createMediaElement(item) {
+      let element;
+
+      if (item.typ === 'video') {
+        element = document.createElement('video');
+        element.src = item.url;
+        element.volume = audio_volume / 100;
+        element.muted = true; // Safari requires muted for autoplay
+        element.playsInline = true;
+        element.preload = 'auto';
+        element.crossOrigin = 'anonymous';
+        element.setAttribute('webkit-playsinline', 'true');
+
+        element.addEventListener('ended', () => {
+          console.log('Video ended');
+          playNext();
+        });
+
+        element.addEventListener('error', (e) => {
+          console.error('Video error:', e, item.url);
+          playNext();
+        });
+
+        element.addEventListener('loadeddata', () => {
+          console.log('Video loaded:', item.titel);
+        });
+      } else if (item.typ === 'image') {
+        element = document.createElement('img');
+        element.src = item.url;
+        element.alt = item.titel || '';
+
+        element.addEventListener('error', (e) => {
+          console.error('Image error:', e, item.url);
+          playNext();
+        });
+
+        element.addEventListener('load', () => {
+          console.log('Image loaded:', item.titel);
+        });
+      }
+
+      element.classList.add('media-item');
+      element.dataset.index = currentIndex;
+
+      return element;
+    }
+
+    function updateOverlay(item) {
+      if (!zeige_overlay || !overlay) return;
+
+      if (item.titel || item.beschreibung) {
+        overlayTitle.textContent = item.titel || '';
+        overlayDescription.textContent = item.beschreibung || '';
+        overlay.classList.add('visible');
+      } else {
+        overlay.classList.remove('visible');
+      }
+    }
+
+    function updateProgress() {
+      if (currentIndexEl) {
+        currentIndexEl.textContent = currentIndex + 1;
+      }
+    }
+
+    async function playItem(index) {
+      if (index < 0 || index >= playlist.length) {
+        if (loop) {
+          index = index < 0 ? playlist.length - 1 : 0;
+        } else {
+          console.log('Playlist ended');
+          return;
+        }
+      }
+
+      currentIndex = index;
+      const item = playlist[index];
+
+      console.log(`Playing item ${index + 1}/${playlist.length}:`, item.titel || item.typ);
+
+      // Fade out current media
+      if (currentMedia) {
+        currentMedia.classList.remove('active');
+        currentMedia.classList.add('fade-out');
+
+        setTimeout(() => {
+          if (currentMedia && currentMedia.parentNode) {
+            currentMedia.parentNode.removeChild(currentMedia);
+          }
+        }, uebergang === 'fade' ? 1000 : 100);
+      }
+
+      // Create and add new media
+      currentMedia = createMediaElement(item);
+      container.appendChild(currentMedia);
+
+      // Update overlay and progress
+      updateOverlay(item);
+      updateProgress();
+
+      // Play media
+      if (item.typ === 'video') {
+        // Wait for video to be ready
+        try {
+          // Wait for metadata to be loaded
+          await new Promise((resolve, reject) => {
+            if (currentMedia.readyState >= 2) {
+              resolve();
+            } else {
+              currentMedia.addEventListener('loadedmetadata', resolve, { once: true });
+              currentMedia.addEventListener('error', reject, { once: true });
+              setTimeout(() => reject(new Error('Timeout waiting for video metadata')), 10000);
+            }
+          });
+
+          console.log('Video metadata loaded, duration:', currentMedia.duration);
+
+          // Trigger fade-in
+          currentMedia.classList.add('active');
+
+          // Start playing
+          await currentMedia.play();
+          isPlaying = true;
+          console.log('Video playing');
+        } catch (e) {
+          console.error('Play error:', e, item.url);
+          playNext();
+        }
+      } else if (item.typ === 'image') {
+        // Wait for image to load
+        if (!currentMedia.complete) {
+          await new Promise((resolve) => {
+            currentMedia.addEventListener('load', resolve, { once: true });
+          });
+        }
+
+        // Trigger fade-in
+        currentMedia.classList.add('active');
+
+        // Set timer for image duration
+        clearTimeout(imageTimer);
+        imageTimer = setTimeout(() => {
+          playNext();
+        }, (item.dauer || 10) * 1000);
+        console.log(`Image will display for ${item.dauer || 10} seconds`);
+      }
+    }
+
+    function playNext() {
+      clearTimeout(imageTimer);
+      playItem(currentIndex + 1);
+    }
+
+    function playPrevious() {
+      clearTimeout(imageTimer);
+      playItem(currentIndex - 1);
+    }
+
+    // Keyboard controls
+    document.addEventListener('keydown', (e) => {
+      switch(e.key) {
+        case 'ArrowRight':
+        case 'n':
+          playNext();
+          break;
+        case 'ArrowLeft':
+        case 'p':
+          playPrevious();
+          break;
+        case ' ':
+          if (currentMedia && currentMedia.tagName === 'VIDEO') {
+            if (currentMedia.paused) {
+              currentMedia.play();
+            } else {
+              currentMedia.pause();
+            }
+          }
+          break;
+        case 'Escape':
+        case 'q':
+          // Exit fullscreen or close
+          if (document.fullscreenElement) {
+            document.exitFullscreen();
+          }
+          break;
+      }
+    });
+
+    // Touch controls (swipe)
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    document.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    });
+
+    document.addEventListener('touchend', (e) => {
+      const touchEndX = e.changedTouches[0].clientX;
+      const touchEndY = e.changedTouches[0].clientY;
+
+      const deltaX = touchEndX - touchStartX;
+      const deltaY = touchEndY - touchStartY;
+
+      // Only trigger if horizontal swipe is dominant
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+        if (deltaX > 0) {
+          playPrevious();
+        } else {
+          playNext();
+        }
+      }
+    });
+
+    // Start overlay handler (for Safari autoplay)
+    const startOverlay = document.getElementById('start-overlay');
+    let started = false;
+
+    function startPlayback() {
+      if (started) return;
+      started = true;
+
+      if (startOverlay) {
+        startOverlay.classList.add('hidden');
+        setTimeout(() => {
+          startOverlay.style.display = 'none';
+        }, 500);
+      }
+
+      if (playlist.length > 0) {
+        playItem(0);
+      }
+    }
+
+    // Try to autostart (works in Chrome, not Safari)
+    if (playlist.length > 0) {
+      setTimeout(() => {
+        if (!started) {
+          // Try autoplay
+          playItem(0).then(() => {
+            started = true;
+            if (startOverlay) {
+              startOverlay.classList.add('hidden');
+              setTimeout(() => {
+                startOverlay.style.display = 'none';
+              }, 500);
+            }
+          }).catch(() => {
+            // Autoplay failed (Safari) - show start overlay
+            console.log('Autoplay blocked, waiting for user interaction');
+          });
+        }
+      }, 100);
+    }
+
+    // Click to start
+    if (startOverlay) {
+      startOverlay.addEventListener('click', startPlayback);
+    }
+
+    // Also allow keyboard to start
+    document.addEventListener('keydown', function startOnKey(e) {
+      if (!started && (e.key === ' ' || e.key === 'Enter')) {
+        e.preventDefault();
+        startPlayback();
+        document.removeEventListener('keydown', startOnKey);
+      }
+    });
+
+    // Preload next item
+    function preloadNext() {
+      const nextIndex = (currentIndex + 1) % playlist.length;
+      const nextItem = playlist[nextIndex];
+
+      if (nextItem.typ === 'video') {
+        const preload = document.createElement('video');
+        preload.src = nextItem.url;
+        preload.preload = 'auto';
+        preload.style.display = 'none';
+        container.appendChild(preload);
+
+        setTimeout(() => {
+          if (preload.parentNode) {
+            preload.parentNode.removeChild(preload);
+          }
+        }, 60000); // Remove after 1 minute
+      }
+    }
+
+    // Preload next item when current starts playing
+    if (currentMedia && currentMedia.tagName === 'VIDEO') {
+      currentMedia.addEventListener('playing', preloadNext, { once: true });
+    }
+  </script>
+</Layout>

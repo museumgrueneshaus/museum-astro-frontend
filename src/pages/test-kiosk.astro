@@ -1,0 +1,67 @@
+---
+import { getKioskConfig } from '../lib/sanity';
+
+const identifier = 'beamer-ausstellung';
+
+let config = null;
+let error = null;
+
+try {
+  config = await getKioskConfig(identifier);
+  console.log('Config loaded:', config);
+} catch (e) {
+  error = e.message;
+  console.error('Error:', e);
+}
+---
+
+<html>
+<head>
+  <title>Kiosk Config Debug</title>
+  <style>
+    body {
+      font-family: monospace;
+      padding: 20px;
+      background: #000;
+      color: #0f0;
+    }
+    pre {
+      background: #111;
+      padding: 20px;
+      overflow: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Kiosk Config Debug</h1>
+
+  {error ? (
+    <div style="color: red;">
+      <h2>Error:</h2>
+      <pre>{error}</pre>
+    </div>
+  ) : config ? (
+    <div>
+      <h2>Config loaded successfully:</h2>
+      <pre>{JSON.stringify(config, null, 2)}</pre>
+
+      <h2>Playlist Items:</h2>
+      {config.konfiguration?.video_settings?.playlist?.map((item, i) => (
+        <div style="border: 1px solid #0f0; margin: 10px 0; padding: 10px;">
+          <h3>Item {i + 1}</h3>
+          <p>Type: {item.typ}</p>
+          <p>Title: {item.titel}</p>
+          <p>Video URL: {item.video_url || 'none'}</p>
+          <p>Video Asset: {item.video?.asset?.url || 'none'}</p>
+          <p>Bild Asset: {item.bild?.asset?.url || 'none'}</p>
+        </div>
+      ))}
+    </div>
+  ) : (
+    <div>
+      <h2>No config found</h2>
+      <p>Identifier: {identifier}</p>
+    </div>
+  )}
+</body>
+</html>

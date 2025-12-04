@@ -1,0 +1,818 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getAusstellung, urlFor } from '../../lib/sanity';
+
+const { id } = Astro.params;
+const ausstellung = await getAusstellung(id);
+
+if (!ausstellung) {
+  return Astro.redirect('/404');
+}
+
+// Sample Media (will be replaced with real data from Sanity)
+const sampleImages = [
+  'https://images.unsplash.com/photo-1564399580075-5dfe19f14d03?w=1600',
+  'https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?w=1600',
+  'https://images.unsplash.com/photo-1578926375605-eaf7559b1458?w=1600',
+  'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=1600',
+];
+
+const heroImage = ausstellung.titelbild
+  ? urlFor(ausstellung.titelbild).width(2400).height(1350).fit('crop').url()
+  : 'https://images.unsplash.com/photo-1554907984-15263bfd63bd?w=2400';
+---
+
+<Layout title={ausstellung.titel} theme="light">
+  <!-- Progress Bar -->
+  <div class="progress-bar" id="progress-bar"></div>
+
+  <main class="magazine">
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-image-container">
+        <img src={heroImage} alt={ausstellung.titel} class="hero-image" />
+        <div class="hero-overlay"></div>
+      </div>
+      <div class="hero-content">
+        <h1 class="hero-title">{ausstellung.titel}</h1>
+        {ausstellung.untertitel && (
+          <p class="hero-subtitle">{ausstellung.untertitel}</p>
+        )}
+        <div class="hero-meta">
+          {ausstellung.zeitraum?.zeitraum_text && (
+            <span>{ausstellung.zeitraum.zeitraum_text}</span>
+          )}
+          {ausstellung.organisation?.kurator && (
+            <span>Kurator: {ausstellung.organisation.kurator}</span>
+          )}
+        </div>
+        <button class="scroll-indicator" aria-label="Scroll down">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M12 5v14M19 12l-7 7-7-7"/>
+          </svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- Intro Section -->
+    <section class="intro-section fade-in">
+      <div class="container-narrow">
+        <div class="intro-content">
+          <p class="lead-text">
+            {ausstellung.kurzbeschreibung ||
+             'Im Jahr 1975 gründeten engagierte Bürgerinnen und Bürger den Museumsverein Reutte mit dem Ziel, das kulturelle Erbe der Region zu bewahren und für kommende Generationen zugänglich zu machen.'}
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Story Section -->
+    <section class="story-section fade-in">
+      <div class="container">
+        <div class="story-grid">
+          <div class="story-text">
+            <h2>Eine Erfolgsgeschichte</h2>
+            <p>
+              Fünf Jahrzehnte Leidenschaft, Engagement und Bewahrung regionaler Geschichte.
+              Der Museumsverein Reutte hat sich seit seiner Gründung 1975 zu einer wichtigen
+              Institution für die kulturelle Identität der Region entwickelt.
+            </p>
+            <p>
+              Von bescheidenen Anfängen in einem kleinen Raum bis hin zum heutigen Museum –
+              jede Epoche brachte neue Exponate, neue Geschichten und neue Erkenntnisse über
+              unsere gemeinsame Vergangenheit.
+            </p>
+          </div>
+          <div class="story-image parallax-slow">
+            <img src={sampleImages[0]} alt="Museum Geschichte" loading="lazy" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section class="gallery-section fade-in">
+      <div class="container">
+        <h2 class="section-title">Einblicke</h2>
+        <div class="masonry-grid">
+          {sampleImages.map((img, i) => (
+            <div class={`masonry-item masonry-item-${(i % 3) + 1}`}>
+              <img src={img} alt={`Galerie Bild ${i + 1}`} loading="lazy" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- Timeline Section -->
+    <section class="timeline-section fade-in">
+      <div class="container-narrow">
+        <h2 class="section-title">Meilensteine</h2>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-year">1975</div>
+            <div class="timeline-content">
+              <h3>Gründung</h3>
+              <p>23 engagierte Bürgerinnen und Bürger gründen den Museumsverein Reutte</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-year">1982</div>
+            <div class="timeline-content">
+              <h3>Erste Ausstellung</h3>
+              <p>Eröffnung der ersten öffentlichen Ausstellung zur Regionalgeschichte</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-year">1995</div>
+            <div class="timeline-content">
+              <h3>Neues Gebäude</h3>
+              <p>Bezug der heutigen Museumsräume im historischen Stadtzentrum</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-year">2010</div>
+            <div class="timeline-content">
+              <h3>Digitalisierung</h3>
+              <p>Beginn der systematischen Digitalisierung der Sammlung</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-year">2025</div>
+            <div class="timeline-content">
+              <h3>50 Jahre Jubiläum</h3>
+              <p>Festliche Jubiläumsausstellung mit über 200 Exponaten</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quote Section -->
+    <section class="quote-section parallax-slow">
+      <div class="quote-container">
+        <blockquote class="pullquote">
+          <p>"Ein Museum ist mehr als eine Sammlung von Objekten – es ist ein lebendiges Archiv unserer gemeinsamen Geschichte."</p>
+          <cite>— Gründungsmitglied, 1975</cite>
+        </blockquote>
+      </div>
+    </section>
+
+    <!-- Highlights Section -->
+    {ausstellung.highlight_exponate && ausstellung.highlight_exponate.length > 0 && (
+      <section class="highlights-section fade-in">
+        <div class="container">
+          <h2 class="section-title">Ausgewählte Exponate</h2>
+          <div class="highlights-grid">
+            {ausstellung.highlight_exponate.slice(0, 6).map((exponat) => (
+              <div class="highlight-card">
+                {exponat.hauptbild && (
+                  <div class="highlight-image">
+                    <img
+                      src={urlFor(exponat.hauptbild).width(600).height(800).fit('crop').url()}
+                      alt={exponat.titel}
+                      loading="lazy"
+                    />
+                  </div>
+                )}
+                <div class="highlight-content">
+                  <h3>{exponat.titel}</h3>
+                  {exponat.datierung?.jahr_text && (
+                    <p class="highlight-date">{exponat.datierung.jahr_text}</p>
+                  )}
+                  {exponat.kurzbeschreibung && (
+                    <p class="highlight-desc">{exponat.kurzbeschreibung}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    )}
+
+    <!-- Full Width Image Section -->
+    <section class="fullwidth-section">
+      <img src={sampleImages[2]} alt="Fullwidth" class="fullwidth-image" />
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section fade-in">
+      <div class="container">
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-number">50</div>
+            <div class="stat-label">Jahre</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">2000+</div>
+            <div class="stat-label">Exponate</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">50+</div>
+            <div class="stat-label">Ausstellungen</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">100k+</div>
+            <div class="stat-label">Besucher</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Events Section -->
+    {ausstellung.veranstaltungen && ausstellung.veranstaltungen.length > 0 && (
+      <section class="events-section fade-in">
+        <div class="container-narrow">
+          <h2 class="section-title">Veranstaltungen</h2>
+          <div class="events-list">
+            {ausstellung.veranstaltungen.map((event) => (
+              <div class="event-card">
+                <div class="event-date">
+                  {event.datum ? new Date(event.datum).toLocaleDateString('de-DE', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                  }) : 'TBA'}
+                </div>
+                <div class="event-content">
+                  <h3>{event.titel}</h3>
+                  {event.beschreibung && <p>{event.beschreibung}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    )}
+
+    <!-- Footer Credits -->
+    <section class="credits-section">
+      <div class="container-narrow">
+        <div class="credits-content">
+          <h3>Credits</h3>
+          {ausstellung.organisation?.kurator && (
+            <p><strong>Kurator:</strong> {ausstellung.organisation.kurator}</p>
+          )}
+          {ausstellung.organisation?.partner && ausstellung.organisation.partner.length > 0 && (
+            <p><strong>Partner:</strong> {ausstellung.organisation.partner.join(', ')}</p>
+          )}
+          <p class="credits-footer">
+            © {new Date().getFullYear()} Museumsverein Reutte
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    .magazine {
+      background: #fff;
+      color: #1a1a1a;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Progress Bar */
+    .progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #D4AF37, #FFD700);
+      z-index: 1000;
+      transition: width 0.1s ease;
+      width: 0%;
+    }
+
+    /* Container Utilities */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 5vw;
+    }
+
+    .container-narrow {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 5vw;
+    }
+
+    /* Section Spacing */
+    section {
+      padding: 10vh 0;
+    }
+
+    .section-title {
+      font-size: clamp(2rem, 5vw, 4rem);
+      font-weight: 900;
+      margin-bottom: 4rem;
+      letter-spacing: -0.02em;
+    }
+
+    /* Hero Section */
+    .hero-section {
+      position: relative;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .hero-image-container {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .hero-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scale(1.1);
+      animation: zoomOut 20s ease-out forwards;
+    }
+
+    @keyframes zoomOut {
+      to { transform: scale(1); }
+    }
+
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.6) 100%);
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      color: white;
+      padding: 2rem;
+      max-width: 1000px;
+    }
+
+    .hero-title {
+      font-size: clamp(3rem, 8vw, 7rem);
+      font-weight: 900;
+      margin-bottom: 1rem;
+      letter-spacing: -0.03em;
+      text-shadow: 0 4px 30px rgba(0,0,0,0.3);
+      animation: fadeInUp 1s ease-out;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(1.5rem, 3vw, 2.5rem);
+      font-weight: 300;
+      margin-bottom: 2rem;
+      opacity: 0.95;
+      animation: fadeInUp 1s ease-out 0.2s backwards;
+    }
+
+    .hero-meta {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      font-size: 1rem;
+      opacity: 0.9;
+      animation: fadeInUp 1s ease-out 0.4s backwards;
+    }
+
+    .scroll-indicator {
+      position: absolute;
+      bottom: 3rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      animation: bounce 2s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+      40% { transform: translateX(-50%) translateY(-10px); }
+      60% { transform: translateX(-50%) translateY(-5px); }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Intro Section */
+    .intro-section {
+      background: #f9f9f9;
+    }
+
+    .lead-text {
+      font-size: clamp(1.5rem, 3vw, 2.5rem);
+      font-weight: 300;
+      line-height: 1.5;
+      color: #2a2a2a;
+    }
+
+    /* Story Section */
+    .story-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6rem;
+      align-items: center;
+    }
+
+    .story-text h2 {
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      font-weight: 900;
+      margin-bottom: 2rem;
+    }
+
+    .story-text p {
+      font-size: 1.25rem;
+      line-height: 1.8;
+      margin-bottom: 1.5rem;
+      color: #4a4a4a;
+    }
+
+    .story-image {
+      aspect-ratio: 4 / 5;
+      overflow: hidden;
+    }
+
+    .story-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Gallery Section */
+    .masonry-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .masonry-item {
+      overflow: hidden;
+      background: #f5f5f5;
+    }
+
+    .masonry-item-1 { aspect-ratio: 1 / 1; }
+    .masonry-item-2 { aspect-ratio: 4 / 5; }
+    .masonry-item-3 { aspect-ratio: 16 / 9; }
+
+    .masonry-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+
+    .masonry-item:hover img {
+      transform: scale(1.05);
+    }
+
+    /* Timeline Section */
+    .timeline {
+      position: relative;
+      padding-left: 2rem;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #D4AF37;
+    }
+
+    .timeline-item {
+      position: relative;
+      padding: 2rem 0 2rem 3rem;
+      margin-bottom: 2rem;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -6px;
+      top: 2.5rem;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #D4AF37;
+      border: 3px solid #fff;
+      box-shadow: 0 0 0 2px #D4AF37;
+    }
+
+    .timeline-year {
+      font-size: 2rem;
+      font-weight: 900;
+      color: #D4AF37;
+      margin-bottom: 0.5rem;
+    }
+
+    .timeline-content h3 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .timeline-content p {
+      color: #666;
+      line-height: 1.6;
+    }
+
+    /* Quote Section */
+    .quote-section {
+      background: #1a1a1a;
+      color: white;
+      min-height: 60vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .pullquote {
+      max-width: 900px;
+      text-align: center;
+      padding: 4rem 2rem;
+    }
+
+    .pullquote p {
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      font-weight: 300;
+      line-height: 1.4;
+      margin-bottom: 2rem;
+      font-style: italic;
+    }
+
+    .pullquote cite {
+      font-size: 1.25rem;
+      font-style: normal;
+      opacity: 0.8;
+    }
+
+    /* Highlights Section */
+    .highlights-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 3rem;
+    }
+
+    .highlight-card {
+      background: #fff;
+      overflow: hidden;
+      transition: transform 0.3s ease;
+    }
+
+    .highlight-card:hover {
+      transform: translateY(-10px);
+    }
+
+    .highlight-image {
+      aspect-ratio: 3 / 4;
+      overflow: hidden;
+      background: #f5f5f5;
+    }
+
+    .highlight-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .highlight-content {
+      padding: 2rem 0;
+    }
+
+    .highlight-content h3 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .highlight-date {
+      color: #D4AF37;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .highlight-desc {
+      color: #666;
+      line-height: 1.6;
+    }
+
+    /* Full Width Section */
+    .fullwidth-section {
+      padding: 0;
+      margin: 10vh 0;
+    }
+
+    .fullwidth-image {
+      width: 100%;
+      height: 80vh;
+      object-fit: cover;
+    }
+
+    /* Stats Section */
+    .stats-section {
+      background: #f9f9f9;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 4rem;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: clamp(3rem, 6vw, 5rem);
+      font-weight: 900;
+      color: #D4AF37;
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 1.25rem;
+      color: #666;
+      margin-top: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* Events Section */
+    .events-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .event-card {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 3rem;
+      padding: 2rem 0;
+      border-bottom: 1px solid #e5e5e5;
+    }
+
+    .event-date {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #D4AF37;
+    }
+
+    .event-content h3 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .event-content p {
+      color: #666;
+      line-height: 1.6;
+    }
+
+    /* Credits Section */
+    .credits-section {
+      background: #1a1a1a;
+      color: white;
+      padding: 6rem 0;
+    }
+
+    .credits-content {
+      text-align: center;
+    }
+
+    .credits-content h3 {
+      font-size: 2rem;
+      margin-bottom: 2rem;
+      color: #D4AF37;
+    }
+
+    .credits-content p {
+      margin-bottom: 1rem;
+      opacity: 0.9;
+    }
+
+    .credits-footer {
+      margin-top: 3rem;
+      opacity: 0.6;
+    }
+
+    /* Scroll Animations */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(50px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .parallax-slow {
+      transition: transform 0.5s ease-out;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 900px) {
+      section {
+        padding: 8vh 0;
+      }
+
+      .story-grid {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+      }
+
+      .timeline {
+        padding-left: 1rem;
+      }
+
+      .timeline-item {
+        padding-left: 2rem;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+      }
+
+      .event-card {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .highlights-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+  <script>
+    // Progress Bar
+    function updateProgressBar() {
+      const winScroll = window.scrollY;
+      const height = document.documentElement.scrollHeight - window.innerHeight;
+      const scrolled = (winScroll / height) * 100;
+      document.getElementById('progress-bar').style.width = scrolled + '%';
+    }
+
+    window.addEventListener('scroll', updateProgressBar);
+
+    // Intersection Observer for Fade-in Animations
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -100px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+    // Parallax Effect
+    window.addEventListener('scroll', () => {
+      const scrolled = window.scrollY;
+      document.querySelectorAll('.parallax-slow').forEach(el => {
+        const speed = 0.3;
+        const yPos = -(scrolled * speed);
+        el.style.transform = `translateY(${yPos}px)`;
+      });
+    });
+
+    // Smooth Scroll for Scroll Indicator
+    document.querySelector('.scroll-indicator')?.addEventListener('click', () => {
+      window.scrollTo({
+        top: window.innerHeight,
+        behavior: 'smooth'
+      });
+    });
+  </script>
+</Layout>

@@ -1,0 +1,462 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+// Hard-coded playlist for testing
+const playlist = [
+  {
+    id: 'item-0',
+    typ: 'video',
+    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    titel: 'Big Buck Bunny',
+    beschreibung: 'Beispiel Video 1 - 3D Animations-Kurzfilm',
+  },
+  {
+    id: 'item-1',
+    typ: 'video',
+    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+    titel: 'Elephants Dream',
+    beschreibung: 'Beispiel Video 2 - Surrealer Animationsfilm',
+  },
+  {
+    id: 'item-2',
+    typ: 'video',
+    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    titel: 'For Bigger Blazes',
+    beschreibung: 'Beispiel Video 3',
+  },
+  {
+    id: 'item-3',
+    typ: 'video',
+    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+    titel: 'Sintel',
+    beschreibung: 'Beispiel Video 4 - Fantasy Kurzfilm',
+  }
+];
+
+const loop = true;
+const shuffle = false;
+const zeige_overlay = true;
+const overlay_position = 'bottom-left';
+const uebergang = 'fade';
+const audio_volume = 70;
+const audio_muted = false;
+---
+
+<Layout title="Video Player - Test" theme="dark">
+  <main class="video-player">
+    {/* Video Container */}
+    <div class="player-container" id="player-container">
+      {/* Video elements will be created dynamically */}
+    </div>
+
+    {/* Overlay */}
+    {zeige_overlay && (
+      <div class="info-overlay" id="info-overlay" data-position={overlay_position}>
+        <h2 class="overlay-title" id="overlay-title"></h2>
+        <p class="overlay-description" id="overlay-description"></p>
+      </div>
+    )}
+
+    {/* Progress Indicator */}
+    <div class="progress-indicator" id="progress-indicator">
+      <span class="current-item" id="current-index">1</span>
+      <span class="separator">/</span>
+      <span class="total-items" id="total-items">{playlist.length}</span>
+    </div>
+
+    {/* Instructions */}
+    <div class="instructions" id="instructions">
+      <p>← → Vor/Zurück | Leertaste Pause/Play | Escape Fullscreen</p>
+    </div>
+  </main>
+
+  <style>
+    :root {
+      --overlay-padding: 32px;
+      --transition-duration: 1s;
+    }
+
+    .video-player {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+      background: #000;
+    }
+
+    .player-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .media-item {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      opacity: 0;
+      transition: opacity var(--transition-duration) ease-in-out;
+    }
+
+    .media-item.active {
+      opacity: 1;
+      z-index: 1;
+    }
+
+    .media-item.fade-out {
+      opacity: 0;
+      z-index: 0;
+    }
+
+    .info-overlay {
+      position: absolute;
+      z-index: 10;
+      padding: var(--overlay-padding);
+      background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+      color: #fff;
+      max-width: 800px;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .info-overlay.visible {
+      opacity: 1;
+    }
+
+    .info-overlay[data-position="bottom-left"] {
+      bottom: 0;
+      left: 0;
+    }
+
+    .info-overlay[data-position="bottom-right"] {
+      bottom: 0;
+      right: 0;
+      text-align: right;
+    }
+
+    .info-overlay[data-position="top-left"] {
+      top: 0;
+      left: 0;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+    }
+
+    .info-overlay[data-position="top-right"] {
+      top: 0;
+      right: 0;
+      text-align: right;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+    }
+
+    .overlay-title {
+      font-size: 42px !important;
+      font-weight: 700 !important;
+      margin: 0 0 12px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+
+    .overlay-description {
+      font-size: 20px !important;
+      line-height: 1.5;
+      margin: 0;
+      opacity: 0.9;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    }
+
+    .progress-indicator {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 20;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(8px);
+      padding: 12px 20px;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 18px !important;
+      font-weight: 600 !important;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .separator {
+      margin: 0 6px;
+      opacity: 0.5;
+    }
+
+    .instructions {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 20;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(8px);
+      padding: 12px 20px;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px !important;
+      opacity: 1;
+      transition: opacity 0.5s ease;
+    }
+
+    .instructions.hidden {
+      opacity: 0;
+    }
+
+    .instructions p {
+      margin: 0;
+    }
+
+    /* Hide cursor after inactivity */
+    body.hide-cursor {
+      cursor: none;
+    }
+
+    body.hide-cursor .instructions {
+      opacity: 0;
+    }
+  </style>
+
+  <script define:vars={{ playlist, loop, uebergang, zeige_overlay, audio_volume, audio_muted }}>
+    let currentIndex = 0;
+    let currentMedia = null;
+    let isPlaying = false;
+    let imageTimer = null;
+
+    const container = document.getElementById('player-container');
+    const overlay = document.getElementById('info-overlay');
+    const overlayTitle = document.getElementById('overlay-title');
+    const overlayDescription = document.getElementById('overlay-description');
+    const currentIndexEl = document.getElementById('current-index');
+    const instructions = document.getElementById('instructions');
+
+    // Hide cursor and instructions after 5 seconds of inactivity
+    let cursorTimeout;
+    function resetCursorTimer() {
+      document.body.classList.remove('hide-cursor');
+      if (instructions) instructions.classList.remove('hidden');
+      clearTimeout(cursorTimeout);
+      cursorTimeout = setTimeout(() => {
+        document.body.classList.add('hide-cursor');
+        if (instructions) instructions.classList.add('hidden');
+      }, 5000);
+    }
+
+    document.addEventListener('mousemove', resetCursorTimer);
+    document.addEventListener('keydown', resetCursorTimer);
+    resetCursorTimer();
+
+    function createMediaElement(item) {
+      let element;
+
+      if (item.typ === 'video') {
+        element = document.createElement('video');
+        element.src = item.url;
+        element.volume = audio_volume / 100;
+        element.muted = audio_muted;
+        element.playsInline = true;
+        element.preload = 'auto';
+
+        element.addEventListener('ended', () => {
+          playNext();
+        });
+
+        element.addEventListener('error', (e) => {
+          console.error('Video error:', e, item.url);
+          playNext();
+        });
+      } else if (item.typ === 'image') {
+        element = document.createElement('img');
+        element.src = item.url;
+        element.alt = item.titel || '';
+
+        element.addEventListener('error', (e) => {
+          console.error('Image error:', e, item.url);
+          playNext();
+        });
+      }
+
+      element.classList.add('media-item');
+      element.dataset.index = currentIndex;
+
+      return element;
+    }
+
+    function updateOverlay(item) {
+      if (!zeige_overlay || !overlay) return;
+
+      if (item.titel || item.beschreibung) {
+        overlayTitle.textContent = item.titel || '';
+        overlayDescription.textContent = item.beschreibung || '';
+        overlay.classList.add('visible');
+      } else {
+        overlay.classList.remove('visible');
+      }
+    }
+
+    function updateProgress() {
+      if (currentIndexEl) {
+        currentIndexEl.textContent = currentIndex + 1;
+      }
+    }
+
+    async function playItem(index) {
+      if (index < 0 || index >= playlist.length) {
+        if (loop) {
+          index = index < 0 ? playlist.length - 1 : 0;
+        } else {
+          console.log('Playlist ended');
+          return;
+        }
+      }
+
+      currentIndex = index;
+      const item = playlist[index];
+
+      // Fade out current media
+      if (currentMedia) {
+        currentMedia.classList.remove('active');
+        currentMedia.classList.add('fade-out');
+
+        setTimeout(() => {
+          if (currentMedia && currentMedia.parentNode) {
+            currentMedia.parentNode.removeChild(currentMedia);
+          }
+        }, uebergang === 'fade' ? 1000 : 100);
+      }
+
+      // Create and add new media
+      currentMedia = createMediaElement(item);
+      container.appendChild(currentMedia);
+
+      // Trigger fade-in
+      setTimeout(() => {
+        currentMedia.classList.add('active');
+      }, 50);
+
+      // Update overlay and progress
+      updateOverlay(item);
+      updateProgress();
+
+      // Play media
+      if (item.typ === 'video') {
+        try {
+          await currentMedia.play();
+          isPlaying = true;
+        } catch (e) {
+          console.error('Play error:', e);
+          playNext();
+        }
+      } else if (item.typ === 'image') {
+        // Set timer for image duration
+        clearTimeout(imageTimer);
+        imageTimer = setTimeout(() => {
+          playNext();
+        }, (item.dauer || 10) * 1000);
+      }
+    }
+
+    function playNext() {
+      clearTimeout(imageTimer);
+      playItem(currentIndex + 1);
+    }
+
+    function playPrevious() {
+      clearTimeout(imageTimer);
+      playItem(currentIndex - 1);
+    }
+
+    // Keyboard controls
+    document.addEventListener('keydown', (e) => {
+      switch(e.key) {
+        case 'ArrowRight':
+        case 'n':
+          playNext();
+          break;
+        case 'ArrowLeft':
+        case 'p':
+          playPrevious();
+          break;
+        case ' ':
+          e.preventDefault();
+          if (currentMedia && currentMedia.tagName === 'VIDEO') {
+            if (currentMedia.paused) {
+              currentMedia.play();
+            } else {
+              currentMedia.pause();
+            }
+          }
+          break;
+        case 'Escape':
+        case 'q':
+          if (document.fullscreenElement) {
+            document.exitFullscreen();
+          }
+          break;
+        case 'f':
+          // Fullscreen toggle
+          if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+          } else {
+            document.exitFullscreen();
+          }
+          break;
+      }
+    });
+
+    // Touch controls (swipe)
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    document.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    });
+
+    document.addEventListener('touchend', (e) => {
+      const touchEndX = e.changedTouches[0].clientX;
+      const touchEndY = e.changedTouches[0].clientY;
+
+      const deltaX = touchEndX - touchStartX;
+      const deltaY = touchEndY - touchStartY;
+
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+        if (deltaX > 0) {
+          playPrevious();
+        } else {
+          playNext();
+        }
+      }
+    });
+
+    // Start playback
+    if (playlist.length > 0) {
+      playItem(0);
+    }
+
+    // Preload next item
+    function preloadNext() {
+      const nextIndex = (currentIndex + 1) % playlist.length;
+      const nextItem = playlist[nextIndex];
+
+      if (nextItem.typ === 'video') {
+        const preload = document.createElement('video');
+        preload.src = nextItem.url;
+        preload.preload = 'auto';
+        preload.style.display = 'none';
+        container.appendChild(preload);
+
+        setTimeout(() => {
+          if (preload.parentNode) {
+            preload.parentNode.removeChild(preload);
+          }
+        }, 60000);
+      }
+    }
+
+    if (currentMedia && currentMedia.tagName === 'VIDEO') {
+      currentMedia.addEventListener('playing', preloadNext, { once: true });
+    }
+  </script>
+</Layout>
