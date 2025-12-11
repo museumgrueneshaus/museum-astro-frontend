@@ -515,6 +515,12 @@ try {
         // Click to start (in case autoplay is blocked)
         startScreen.addEventListener('click', start);
 
+        // Auto-start in kiosk mode (after 1 second to ensure everything is loaded)
+        setTimeout(() => {
+          log('Auto-starting in kiosk mode...');
+          start();
+        }, 1000);
+
         // Keyboard controls
         document.addEventListener('keydown', (e) => {
           if (!started && (e.key === ' ' || e.key === 'Enter')) {
