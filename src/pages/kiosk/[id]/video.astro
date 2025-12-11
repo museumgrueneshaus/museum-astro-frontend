@@ -515,10 +515,10 @@ try {
         // Click to start (in case autoplay is blocked)
         startScreen.addEventListener('click', start);
 
-        // Auto-start in kiosk mode (after 1 second to ensure everything is loaded)
+        // Auto-start in kiosk mode via simulated click (counts as user gesture for audio)
         setTimeout(() => {
-          log('Auto-starting in kiosk mode...');
-          start();
+          log('Auto-starting in kiosk mode via simulated click...');
+          startScreen.click();
         }, 1000);
 
         // Keyboard controls
