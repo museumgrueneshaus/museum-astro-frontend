@@ -160,6 +160,16 @@ try {
       flex: 1 1 auto;
     }
 
+    /* Native video subtitles styling */
+    video::cue {
+      background-color: rgba(0, 0, 0, 0.85);
+      color: white;
+      font-size: 32px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.4;
+      padding: 0.2em 0.5em;
+    }
+
     .progress {
       position: absolute;
       top: 20px;
@@ -310,24 +320,13 @@ try {
         // Setup subtitle display from TextTrack
         function setupSubtitleDisplay(videoElement) {
           if (!showSubtitles || !videoElement.textTracks || videoElement.textTracks.length === 0) {
-            subtitlesEl.style.display = 'none';
             return;
           }
 
           const track = videoElement.textTracks[0];
-          track.mode = 'hidden'; // hidden = loaded but not displayed natively
-
-          track.addEventListener('cuechange', () => {
-            const cues = track.activeCues;
-            if (cues && cues.length > 0) {
-              subtitlesEl.textContent = cues[0].text;
-              subtitlesEl.style.display = 'inline-block';
-            } else {
-              subtitlesEl.style.display = 'none';
-            }
-          });
-
-          log('Subtitle display ready');
+          // Use native browser subtitles - more reliable
+          track.mode = 'showing';
+          log('Native subtitles enabled');
         }
 
         let firstPlay = true;
