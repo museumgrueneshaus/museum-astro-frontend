@@ -1,82 +1,25 @@
 ---
-import Layout from '../../../layouts/Layout.astro';
-import ModePreview from '../../../components/ModePreview.astro';
+import { getKioskConfig } from '../../../lib/sanity';
 
 export async function getStaticPaths() {
   // Build-time: do not pre-generate kiosk pages (identifier list unknown/offline)
   return [];
 }
-import { getKioskConfig, getExponate, getMuseumInfo } from '../../../lib/sanity';
 
 const { id } = Astro.params;
 const kioskConfig = await getKioskConfig(id).catch(() => null);
-const museumInfo = await getMuseumInfo().catch(() => ({ name: 'Museum Digital' }));
 
-let explorerPreview = [];
-let slideshowPreview = [];
-try {
-  const expSettings = kioskConfig?.konfiguration?.explorer_settings;
-  explorerPreview = await getExponate({
-    highlight: expSettings?.nur_highlights,
-    categories: expSettings?.kategorien,
-    limit: 4
-  });
-} catch {}
-try {
-  const ss = kioskConfig?.konfiguration?.slideshow_settings;
-  if (ss?.exponate && ss.exponate.length > 0) {
-    slideshowPreview = ss.exponate.slice(0, 1);
-  }
-} catch {}
+// Get modus from Sanity config and redirect to appropriate template
+const modus = kioskConfig?.modus || 'explorer';
 
-const pageTitle = `${museumInfo?.name || 'Museum'} – ${kioskConfig?.name || id}`;
-const theme = kioskConfig?.design?.theme || 'default';
-const idleMs = kioskConfig?.konfiguration?.idle_ms || 300000;
-
-// Auto-redirect to video mode if configured
-const modus = kioskConfig?.modus;
+// Dynamically redirect to the correct mode page
 if (modus === 'video') {
   return Astro.redirect(`/kiosk/${id}/video`);
+} else if (modus === 'slideshow') {
+  return Astro.redirect(`/kiosk/${id}/slideshow`);
+} else if (modus === 'reader') {
+  return Astro.redirect(`/kiosk/${id}/reader`);
+} else {
+  // Default to explorer
+  return Astro.redirect(`/kiosk/${id}/explorer`);
 }
----
-
-<Layout title={pageTitle} theme={theme} idleHome={`/kiosk/${id}`} idleMs={idleMs}>
-  <div class="kiosk-app" data-kiosk={id}>
-    <header class="app-header">
-      <div class="container header-bar">
-        <div class="brand">
-          {museumInfo?.logo && (<img src={museumInfo.logo} alt={museumInfo.name} class="brand-logo" />)}
-          <div>
-            <div class="brand-title">{kioskConfig?.name || id}</div>
-            {kioskConfig?.standort && (<div class="brand-subtitle">{kioskConfig.standort}</div>)}
-          </div>
-        </div>
-        <nav class="segmented" aria-label="Modi">
-          <a class="seg-btn" href={`/kiosk/${id}/explorer`}>Entdecken</a>
-          <a class="seg-btn" href={`/kiosk/${id}/slideshow`}>Präsentation</a>
-          <a class="seg-btn" href={`/kiosk/${id}/reader`}>Reader</a>
-          {kioskConfig?.modus === 'video' && <a class="seg-btn" href={`/kiosk/${id}/video`}>Video</a>}
-        </nav>
-        <div></div>
-      </div>
-    </header>
-
-    <main class="kiosk-main container">
-      <ModePreview explorerItems={explorerPreview} slideshowItems={slideshowPreview} />
-      <div class="meta">
-        <div>Modus: <strong>{kioskConfig?.modus || 'explorer'}</strong></div>
-        {kioskConfig?.mac_adresse && (<div>MAC: <code>{kioskConfig.mac_adresse}</code></div>)}
-      </div>
-    </main>
-  </div>
-
-  <style>
-    .brand-logo { height: 40px; width: auto; object-fit: contain; }
-    .header-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--space-4); }
-    .segmented { display: inline-flex; gap: var(--space-6); }
-    .seg-btn { text-decoration: none; color: var(--muted); font-weight: 700; padding: 6px 0; border-bottom: 2px solid transparent; }
-    .seg-btn:hover { color: var(--text); border-bottom-color: currentColor; }
-    .kiosk-main { padding: var(--space-8) 0; }
-    .meta { color: var(--muted); margin-top: var(--space-6); }
-  </style>
-</Layout>
