@@ -348,3 +348,4 @@ Die App ist optimiert für:
 - Touch-Geräte
 - Große Bildschirme (4K)
 - Offline-Nutzung
+# Test auto-deploy
