@@ -291,6 +291,7 @@ export async function getAusstellungen(options = {}) {
     slug,
     kurzbeschreibung,
     titelbild{..., asset->{_id, metadata{lqip, dimensions}}},
+    "titelbildOrFallback": coalesce(titelbild, videos[0].thumbnail),
     zeitraum,
     ist_featured,
     reihenfolge,
@@ -310,6 +311,7 @@ export async function getAusstellung(id) {
     kurzbeschreibung,
     beschreibung,
     titelbild{..., asset->{_id, metadata{lqip, dimensions}}},
+    "titelbildOrFallback": coalesce(titelbild, videos[0].thumbnail),
     galerie[]{..., asset->{_id, metadata{lqip, dimensions}}},
     videos,
     dokumente,
@@ -353,24 +355,26 @@ export async function getAusstellung(id) {
   return await client.fetch(query, { id });
 }
 
-// Kiosk Config
+// Kiosk Config (now pulls from kioskDevice + ausstellung)
 export async function getKioskConfig(identifier) {
-  // identifier can be: MAC address, IP address, name, or _id
-  const query = `*[_type == "kioskConfig" && (
-    _id == $identifier ||
-    name == $identifier ||
-    mac_adresse == $identifier ||
-    ip_adresse == $identifier
-  ) && aktiv == true][0]{
+  // identifier is usually the kioskId (e.g. RPI_01)
+  const query = `*[_type == "kioskDevice" && (
+    kioskId == $identifier ||
+    hostname == $identifier ||
+    _id == $identifier
+  )][0]{
     _id,
-    name,
-    standort,
-    modus,
-    konfiguration{
-      video_settings{
-        playlist[]{
-          typ,
-          video{
+    kioskId,
+    hostname,
+    location,
+    "name": kioskId,
+    "standort": location,
+    "modus": ausstellung->kioskTemplate.template,
+    "konfiguration": {
+      "video_settings": {
+        "playlist": ausstellung->videos[]{
+          "typ": "video",
+          "video": videodatei{
             asset->{
               _id,
               url,
@@ -379,39 +383,51 @@ export async function getKioskConfig(identifier) {
               mimeType
             }
           },
-          video_url,
-          bild{
-            asset->{
-              _id,
-              url,
-              metadata{lqip, dimensions}
-            }
-          },
-          untertitel{
+          "titel": videotitel,
+          "beschreibung": beschreibung,
+          "dauer": dauer,
+          "untertitel": untertitel{
             asset->{
               _id,
               url
             }
           },
-          dauer,
-          titel,
-          beschreibung
+          "bild": thumbnail{
+            asset->{
+              _id,
+              url,
+              metadata{lqip, dimensions}
+            }
+          }
         },
-        loop,
-        shuffle,
-        zeige_overlay,
-        overlay_position,
-        uebergang,
-        audio,
-        zeige_untertitel
-      }
+        "loop": ausstellung->kioskTemplate.videoSettings.loop,
+        "shuffle": ausstellung->kioskTemplate.videoSettings.shuffle,
+        "zeige_overlay": ausstellung->kioskTemplate.videoSettings.zeige_overlay,
+        "overlay_position": ausstellung->kioskTemplate.videoSettings.overlay_position,
+        "uebergang": ausstellung->kioskTemplate.videoSettings.uebergang,
+        "zeige_untertitel": ausstellung->kioskTemplate.videoSettings.zeige_untertitel,
+        "audio": {
+          "lautstaerke": ausstellung->kioskTemplate.videoSettings.lautstaerke
+        }
+      },
+      "slideshow_settings": ausstellung->kioskTemplate.slideshowSettings,
+      "explorer_settings": ausstellung->kioskTemplate.explorerSettings,
+      "reader_settings": ausstellung->kioskTemplate.readerSettings
     },
-    design,
-    funktionen
+    "design": {
+      "theme": "default"
+    },
+    "funktionen": {
+      "zeige_qr_codes": true,
+      "idle_timeout": 300
+    }
   }`;
 
   return await client.fetch(query, { identifier });
 }
+
+// Alias for backward compatibility
+export const getKioskConfigByIdentifier = getKioskConfig;
 
 // Get file URL helper
 export function fileUrl(ref) {
