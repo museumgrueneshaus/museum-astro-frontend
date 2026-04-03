@@ -52,13 +52,11 @@ GROQ='*[_type=="kioskDevice" && kioskId==$kioskId][0]{
         "titel": videotitel,
         "beschreibung": beschreibung,
         "dauer": dauer,
-        "untertitel": untertitel{ asset->{ _id, url } },
         "bild": thumbnail{ asset->{ _id, url } }
       },
       "loop":           ausstellung->kioskTemplate.videoSettings.loop,
       "shuffle":        ausstellung->kioskTemplate.videoSettings.shuffle,
       "zeige_overlay":  ausstellung->kioskTemplate.videoSettings.zeige_overlay,
-      "zeige_untertitel": ausstellung->kioskTemplate.videoSettings.zeige_untertitel,
       "uebergang":      ausstellung->kioskTemplate.videoSettings.uebergang,
       "audio": { "lautstaerke": ausstellung->kioskTemplate.videoSettings.lautstaerke }
     }

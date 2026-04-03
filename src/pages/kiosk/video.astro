@@ -100,17 +100,6 @@
       font-weight: 400;
     }
 
-    .subtitles {
-      font-size: 28px;
-      line-height: 1.6;
-      margin: 0;
-      padding: 0;
-      min-height: 45px;
-      text-align: left;
-      opacity: 0.95;
-      flex: 1 1 auto;
-    }
-
     .progress {
       position: absolute;
       top: 20px;
@@ -167,16 +156,6 @@
       border-radius: 8px;
       font-size: 14px;
       font-family: monospace;
-    }
-
-    /* Hide native video subtitles - we show them in overlay */
-    video::cue {
-      opacity: 0;
-      display: none;
-    }
-
-    video::-webkit-media-text-track-container {
-      display: none;
     }
 
     #loading-screen {
@@ -255,7 +234,6 @@
           <h2 id="title">Video Title</h2>
           <div id="function" class="function"></div>
         </div>
-        <div id="subtitles" class="subtitles" style="display:none;"></div>
       </div>
     </div>
 
@@ -290,13 +268,11 @@
             "titel": videotitel,
             "beschreibung": beschreibung,
             "dauer": dauer,
-            "untertitel": untertitel{ asset->{ _id, url } },
             "bild": thumbnail{ asset->{ _id, url } }
           },
           "loop": ausstellung->kioskTemplate.videoSettings.loop,
           "shuffle": ausstellung->kioskTemplate.videoSettings.shuffle,
           "zeige_overlay": ausstellung->kioskTemplate.videoSettings.zeige_overlay,
-          "zeige_untertitel": ausstellung->kioskTemplate.videoSettings.zeige_untertitel,
           "uebergang": ausstellung->kioskTemplate.videoSettings.uebergang,
           "audio": { "lautstaerke": ausstellung->kioskTemplate.videoSettings.lautstaerke }
         }
@@ -422,7 +398,6 @@
       const audioSettings = config?.konfiguration?.video_settings?.audio || {};
       const audioVolume   = audioSettings.lautstaerke || 70;
       const audioMuted    = audioSettings.stumm === true;
-      const showSubtitles = config?.konfiguration?.video_settings?.zeige_untertitel === true;
       const loopPlaylist  = config?.konfiguration?.video_settings?.loop !== false;
 
       const rawPlaylist = config?.konfiguration?.video_settings?.playlist || [];
@@ -440,7 +415,6 @@
           description: item.beschreibung || '',
           typ:         item.typ,
           dauer:       item.dauer        || 10,
-          subtitles:   item.untertitel?.asset?.url || null
         };
       }).filter(v => v.url);
 
@@ -451,17 +425,13 @@
 
       document.getElementById('total').textContent = videos.length;
       showPlayer();
-      startPlayback(videos, audioVolume, audioMuted, showSubtitles, loopPlaylist);
+      startPlayback(videos, audioVolume, audioMuted, loopPlaylist);
     }
 
     // ── Video player ─────────────────────────────────────────────────────────
-    function startPlayback(videos, audioVolume, audioMuted, showSubtitles, loopPlaylist) {
+    function startPlayback(videos, audioVolume, audioMuted, loopPlaylist) {
       console.log('Videos data:', videos);
-      console.log('Show subtitles:', showSubtitles);
       console.log('Loop playlist:', loopPlaylist);
-      videos.forEach((v, i) => {
-        console.log(`Video ${i + 1}: ${v.title}, Subtitles: ${v.subtitles || 'none'}`);
-      });
 
       let currentIndex = 0;
       let currentMedia = null;
@@ -478,7 +448,6 @@
       const totalEl     = document.getElementById('total');
       const startScreen = document.getElementById('startScreen');
       const statusEl    = document.getElementById('status');
-      const subtitlesEl = document.getElementById('subtitles');
 
       totalEl.textContent = videos.length;
 
@@ -493,15 +462,6 @@
         currentEl.textContent  = currentIndex + 1;
       }
 
-      function setupSubtitleDisplay(videoElement) {
-        if (!showSubtitles || !videoElement.textTracks || videoElement.textTracks.length === 0) {
-          return;
-        }
-        const track = videoElement.textTracks[0];
-        track.mode = 'showing';
-        log('Native subtitles enabled');
-      }
-
       let firstPlay = true;
 
       async function loadMedia(mediaElement, videoData) {
@@ -511,33 +471,6 @@
             mediaElement.src     = videoData.url;
             mediaElement.muted   = firstPlay ? true : audioMuted;
             mediaElement.volume  = audioVolume / 100;
-
-            if (videoData.subtitles) {
-              log(`Adding subtitles: ${videoData.subtitles}`);
-              while (mediaElement.firstChild) {
-                mediaElement.removeChild(mediaElement.firstChild);
-              }
-              const track     = document.createElement('track');
-              track.kind      = 'subtitles';
-              track.label     = 'Deutsch';
-              track.srclang   = 'de';
-              track.src       = videoData.subtitles;
-              track.default   = true;
-
-              track.addEventListener('load', () => { log('Subtitles loaded successfully'); });
-              track.addEventListener('error', (e) => { log(`Subtitle error: ${e}`); });
-
-              mediaElement.appendChild(track);
-
-              setTimeout(() => {
-                if (mediaElement.textTracks[0]) {
-                  mediaElement.textTracks[0].mode = 'showing';
-                  log('Text track mode set to showing');
-                }
-              }, 100);
-            } else {
-              log('No subtitles for this video');
-            }
 
             mediaElement.load();
 
@@ -630,8 +563,6 @@
           currentMedia.classList.add('active');
 
           if (videoData.typ === 'video') {
-            setupSubtitleDisplay(currentMedia);
-
             await currentMedia.play();
 
             if (firstPlay) {
