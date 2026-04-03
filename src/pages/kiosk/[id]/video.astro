@@ -497,13 +497,19 @@ try {
           playMedia(0);
         }
 
-        // Click to start (in case autoplay is blocked)
-        startScreen.addEventListener('click', start);
-
         // Auto-start in kiosk mode
         setTimeout(() => {
           if (!started) start();
         }, 100);
+
+        // Click to start (in case autoplay is blocked)
+        startScreen.addEventListener('click', start);
+
+        // Simulated click at 1000ms: provides browser audio-context unlock
+        // (fires regardless of started — the DOM click event itself unlocks the audio context)
+        setTimeout(() => {
+          startScreen.click();
+        }, 1000);
 
         // Keyboard controls
         document.addEventListener('keydown', (e) => {
