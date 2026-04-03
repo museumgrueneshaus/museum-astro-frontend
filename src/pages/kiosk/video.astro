@@ -682,6 +682,23 @@
         startScreen.click();
       }, 1000);
 
+      // Watchdog: if nothing is playing after 6s, reset and retry
+      // Covers the case where started=true but playMedia silently failed
+      setTimeout(function watchdog() {
+        const isVideoPlaying = currentMedia &&
+          currentMedia.tagName === 'VIDEO' &&
+          !currentMedia.paused &&
+          currentMedia.readyState >= 2;
+        const isImageShowing = currentMedia &&
+          currentMedia.tagName === 'IMG' &&
+          currentMedia.style.display !== 'none';
+        if (!isVideoPlaying && !isImageShowing) {
+          log('Watchdog: kein Wiedergabe erkannt — Neustart...');
+          started = false;
+          start();
+        }
+      }, 6000);
+
       // Keyboard controls
       document.addEventListener('keydown', (e) => {
         if (!started && (e.key === ' ' || e.key === 'Enter')) {
