@@ -222,8 +222,8 @@
 
   <script>
     // ── Sanity helpers ──
-    const SANITY_PROJECT = '832k5je1';
-    const SANITY_DATASET = 'production';
+    const SANITY_PROJECT = import.meta.env.PUBLIC_SANITY_PROJECT_ID || '832k5je1';
+    const SANITY_DATASET = import.meta.env.PUBLIC_SANITY_DATASET || 'production';
     async function sanityFetch(query, params = {}) {
       const paramStr = Object.entries(params).map(([k,v]) => `$${k}=${encodeURIComponent(JSON.stringify(v))}`).join('&');
       const url = `https://${SANITY_PROJECT}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}?query=${encodeURIComponent(query)}${paramStr ? '&'+paramStr : ''}`;

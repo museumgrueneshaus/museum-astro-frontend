@@ -111,16 +111,6 @@
       flex: 1 1 auto;
     }
 
-    /* Native video subtitles styling */
-    video::cue {
-      background-color: rgba(0, 0, 0, 0.85);
-      color: white;
-      font-size: 32px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      line-height: 1.4;
-      padding: 0.2em 0.5em;
-    }
-
     .progress {
       position: absolute;
       top: 20px;
@@ -279,7 +269,7 @@
   <script>
     // ── Sanity fetch helper ──────────────────────────────────────────────────
     async function sanityFetch(query, params = {}) {
-      const p = '832k5je1', d = 'production';
+      const p = import.meta.env.PUBLIC_SANITY_PROJECT_ID || '832k5je1', d = import.meta.env.PUBLIC_SANITY_DATASET || 'production';
       const paramStr = Object.entries(params).map(([k, v]) => `$${k}=${encodeURIComponent(JSON.stringify(v))}`).join('&');
       const url = `https://${p}.api.sanity.io/v2024-01-01/data/query/${d}?query=${encodeURIComponent(query)}${paramStr ? '&' + paramStr : ''}`;
       const res = await fetch(url);
@@ -679,18 +669,12 @@
         playMedia(0);
       }
 
-      // Autoplay immediately for headless setup
+      startScreen.addEventListener('click', start);
+
+      // Auto-start in kiosk mode
       setTimeout(() => {
         if (!started) start();
       }, 100);
-
-      startScreen.addEventListener('click', start);
-
-      // Auto-start via simulated click (counts as user gesture for audio)
-      setTimeout(() => {
-        log('Auto-starting in kiosk mode via simulated click...');
-        startScreen.click();
-      }, 1000);
 
       // Keyboard controls
       document.addEventListener('keydown', (e) => {

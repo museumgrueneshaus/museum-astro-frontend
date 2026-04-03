@@ -112,8 +112,8 @@
 
     <script>
       (function () {
-        const SANITY_PROJECT_ID = '832k5je1';
-        const SANITY_DATASET = 'production';
+        const SANITY_PROJECT_ID = import.meta.env.PUBLIC_SANITY_PROJECT_ID || '832k5je1';
+        const SANITY_DATASET = import.meta.env.PUBLIC_SANITY_DATASET || 'production';
         const SANITY_API_VERSION = '2024-01-01';
         const KIOSK_CONFIG_PATH = '/kiosk-config.json';
 
