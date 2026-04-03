@@ -1,0 +1,246 @@
+---
+---
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kiosk</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: #000;
+        color: #fff;
+        font-family: sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        text-align: center;
+      }
+
+      #container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 2rem;
+      }
+
+      /* Spinner */
+      .spinner {
+        width: 56px;
+        height: 56px;
+        border: 5px solid rgba(255, 255, 255, 0.2);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      .status-text {
+        font-size: 1.1rem;
+        opacity: 0.75;
+        letter-spacing: 0.03em;
+      }
+
+      /* Error state */
+      .error-icon {
+        font-size: 3rem;
+        line-height: 1;
+      }
+
+      .error-title {
+        font-size: 1.4rem;
+        font-weight: 600;
+      }
+
+      .error-message {
+        font-size: 0.95rem;
+        opacity: 0.65;
+        max-width: 360px;
+        line-height: 1.6;
+      }
+
+      .retry-btn {
+        margin-top: 0.5rem;
+        padding: 0.65rem 1.8rem;
+        background: #fff;
+        color: #000;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        letter-spacing: 0.02em;
+        transition: opacity 0.2s;
+      }
+
+      .retry-btn:hover {
+        opacity: 0.85;
+      }
+
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <!-- Loading state (shown by default) -->
+      <div id="loading-state">
+        <div class="spinner"></div>
+        <p class="status-text" id="status-text">Initializing kiosk…</p>
+      </div>
+
+      <!-- Error state (hidden by default) -->
+      <div id="error-state" class="hidden">
+        <div class="error-icon">&#9888;</div>
+        <p class="error-title" id="error-title">Something went wrong</p>
+        <p class="error-message" id="error-message"></p>
+        <button class="retry-btn" id="retry-btn">Wiederholen</button>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const SANITY_PROJECT_ID = '832k5je1';
+        const SANITY_DATASET = 'production';
+        const SANITY_API_VERSION = '2024-01-01';
+        const KIOSK_CONFIG_PATH = '/kiosk-config.json';
+
+        const loadingState = document.getElementById('loading-state');
+        const errorState = document.getElementById('error-state');
+        const statusText = document.getElementById('status-text');
+        const errorTitle = document.getElementById('error-title');
+        const errorMessage = document.getElementById('error-message');
+        const retryBtn = document.getElementById('retry-btn');
+
+        // German error messages for museum staff
+        const ERRORS = {
+          noId: ['Kein Kiosk-ID gefunden', 'Keine Kiosk-ID in kiosk-config.json oder URL-Parameter ?id= gefunden.'],
+          notConfigured: (id) => [`Kiosk nicht konfiguriert`, `Kein Kiosk-Eintrag für ID "${id}" gefunden oder Anzeigemodus nicht gesetzt.`],
+          network: (msg) => ['Netzwerkfehler', `Kiosk-Konfiguration konnte nicht geladen werden. ${msg}`],
+        };
+
+        function showError(title, message) {
+          loadingState.classList.add('hidden');
+          errorState.classList.remove('hidden');
+          errorTitle.textContent = title;
+          errorMessage.textContent = message;
+        }
+
+        function setStatus(text) {
+          statusText.textContent = text;
+        }
+
+        // Try local content cache (populated by sync-content.sh on Pi)
+        // Returns object with kioskId if present (modus may be null if Sanity not configured yet)
+        async function loadFromCache() {
+          try {
+            const res = await fetch('/kiosk-content.json', { cache: 'no-store' });
+            if (res.ok) {
+              const c = await res.json();
+              if (c?.kioskId) return c;
+            }
+          } catch (_) {}
+          return null;
+        }
+
+        async function getKioskId() {
+          // 1. Try reading from /kiosk-config.json (Raspberry Pi deployment)
+          try {
+            const res = await fetch(KIOSK_CONFIG_PATH, { cache: 'no-store' });
+            if (res.ok) {
+              const config = await res.json();
+              if (config && config.kioskId) return config.kioskId;
+            }
+          } catch (_) {}
+
+          // 2. Fallback: ?id= URL parameter (dev / testing)
+          const params = new URLSearchParams(window.location.search);
+          const idParam = params.get('id');
+          if (idParam) return idParam;
+
+          return null;
+        }
+
+        async function fetchModus(kioskId) {
+          const query = `*[_type=="kioskDevice" && (kioskId==$id || hostname==$id || _id==$id)][0]{ "modus": ausstellung->kioskTemplate.template }`;
+          const encodedQuery = encodeURIComponent(query);
+          const encodedId = encodeURIComponent(JSON.stringify(kioskId));
+          const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v${SANITY_API_VERSION}/data/query/${SANITY_DATASET}?query=${encodedQuery}&$id=${encodedId}`;
+
+          const res = await fetch(url);
+          if (!res.ok) throw new Error(`Sanity API responded with status ${res.status}`);
+          const data = await res.json();
+          return data.result ? data.result.modus : null;
+        }
+
+        async function init() {
+          loadingState.classList.remove('hidden');
+          errorState.classList.add('hidden');
+          setStatus('Kiosk wird gestartet…');
+
+          // Step 1: Try local cache (Pi: zero API calls)
+          const cached = await loadFromCache();
+          if (cached) {
+            if (!cached.modus) {
+              // kiosk-content.json exists but modus is null → Sanity data incomplete
+              const [t, m] = ERRORS.notConfigured(cached.kioskId);
+              showError(t, m);
+              return;
+            }
+            setStatus('Weiterleiten…');
+            window.location.replace(`/kiosk/${cached.modus}?id=${encodeURIComponent(cached.kioskId)}`);
+            return;
+          }
+
+          // Step 2: Fall back — read kioskId, fetch modus from Sanity (dev / first boot)
+          let kioskId;
+          try {
+            kioskId = await getKioskId();
+          } catch (err) {
+            showError('Konfigurationsfehler', err.message);
+            return;
+          }
+
+          if (!kioskId) {
+            showError(...ERRORS.noId);
+            return;
+          }
+
+          setStatus(`Konfiguration wird geladen…`);
+
+          let modus;
+          try {
+            modus = await fetchModus(kioskId);
+          } catch (err) {
+            showError(...ERRORS.network(err.message));
+            return;
+          }
+
+          if (!modus) {
+            showError(...ERRORS.notConfigured(kioskId));
+            return;
+          }
+
+          setStatus('Weiterleiten…');
+          window.location.replace(`/kiosk/${modus}?id=${encodeURIComponent(kioskId)}`);
+        }
+
+        retryBtn.addEventListener('click', init);
+
+        init();
+      })();
+    </script>
+  </body>
+</html>

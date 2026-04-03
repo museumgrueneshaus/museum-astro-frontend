@@ -1,0 +1,332 @@
+---
+---
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="description" content="Museum Digital Kiosk – Slideshow" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <title>Slideshow</title>
+  <script src="/register-sw.js" defer></script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <style>
+    /* ── CSS Variables & Reset (from Layout.astro) ── */
+    :root {
+      --primary: #000000;
+      --primary-acc: #3b82f6;
+      --text: #111111;
+      --text-dim: #555555;
+      --bg: #ffffff;
+      --bg-alt: #f4f4f4;
+      --border: #e5e5e5;
+      --muted: #555555;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-display: 64px;
+      --font-h1: 48px;
+      --font-h2: 32px;
+      --font-body: 22px;
+      --font-caption: 18px;
+      --leading: 1.5;
+      --heading-tight: 1.1;
+      --space-1: 0.5rem;
+      --space-2: 1rem;
+      --space-3: 1.5rem;
+      --space-4: 2rem;
+      --space-5: 2.5rem;
+      --space-6: 3rem;
+      --space-7: 3.5rem;
+      --space-8: 4rem;
+      --radius: 0px;
+      --container: 1920px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-sans); }
+    html {
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      scroll-behavior: smooth;
+    }
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      line-height: var(--leading);
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+    input, select, textarea { font: inherit; }
+    html, body, p, div, span, a, small, li,
+    h1, h2, h3, h4, h5, h6 { font-size: 16px !important; }
+    :focus-visible { outline: 3px solid var(--primary-acc); outline-offset: 3px; }
+    [hidden] { display: none !important; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading {
+      display: inline-block;
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--border);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 1s linear infinite;
+    }
+
+    /* ── Loading / Error States ── */
+    #loading-screen, #error-screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0b0f17;
+      color: #fff;
+      gap: 1.5rem;
+      z-index: 999;
+    }
+    #loading-screen p, #error-screen p { opacity: 0.7; font-size: 14px !important; }
+    #error-screen h2 { font-size: 20px !important; }
+
+    /* ── Slideshow ── */
+    .slideshow-app { background: #0b0f17; min-height: 100vh; color: #fff; }
+    .slideshow-main { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+    .slideshow-container { width: 100%; max-width: 1600px; }
+    .slideshow-track { position: relative; width: 100%; height: min(80vh, 70vw); }
+    .slide { position: absolute; inset: 0; display: flex; gap: 3rem; align-items: center; opacity: 0; transition: opacity 1s; }
+    .slide.active { opacity: 1; }
+    .slide-image { flex: 1; height: 100%; }
+    .slide-image img { width: 100%; height: 100%; object-fit: contain; }
+    .slide-info { flex: 1; color: #fff; position: relative; }
+    .caption { position: absolute; left: 12px; bottom: 12px; color: #fff; background: rgba(0,0,0,.35); padding: 8px 12px; }
+    .cap-title { font-weight: 700; }
+    .cap-sub { font-size: .9em; opacity: .85; }
+    .slide-info h2 { font-size: clamp(1.5rem, 3vw, 2.5rem); margin-bottom: 1rem; }
+    .slideshow-controls { display: flex; gap: 1rem; margin-top: 2rem; transition: opacity .2s; }
+    .slideshow-controls button { width: 44px; height: 44px; border: 1px solid var(--border); background: transparent; color: #fff; cursor: pointer; }
+    .slideshow-dots { display: flex; gap: 8px; margin-top: .5rem; transition: opacity .2s; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: #cbd5e1; cursor: pointer; }
+    .dot.active { background: #fff; }
+    .ui-hidden { opacity: 0; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <div id="loading-screen">
+    <div class="loading"></div>
+    <p>Lade Kiosk-Konfiguration…</p>
+  </div>
+
+  <div id="error-screen" style="display:none;">
+    <h2>Fehler</h2>
+    <p id="error-msg">Kiosk-Konfiguration konnte nicht geladen werden.</p>
+  </div>
+
+  <div id="app" style="display:none;">
+    <div class="slideshow-app">
+      <main class="slideshow-main">
+        <div class="slideshow-container">
+          <div class="slideshow-track" id="slideshow-track">
+            <!-- Slides injected by JS -->
+          </div>
+          <div class="slideshow-controls" id="slideshow-controls">
+            <button class="prev-btn" aria-label="Vorherige Folie">←</button>
+            <button class="play-pause-btn" aria-label="Pause">⏸</button>
+            <button class="next-btn" aria-label="Nächste Folie">→</button>
+          </div>
+          <div class="slideshow-dots" id="slideshow-dots">
+            <!-- Dots injected by JS -->
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // ── Sanity helpers ──
+    const SANITY_PROJECT = '832k5je1';
+    const SANITY_DATASET = 'production';
+    async function sanityFetch(query, params = {}) {
+      const paramStr = Object.entries(params).map(([k,v]) => `$${k}=${encodeURIComponent(JSON.stringify(v))}`).join('&');
+      const url = `https://${SANITY_PROJECT}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}?query=${encodeURIComponent(query)}${paramStr ? '&'+paramStr : ''}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      return data.result;
+    }
+    function imageUrl(ref, width = 800) {
+      if (!ref) return '';
+      const r = ref.asset?._ref;
+      if (!r) return '';
+      const parts = r.split('-');
+      const fmt = parts[parts.length - 1];
+      const dims = parts[parts.length - 2];
+      const id = parts.slice(1, parts.length - 2).join('-');
+      return `https://cdn.sanity.io/images/${SANITY_PROJECT}/${SANITY_DATASET}/${id}-${dims}.${fmt}?w=${width}&auto=format&fit=crop`;
+    }
+
+    // ── Kiosk ID resolution ──
+    async function getKioskId() {
+      try {
+        const res = await fetch('/kiosk-config.json');
+        if (res.ok) {
+          const cfg = await res.json();
+          if (cfg && cfg.kioskId) return cfg.kioskId;
+        }
+      } catch (_) { /* fallback */ }
+      const params = new URLSearchParams(location.search);
+      return params.get('id') || null;
+    }
+
+    // ── Bootstrap ──
+    (async () => {
+      const loadingScreen = document.getElementById('loading-screen');
+      const errorScreen = document.getElementById('error-screen');
+      const errorMsg = document.getElementById('error-msg');
+      const appEl = document.getElementById('app');
+
+      function showErr(msg) {
+        loadingScreen.style.display = 'none';
+        errorMsg.textContent = msg;
+        errorScreen.style.display = 'flex';
+      }
+
+      let result = null;
+
+      // 1. Try local content cache (Pi: populated by sync-content.sh every 5 min)
+      try {
+        const r = await fetch('/kiosk-content.json', { cache: 'no-store' });
+        if (r.ok) {
+          const cached = await r.json();
+          if (cached?.kioskId) result = cached;
+        }
+      } catch (_) {}
+
+      // 2. Fall back to Sanity API (dev / first boot before first sync)
+      if (!result) {
+        const kioskId = await getKioskId();
+        if (!kioskId) { showErr('Kein Kiosk-ID gefunden. Bitte ?id= Parameter angeben.'); return; }
+
+        const QUERY = `*[_type=="kioskDevice" && (kioskId==$id || hostname==$id || _id==$id)][0]{
+          "exponate": ausstellung->exponate[]->{
+            _id, titel, untertitel, inventarnummer,
+            hauptbild{..., asset->{_id, _ref, metadata{lqip, dimensions}}}
+          },
+          "slideshowSettings": ausstellung->kioskTemplate.slideshowSettings,
+          "idle_timeout": 300000
+        }`;
+
+        try {
+          result = await sanityFetch(QUERY, { id: kioskId });
+        } catch (e) { showErr(`Fehler beim Laden: ${e.message}`); return; }
+
+        if (!result) { showErr(`Kiosk "${kioskId}" nicht gefunden.`); return; }
+      }
+
+      const exponate = result.exponate || [];
+      const idleTimeout = result.idle_timeout || 300000;
+
+      // ── Build DOM ──
+      const track = document.getElementById('slideshow-track');
+      const dotsContainer = document.getElementById('slideshow-dots');
+
+      exponate.forEach((exponat, index) => {
+        const slide = document.createElement('div');
+        slide.className = 'slide';
+        slide.dataset.slide = String(index);
+        const imgSrc = imageUrl(exponat.hauptbild, 1600);
+        slide.innerHTML = `
+          <div class="slide-image">
+            ${imgSrc ? `<img src="${imgSrc}" alt="${escHtml(exponat.titel || '')}" />` : ''}
+          </div>
+          <div class="slide-info">
+            <div class="caption">
+              <div class="cap-title">${escHtml(exponat.titel || '')}</div>
+              ${exponat.inventarnummer ? `<div class="cap-sub">${escHtml(exponat.inventarnummer)}</div>` : ''}
+            </div>
+          </div>
+        `;
+        track.appendChild(slide);
+
+        const dot = document.createElement('span');
+        dot.className = 'dot';
+        dot.dataset.dot = String(index);
+        dotsContainer.appendChild(dot);
+      });
+
+      loadingScreen.style.display = 'none';
+      appEl.style.display = '';
+
+      // ── Slideshow logic ──
+      let slideshowInterval;
+      let currentSlide = 0;
+      const slides = document.querySelectorAll('.slide');
+      const dots = document.querySelectorAll('.dot');
+
+      function showSlide(index) {
+        slides.forEach(s => s.classList.remove('active'));
+        dots.forEach(d => d.classList.remove('active'));
+        if (slides[index]) slides[index].classList.add('active');
+        if (dots[index]) dots[index].classList.add('active');
+        currentSlide = index;
+      }
+      function nextSlide() { currentSlide = (currentSlide + 1) % (slides.length || 1); showSlide(currentSlide); }
+      function prevSlide() { currentSlide = (currentSlide - 1 + (slides.length || 1)) % (slides.length || 1); showSlide(currentSlide); }
+      function startSlideshow() { if (!slides || slides.length === 0) return; showSlide(0); slideshowInterval = setInterval(nextSlide, 10000); }
+      function stopSlideshow() { clearInterval(slideshowInterval); slideshowInterval = null; }
+
+      document.querySelector('.prev-btn')?.addEventListener('click', () => { stopSlideshow(); prevSlide(); });
+      document.querySelector('.next-btn')?.addEventListener('click', () => { stopSlideshow(); nextSlide(); });
+      document.querySelector('.play-pause-btn')?.addEventListener('click', (e) => {
+        if (slideshowInterval) { stopSlideshow(); e.target.textContent = '▶'; }
+        else { startSlideshow(); e.target.textContent = '⏸'; }
+      });
+
+      // Dot click
+      dots.forEach((dot, i) => dot.addEventListener('click', () => { stopSlideshow(); showSlide(i); }));
+
+      startSlideshow();
+
+      // ── Auto-hide chrome ──
+      const chromeEls = [
+        document.querySelector('.slideshow-controls'),
+        document.querySelector('.slideshow-dots'),
+        ...Array.from(document.querySelectorAll('.caption')),
+      ].filter(Boolean);
+      let hideTimer;
+      const HIDE_MS = 2000;
+      const showChrome = () => chromeEls.forEach(el => el.classList.remove('ui-hidden'));
+      const hideChrome = () => chromeEls.forEach(el => el.classList.add('ui-hidden'));
+      const resetHide = () => { showChrome(); clearTimeout(hideTimer); hideTimer = setTimeout(hideChrome, HIDE_MS); };
+      ['mousemove','touchstart','keydown','click'].forEach(ev => document.addEventListener(ev, resetHide, { passive: true }));
+      resetHide();
+
+      // ── Idle timeout → redirect to kiosk home ──
+      let idleTimer;
+      const resetIdle = () => {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => {
+          window.location.href = `/kiosk/?id=${encodeURIComponent(kioskId)}`;
+        }, idleTimeout);
+      };
+      ['pointerdown','touchstart','mousedown','keydown','scroll'].forEach(ev => {
+        document.addEventListener(ev, resetIdle, { passive: true });
+      });
+      resetIdle();
+
+      // ── Helper ──
+      function escHtml(str) {
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      }
+    })();
+  </script>
+</body>
+</html>

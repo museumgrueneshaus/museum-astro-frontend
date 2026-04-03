@@ -1,0 +1,54 @@
+# systemd USER unit — lives at ~/.config/systemd/user/chromium-kiosk.service
+# Managed by the museumgh user session, NOT by root.
+# Launched via ~/.config/labwc/autostart after the Wayland compositor is ready.
+#
+# Logs: journalctl --user -u chromium-kiosk -f
+
+[Unit]
+Description=Museum Kiosk (Chromium)
+# Do not add After=graphical-session.target — labwc does not reliably emit it.
+# The socket poll in ExecStartPre handles the timing instead.
+
+[Service]
+Type=simple
+
+# Poll until the Wayland socket exists (replaces fragile hardcoded sleep)
+ExecStartPre=/bin/bash -c '\
+    SOCK="/run/user/$(id -u)/${WAYLAND_DISPLAY:-wayland-0}"; \
+    echo "Waiting for Wayland socket: $SOCK"; \
+    until [ -S "$SOCK" ]; do sleep 0.5; done; \
+    echo "Wayland socket ready."'
+
+# Clear Chromium's crash-restore dialog so it never prompts on restart
+ExecStartPre=/bin/bash -c '\
+    PREFS="$HOME/.config/chromium/Default/Preferences"; \
+    if [ -f "$PREFS" ]; then \
+        sed -i "s/\"exited_cleanly\":false/\"exited_cleanly\":true/" "$PREFS"; \
+        sed -i "s/\"exit_type\":\"Crashed\"/\"exit_type\":\"Normal\"/" "$PREFS"; \
+    fi; \
+    true'
+
+ExecStart=/bin/bash -c '\
+    CHROMIUM=$(which chromium chromium-browser 2>/dev/null | head -1); \
+    exec $CHROMIUM \
+        --kiosk \
+        --noerrdialogs \
+        --disable-infobars \
+        --no-first-run \
+        --disable-translate \
+        --disable-pinch \
+        --disable-features=TranslateUI \
+        --disable-component-update \
+        --check-for-update-interval=31536000 \
+        --autoplay-policy=no-user-gesture-required \
+        --password-store=basic \
+        --ozone-platform=wayland \
+        --enable-features=OverlayScrollbar \
+        --no-sandbox \
+        http://localhost/kiosk/'
+
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

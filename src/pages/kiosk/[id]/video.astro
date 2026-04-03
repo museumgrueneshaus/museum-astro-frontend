@@ -1,6 +1,8 @@
 ---
 import { getKioskConfig } from '../../../lib/sanity';
 
+export async function getStaticPaths() { return []; }
+
 const { id } = Astro.params;
 
 let config = null;

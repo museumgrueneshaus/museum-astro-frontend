@@ -1,0 +1,402 @@
+---
+---
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="description" content="Museum Digital Kiosk – Explorer" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <title>Explorer</title>
+  <script src="/register-sw.js" defer></script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <style>
+    /* ── CSS Variables & Reset (from Layout.astro) ── */
+    :root {
+      --primary: #000000;
+      --primary-acc: #3b82f6;
+      --text: #111111;
+      --text-dim: #555555;
+      --bg: #ffffff;
+      --bg-alt: #f4f4f4;
+      --border: #e5e5e5;
+      --muted: #555555;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-display: 64px;
+      --font-h1: 48px;
+      --font-h2: 32px;
+      --font-body: 22px;
+      --font-caption: 18px;
+      --leading: 1.5;
+      --heading-tight: 1.1;
+      --space-1: 0.5rem;
+      --space-2: 1rem;
+      --space-3: 1.5rem;
+      --space-4: 2rem;
+      --space-5: 2.5rem;
+      --space-6: 3rem;
+      --space-7: 3.5rem;
+      --space-8: 4rem;
+      --radius: 0px;
+      --container: 1920px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-sans); }
+    html {
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      scroll-behavior: smooth;
+    }
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      line-height: var(--leading);
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+    input, select, textarea { font: inherit; }
+    html, body, p, div, span, a, small, li,
+    h1, h2, h3, h4, h5, h6 { font-size: 16px !important; }
+    :focus-visible { outline: 3px solid var(--primary-acc); outline-offset: 3px; }
+    [hidden] { display: none !important; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading {
+      display: inline-block;
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--border);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 1s linear infinite;
+    }
+    .touchable { transition: transform 0.1s ease-in-out; }
+    .touchable:active { transform: scale(0.97); }
+
+    /* ── Loading / Error States ── */
+    #loading-screen, #error-screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      color: var(--text);
+      gap: 1.5rem;
+      z-index: 999;
+    }
+    #loading-screen p, #error-screen p { opacity: 0.7; font-size: 14px !important; }
+    #error-screen h2 { font-size: 20px !important; }
+
+    /* ── Explorer ── */
+    .explorer-app { min-height: 100vh; background: #fff; }
+    .explorer-main { min-height: 100vh; padding: 12px clamp(12px, 2vw, 24px) 24px; display: grid; grid-template-rows: auto 1fr; }
+    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+    .filters.chips-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; display: flex; gap: .75rem; flex-wrap: nowrap; }
+    .chip {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      padding: 6px 0;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+    }
+    .chip.active, .chip:hover { color: var(--text); border-bottom-color: currentColor; }
+    .search-input {
+      width: 100%;
+      border: 0;
+      border-bottom: 1px solid var(--border);
+      padding: 10px 2px;
+      background: transparent;
+    }
+    .desktop-only { display: block; }
+    @media (max-width: 600px) { .desktop-only { display: none; } }
+    .exponate-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: clamp(1.5rem, 2.5vw, 2.5rem);
+      align-content: start;
+    }
+
+    /* ── ExponatCard styles (mirrored from ExponatCard.astro) ── */
+    .card-link {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      height: 100%;
+    }
+    .exponat-card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background-color: var(--bg, #000);
+      overflow: hidden;
+    }
+    .card-image {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      background-color: var(--bg-alt, #111);
+    }
+    .card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .highlight-badge {
+      position: absolute;
+      top: var(--space-2, 16px);
+      left: var(--space-2, 16px);
+      padding: var(--space-1, 8px) var(--space-2, 16px);
+      background-color: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(5px);
+      color: var(--primary, #fff);
+      font-size: 14px !important;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .card-content {
+      padding: var(--space-3, 24px) var(--space-2, 16px);
+    }
+    .card-title {
+      font-size: var(--font-h2, 32px);
+      font-weight: 500;
+      line-height: var(--heading-tight, 1.1);
+      color: var(--primary, #000);
+      margin: 0 0 var(--space-1, 8px) 0;
+    }
+    .card-subtitle {
+      font-size: var(--font-caption, 18px);
+      font-weight: 400;
+      color: var(--text-dim, #555);
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading-screen">
+    <div class="loading"></div>
+    <p>Lade Kiosk-Konfiguration…</p>
+  </div>
+
+  <div id="error-screen" style="display:none;">
+    <h2>Fehler</h2>
+    <p id="error-msg">Kiosk-Konfiguration konnte nicht geladen werden.</p>
+  </div>
+
+  <div id="app" style="display:none;">
+    <div class="explorer-app">
+      <main class="explorer-main">
+        <div class="toolbar">
+          <div class="filters chips-scroll" id="filters">
+            <button class="chip active" data-filter="all">Alle</button>
+            <button class="chip" data-filter="highlights">Highlights</button>
+            <!-- Category chips injected by JS -->
+          </div>
+          <div class="search desktop-only">
+            <input id="search-input" class="search-input" type="search" placeholder="Suche Exponate…" autocomplete="off" />
+          </div>
+        </div>
+        <div class="exponate-grid" id="exponate-grid">
+          <!-- Cards injected by JS -->
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // ── Sanity helpers ──
+    const SANITY_PROJECT = '832k5je1';
+    const SANITY_DATASET = 'production';
+    async function sanityFetch(query, params = {}) {
+      const paramStr = Object.entries(params).map(([k,v]) => `$${k}=${encodeURIComponent(JSON.stringify(v))}`).join('&');
+      const url = `https://${SANITY_PROJECT}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}?query=${encodeURIComponent(query)}${paramStr ? '&'+paramStr : ''}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      return data.result;
+    }
+    function imageUrl(ref, width = 800) {
+      if (!ref) return '';
+      const r = ref.asset?._ref;
+      if (!r) return '';
+      const parts = r.split('-');
+      const fmt = parts[parts.length - 1];
+      const dims = parts[parts.length - 2];
+      const id = parts.slice(1, parts.length - 2).join('-');
+      return `https://cdn.sanity.io/images/${SANITY_PROJECT}/${SANITY_DATASET}/${id}-${dims}.${fmt}?w=${width}&auto=format&fit=crop`;
+    }
+
+    // ── HTML escape helper ──
+    function escHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Kiosk ID resolution ──
+    async function getKioskId() {
+      try {
+        const res = await fetch('/kiosk-config.json');
+        if (res.ok) {
+          const cfg = await res.json();
+          if (cfg && cfg.kioskId) return cfg.kioskId;
+        }
+      } catch (_) { /* fallback */ }
+      const params = new URLSearchParams(location.search);
+      return params.get('id') || null;
+    }
+
+    // ── Build a card HTML string matching ExponatCard.astro structure ──
+    function buildCardHtml(exponat) {
+      const imgSrc = imageUrl(exponat.hauptbild, 800);
+      const lqip = exponat.hauptbild?.asset?.metadata?.lqip;
+      const imgStyle = lqip ? ` style="background-image: url(${escHtml(lqip)}); background-size: cover;"` : '';
+      const isHighlight = exponat.ist_highlight ? 'true' : 'false';
+      const categoryId = exponat.kategorie?._id || '';
+      const searchTerms = [exponat.titel, exponat.untertitel, exponat.inventarnummer, exponat.kategorie?.titel]
+        .filter(Boolean).join(' ').toLowerCase();
+      return `<a
+          href="/exponat/${escHtml(exponat._id)}"
+          class="card-link touchable exponat-card-wrap"
+          data-category="${escHtml(categoryId)}"
+          data-highlight="${isHighlight}"
+          data-search="${escHtml(searchTerms)}"
+        >
+          <article class="exponat-card">
+            <div class="card-image"${imgStyle}>
+              ${imgSrc ? `<img src="${escHtml(imgSrc)}" alt="${escHtml(exponat.titel || '')}" loading="lazy" decoding="async"${imgStyle} />` : ''}
+              ${exponat.ist_highlight ? '<div class="highlight-badge">Highlight</div>' : ''}
+            </div>
+            <div class="card-content">
+              <h3 class="card-title">${escHtml(exponat.titel || '')}</h3>
+              ${exponat.untertitel ? `<p class="card-subtitle">${escHtml(exponat.untertitel)}</p>` : ''}
+            </div>
+          </article>
+        </a>`;
+    }
+
+    // ── Bootstrap ──
+    (async () => {
+      const loadingScreen = document.getElementById('loading-screen');
+      const errorScreen = document.getElementById('error-screen');
+      const errorMsg = document.getElementById('error-msg');
+      const appEl = document.getElementById('app');
+
+      function showErr(msg) {
+        loadingScreen.style.display = 'none';
+        errorMsg.textContent = msg;
+        errorScreen.style.display = 'flex';
+      }
+
+      let result = null;
+
+      // 1. Try local content cache (Pi: populated by sync-content.sh every 5 min)
+      try {
+        const r = await fetch('/kiosk-content.json', { cache: 'no-store' });
+        if (r.ok) {
+          const cached = await r.json();
+          if (cached?.kioskId) result = cached;
+        }
+      } catch (_) {}
+
+      // 2. Fall back to Sanity API (dev / first boot)
+      if (!result) {
+        const kioskId = await getKioskId();
+        if (!kioskId) { showErr('Kein Kiosk-ID gefunden. Bitte ?id= Parameter angeben.'); return; }
+
+        const QUERY = `*[_type=="kioskDevice" && (kioskId==$id || hostname==$id || _id==$id)][0]{
+          "exponate": ausstellung->exponate[]->{
+            _id, titel, untertitel, inventarnummer, ist_highlight,
+            hauptbild{..., asset->{_id, _ref, metadata{lqip, dimensions}}},
+            "kategorie": kategorie->{_id, titel}
+          },
+          "kategorien": ausstellung->kategorien[]->{_id, titel},
+          "explorerSettings": ausstellung->kioskTemplate.explorerSettings
+        }`;
+
+        try {
+          result = await sanityFetch(QUERY, { id: kioskId });
+        } catch (e) { showErr(`Fehler beim Laden: ${e.message}`); return; }
+
+        if (!result) { showErr(`Kiosk nicht gefunden.`); return; }
+      }
+
+      const exponate = result.exponate || [];
+      const kategorien = result.kategorien || [];
+      const idleTimeout = result.explorerSettings?.idle_timeout || result.idle_timeout || 300000;
+
+      // ── Inject category chips ──
+      const filtersEl = document.getElementById('filters');
+      kategorien.forEach(k => {
+        const btn = document.createElement('button');
+        btn.className = 'chip';
+        btn.dataset.category = k._id;
+        btn.textContent = k.titel || k._id;
+        filtersEl.appendChild(btn);
+      });
+
+      // ── Inject cards ──
+      const grid = document.getElementById('exponate-grid');
+      grid.innerHTML = exponate.map(buildCardHtml).join('');
+
+      loadingScreen.style.display = 'none';
+      appEl.style.display = '';
+
+      // ── Filter / search logic (preserved from existing explorer.astro) ──
+      const chips = document.querySelectorAll('.chip');
+      const cards = Array.from(document.querySelectorAll('.exponat-card-wrap'));
+      const input = document.getElementById('search-input');
+      let activeCategory = 'all', onlyHighlights = false, term = '';
+
+      function applyFilters() {
+        const t = term.trim().toLowerCase();
+        for (const el of cards) {
+          const matchesTerm = !t || el.dataset.search?.includes(t);
+          const matchesCat = activeCategory === 'all' || el.dataset.category === activeCategory;
+          const matchesHL = !onlyHighlights || el.dataset.highlight === 'true';
+          el.style.display = (matchesTerm && matchesCat && matchesHL) ? '' : 'none';
+        }
+      }
+
+      chips.forEach((chip) => chip.addEventListener('click', () => {
+        chips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        onlyHighlights = chip.dataset.filter === 'highlights';
+        activeCategory = chip.dataset.category || (chip.dataset.filter ? 'all' : activeCategory);
+        if (chip.dataset.filter === 'all') { activeCategory = 'all'; onlyHighlights = false; }
+        applyFilters();
+      }));
+
+      input?.addEventListener('input', (e) => { term = e.target.value || ''; applyFilters(); });
+
+      // ── Idle timeout → redirect to kiosk home ──
+      let idleTimer;
+      const resetIdle = () => {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => {
+          window.location.href = `/kiosk/?id=${encodeURIComponent(kioskId)}`;
+        }, idleTimeout);
+      };
+      ['pointerdown','touchstart','mousedown','keydown','scroll'].forEach(ev => {
+        document.addEventListener(ev, resetIdle, { passive: true });
+      });
+      resetIdle();
+    })();
+  </script>
+</body>
+</html>

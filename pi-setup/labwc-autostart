@@ -1,0 +1,11 @@
+# ~/.config/labwc/autostart
+#
+# This file is ADDITIVE — labwc also runs /etc/xdg/labwc/autostart (system-wide,
+# contains kanshi for display config). Both files execute; this one runs after.
+#
+# We launch Chromium via its systemd user service so it gets:
+#   - Restart=always (auto-recovery on crash)
+#   - Wayland socket polling (no race conditions)
+#   - Clean logs via: journalctl --user -u chromium-kiosk -f
+
+systemctl --user start chromium-kiosk.service &

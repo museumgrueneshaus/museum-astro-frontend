@@ -1,0 +1,346 @@
+---
+---
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="description" content="Museum Digital Kiosk – Reader" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <title>Reader</title>
+  <script src="/register-sw.js" defer></script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <style>
+    /* ── CSS Variables & Reset (from Layout.astro) ── */
+    :root {
+      --primary: #000000;
+      --primary-acc: #3b82f6;
+      --text: #111111;
+      --text-dim: #555555;
+      --bg: #ffffff;
+      --bg-alt: #f4f4f4;
+      --border: #e5e5e5;
+      --muted: #555555;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-display: 64px;
+      --font-h1: 48px;
+      --font-h2: 32px;
+      --font-body: 22px;
+      --font-caption: 18px;
+      --leading: 1.5;
+      --heading-tight: 1.1;
+      --space-1: 0.5rem;
+      --space-2: 1rem;
+      --space-3: 1.5rem;
+      --space-4: 2rem;
+      --space-5: 2.5rem;
+      --space-6: 3rem;
+      --space-7: 3.5rem;
+      --space-8: 4rem;
+      --space-10: 5rem;
+      --radius: 0px;
+      --container: 1920px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-sans); }
+    html {
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      scroll-behavior: smooth;
+    }
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      line-height: var(--leading);
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+    input, select, textarea { font: inherit; }
+    html, body, p, div, span, a, small, li,
+    h1, h2, h3, h4, h5, h6 { font-size: 16px !important; }
+    :focus-visible { outline: 3px solid var(--primary-acc); outline-offset: 3px; }
+    [hidden] { display: none !important; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading {
+      display: inline-block;
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--border);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 1s linear infinite;
+    }
+
+    /* ── Loading / Error States ── */
+    #loading-screen, #error-screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      color: var(--text);
+      gap: 1.5rem;
+      z-index: 999;
+    }
+    #loading-screen p, #error-screen p { opacity: 0.7; font-size: 14px !important; }
+    #error-screen h2 { font-size: 20px !important; }
+
+    /* ── Reader (preserved from [id]/reader.astro) ── */
+    .reader-app { min-height: 100vh; background: #fff; }
+    .reader-main { min-height: 100vh; padding: 0; margin: 0; display: grid; grid-template-rows: auto 1fr; }
+    .reader-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      transition: opacity .2s, transform .2s;
+    }
+    .reader-toolbar.hidden { opacity: 0; transform: translateY(-8px); pointer-events: none; }
+    .controls-left, .controls-right { display: flex; align-items: center; gap: .75rem; }
+    .reader-viewport { min-height: 0; height: calc(100vh - 42px); background: #fff; display: grid; place-items: center; }
+    .reader-frame { width: 100vw; height: 100%; border: 0; }
+    .spread-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); width: 100vw; height: 100%; }
+    .spread-grid .reader-frame { height: 100%; }
+    .page-indicator input { width: 5ch; text-align: right; border: 0; border-bottom: 1px solid var(--border); background: transparent; padding: 2px 4px; }
+    .placeholder { color: var(--muted); text-align: center; padding: var(--space-10, 5rem); }
+    .reader-toolbar button {
+      background: transparent;
+      border: 1px solid var(--border);
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+    @media (max-width: 900px) { .spread { display: none; } }
+  </style>
+</head>
+<body>
+  <div id="loading-screen">
+    <div class="loading"></div>
+    <p>Lade Kiosk-Konfiguration…</p>
+  </div>
+
+  <div id="error-screen" style="display:none;">
+    <h2>Fehler</h2>
+    <p id="error-msg">Kiosk-Konfiguration konnte nicht geladen werden.</p>
+  </div>
+
+  <div id="app" style="display:none;">
+    <div class="reader-app">
+      <main class="reader-main">
+        <div class="reader-toolbar" id="reader-toolbar">
+          <div class="controls-left">
+            <button id="prev-page" aria-label="Vorherige Seite">←</button>
+            <span class="page-indicator">
+              <input id="page-input" type="number" min="1" value="1" />
+              <span id="page-sep">/</span>
+              <span id="page-count">?</span>
+            </span>
+            <button id="next-page" aria-label="Nächste Seite">→</button>
+          </div>
+          <div class="controls-right">
+            <label class="spread">
+              <input id="spread-toggle" type="checkbox" /> Doppelseite
+            </label>
+            <button id="fullscreen" aria-label="Vollbild">⤢ Vollbild</button>
+          </div>
+        </div>
+
+        <div id="reader" class="reader-viewport">
+          <div class="placeholder">
+            <p>Lade PDF…</p>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // ── Sanity helpers ──
+    const SANITY_PROJECT = '832k5je1';
+    const SANITY_DATASET = 'production';
+    async function sanityFetch(query, params = {}) {
+      const paramStr = Object.entries(params).map(([k,v]) => `$${k}=${encodeURIComponent(JSON.stringify(v))}`).join('&');
+      const url = `https://${SANITY_PROJECT}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}?query=${encodeURIComponent(query)}${paramStr ? '&'+paramStr : ''}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      return data.result;
+    }
+    function imageUrl(ref, width = 800) {
+      if (!ref) return '';
+      const r = ref.asset?._ref;
+      if (!r) return '';
+      const parts = r.split('-');
+      const fmt = parts[parts.length - 1];
+      const dims = parts[parts.length - 2];
+      const id = parts.slice(1, parts.length - 2).join('-');
+      return `https://cdn.sanity.io/images/${SANITY_PROJECT}/${SANITY_DATASET}/${id}-${dims}.${fmt}?w=${width}&auto=format&fit=crop`;
+    }
+
+    // ── Kiosk ID resolution ──
+    async function getKioskId() {
+      try {
+        const res = await fetch('/kiosk-config.json');
+        if (res.ok) {
+          const cfg = await res.json();
+          if (cfg && cfg.kioskId) return cfg.kioskId;
+        }
+      } catch (_) { /* fallback */ }
+      const params = new URLSearchParams(location.search);
+      return params.get('id') || null;
+    }
+
+    // ── Bootstrap ──
+    (async () => {
+      const loadingScreen = document.getElementById('loading-screen');
+      const errorScreen = document.getElementById('error-screen');
+      const errorMsg = document.getElementById('error-msg');
+      const appEl = document.getElementById('app');
+
+      function showErr(msg) {
+        loadingScreen.style.display = 'none';
+        errorMsg.textContent = msg;
+        errorScreen.style.display = 'flex';
+      }
+
+      let result = null;
+
+      // 1. Try local content cache (Pi: populated by sync-content.sh every 5 min)
+      try {
+        const r = await fetch('/kiosk-content.json', { cache: 'no-store' });
+        if (r.ok) {
+          const cached = await r.json();
+          if (cached?.kioskId) result = cached;
+        }
+      } catch (_) {}
+
+      // 2. Fall back to Sanity API (dev / first boot)
+      if (!result) {
+        const kioskId = await getKioskId();
+        if (!kioskId) { showErr('Kein Kiosk-ID gefunden. Bitte ?id= Parameter angeben.'); return; }
+
+        const QUERY = `*[_type=="kioskDevice" && (kioskId==$id || hostname==$id || _id==$id)][0]{
+          "pdf_url": ausstellung->kioskTemplate.readerSettings.pdf_url,
+          "idle_timeout": 300000
+        }`;
+
+        try {
+          result = await sanityFetch(QUERY, { id: kioskId });
+        } catch (e) { showErr(`Fehler beim Laden: ${e.message}`); return; }
+
+        if (!result) { showErr(`Kiosk nicht gefunden.`); return; }
+      }
+
+      const defaultFile = result.pdf_url || '';
+      const idleTimeout = result.idle_timeout || 300000;
+
+      loadingScreen.style.display = 'none';
+      appEl.style.display = '';
+
+      // ── Reader logic (preserved from [id]/reader.astro) ──
+      const urlParams = new URLSearchParams(location.search);
+      const fileParam = urlParams.get('file') || defaultFile;
+      let page = Math.max(1, parseInt(urlParams.get('page') || '1', 10));
+      let spread = urlParams.get('spread') === '1';
+
+      const reader = document.getElementById('reader');
+      const prevBtn = document.getElementById('prev-page');
+      const nextBtn = document.getElementById('next-page');
+      const pageInput = document.getElementById('page-input');
+      const pageCount = document.getElementById('page-count');
+      const spreadToggle = document.getElementById('spread-toggle');
+      const fullscreenBtn = document.getElementById('fullscreen');
+      const toolbar = document.getElementById('reader-toolbar');
+
+      function buildSrc(file, p) {
+        const hash = `#page=${p}&view=FitH`;
+        return `${file}${file.includes('#') ? '' : hash}`;
+      }
+
+      function render() {
+        reader.innerHTML = '';
+        if (!fileParam) {
+          reader.innerHTML = '<div class="placeholder"><p>Kein PDF angegeben. Parameter <code>?file=URL</code> in der Adresse angeben oder in der Kiosk-Konfiguration <code>readerSettings.pdf_url</code> setzen.</p></div>';
+          return;
+        }
+        const frame = document.createElement('iframe');
+        frame.className = 'reader-frame';
+        frame.src = buildSrc(fileParam, page);
+        if (spread && window.innerWidth > 900) {
+          const frame2 = document.createElement('iframe');
+          frame2.className = 'reader-frame';
+          frame2.src = buildSrc(fileParam, page + 1);
+          const wrap = document.createElement('div');
+          wrap.className = 'spread-grid';
+          wrap.appendChild(frame);
+          wrap.appendChild(frame2);
+          reader.appendChild(wrap);
+        } else {
+          reader.appendChild(frame);
+        }
+        pageInput.value = String(page);
+      }
+
+      function updateUrl() {
+        const url = new URL(location.href);
+        url.searchParams.set('page', String(page));
+        url.searchParams.set('spread', spread ? '1' : '0');
+        history.replaceState(null, '', url);
+      }
+
+      prevBtn?.addEventListener('click', () => { page = Math.max(1, page - 1); render(); updateUrl(); });
+      nextBtn?.addEventListener('click', () => { page = page + 1; render(); updateUrl(); });
+      pageInput?.addEventListener('change', (e) => {
+        const v = parseInt(e.target.value || '1', 10);
+        page = isNaN(v) ? 1 : Math.max(1, v);
+        render();
+        updateUrl();
+      });
+      spreadToggle?.addEventListener('change', (e) => { spread = e.target.checked; render(); updateUrl(); });
+      fullscreenBtn?.addEventListener('click', () => {
+        if (document.fullscreenElement) document.exitFullscreen();
+        else reader.requestFullscreen?.();
+      });
+
+      // ── Auto-hide toolbar on idle (preserved from existing reader) ──
+      let tbTimer;
+      const TB_HIDE_MS = 2000;
+      const showTb = () => toolbar?.classList.remove('hidden');
+      const hideTb = () => toolbar?.classList.add('hidden');
+      const resetTb = () => { showTb(); clearTimeout(tbTimer); tbTimer = setTimeout(hideTb, TB_HIDE_MS); };
+      ['mousemove','touchstart','keydown','click'].forEach(ev => document.addEventListener(ev, resetTb, { passive: true }));
+
+      if (spreadToggle) spreadToggle.checked = spread;
+      render();
+      resetTb();
+
+      // ── Idle timeout → redirect to kiosk home ──
+      let idleTimer;
+      const resetIdle = () => {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => {
+          window.location.href = `/kiosk/?id=${encodeURIComponent(kioskId)}`;
+        }, idleTimeout);
+      };
+      ['pointerdown','touchstart','mousedown','keydown','scroll'].forEach(ev => {
+        document.addEventListener(ev, resetIdle, { passive: true });
+      });
+      resetIdle();
+    })();
+  </script>
+</body>
+</html>

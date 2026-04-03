@@ -1,0 +1,732 @@
+---
+---
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="google" content="notranslate">
+  <title>Video Player</title>
+  <script src="/register-sw.js" defer></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      overflow: hidden;
+    }
+
+    .error-screen {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+    }
+
+    .error-screen h1 {
+      font-size: 80px;
+      margin-bottom: 20px;
+    }
+
+    .container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    video, img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      position: absolute;
+      top: 0;
+      left: 0;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+    }
+
+    video.active, img.active {
+      opacity: 1;
+      z-index: 1;
+    }
+
+    .overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      z-index: 10;
+      background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 80%, transparent 100%);
+      padding: 80px 60px 40px;
+    }
+
+    .overlay-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 60px;
+    }
+
+    .overlay-left {
+      flex: 0 1 auto;
+    }
+
+    .overlay h2 {
+      font-size: 40px;
+      margin: 0 0 5px;
+      font-weight: 600;
+    }
+
+    .overlay .function {
+      font-size: 24px;
+      margin: 0;
+      opacity: 0.85;
+      font-weight: 400;
+    }
+
+    .subtitles {
+      font-size: 28px;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+      min-height: 45px;
+      text-align: left;
+      opacity: 0.95;
+      flex: 1 1 auto;
+    }
+
+    /* Native video subtitles styling */
+    video::cue {
+      background-color: rgba(0, 0, 0, 0.85);
+      color: white;
+      font-size: 32px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.4;
+      padding: 0.2em 0.5em;
+    }
+
+    .progress {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 10;
+      background: rgba(0,0,0,0.7);
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 20px;
+    }
+
+    .start-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.95);
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      cursor: pointer;
+    }
+
+    .start-screen.hidden {
+      display: none;
+    }
+
+    .play-button {
+      font-size: 120px;
+      margin-bottom: 20px;
+      animation: pulse 2s infinite;
+    }
+
+    .start-text {
+      font-size: 24px;
+      opacity: 0.8;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    .status {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      background: rgba(0,0,0,0.7);
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: monospace;
+    }
+
+    /* Hide native video subtitles - we show them in overlay */
+    video::cue {
+      opacity: 0;
+      display: none;
+    }
+
+    video::-webkit-media-text-track-container {
+      display: none;
+    }
+
+    #loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    #loading-screen.hidden {
+      display: none;
+    }
+
+    #loading-screen p {
+      font-size: 20px;
+      opacity: 0.7;
+    }
+
+    #error-screen {
+      display: none;
+      width: 100vw;
+      height: 100vh;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+    }
+
+    #error-screen.visible {
+      display: flex;
+    }
+
+    #error-screen h1 {
+      font-size: 80px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="loading-screen">
+    <p id="loading-msg">Lade Konfiguration...</p>
+  </div>
+
+  <div id="error-screen">
+    <div>
+      <h1>&#9888;&#65039;</h1>
+      <p id="error-msg">Unbekannter Fehler</p>
+    </div>
+  </div>
+
+  <div id="player-wrapper" style="display:none;">
+    <div class="start-screen" id="startScreen">
+      <div class="play-button">&#9654;</div>
+      <div class="start-text">Klicken zum Starten</div>
+    </div>
+
+    <div class="container" id="container">
+      <video id="media1" playsinline webkit-playsinline preload="auto"></video>
+      <video id="media2" playsinline webkit-playsinline preload="auto"></video>
+      <img id="img1" style="display:none;" />
+      <img id="img2" style="display:none;" />
+    </div>
+
+    <div class="overlay" id="overlay">
+      <div class="overlay-content">
+        <div class="overlay-left">
+          <h2 id="title">Video Title</h2>
+          <div id="function" class="function"></div>
+        </div>
+        <div id="subtitles" class="subtitles" style="display:none;"></div>
+      </div>
+    </div>
+
+    <div class="progress" id="progress">
+      <span id="current">1</span> / <span id="total">0</span>
+    </div>
+
+    <div class="status" id="status">Loading...</div>
+  </div>
+
+  <script>
+    // ── Sanity fetch helper ──────────────────────────────────────────────────
+    async function sanityFetch(query, params = {}) {
+      const p = '832k5je1', d = 'production';
+      const paramStr = Object.entries(params).map(([k, v]) => `$${k}=${encodeURIComponent(JSON.stringify(v))}`).join('&');
+      const url = `https://${p}.api.sanity.io/v2024-01-01/data/query/${d}?query=${encodeURIComponent(query)}${paramStr ? '&' + paramStr : ''}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      return data.result;
+    }
+
+    // ── GROQ query ───────────────────────────────────────────────────────────
+    const KIOSK_QUERY = `*[_type == "kioskDevice" && (kioskId == $id || hostname == $id || _id == $id)][0]{
+      _id,
+      kioskId,
+      "modus": ausstellung->kioskTemplate.template,
+      "konfiguration": {
+        "video_settings": {
+          "playlist": ausstellung->videos[]{
+            "typ": "video",
+            "video": videodatei{ asset->{ _id, url, mimeType } },
+            "titel": videotitel,
+            "beschreibung": beschreibung,
+            "dauer": dauer,
+            "untertitel": untertitel{ asset->{ _id, url } },
+            "bild": thumbnail{ asset->{ _id, url } }
+          },
+          "loop": ausstellung->kioskTemplate.videoSettings.loop,
+          "shuffle": ausstellung->kioskTemplate.videoSettings.shuffle,
+          "zeige_overlay": ausstellung->kioskTemplate.videoSettings.zeige_overlay,
+          "zeige_untertitel": ausstellung->kioskTemplate.videoSettings.zeige_untertitel,
+          "uebergang": ausstellung->kioskTemplate.videoSettings.uebergang,
+          "audio": { "lautstaerke": ausstellung->kioskTemplate.videoSettings.lautstaerke }
+        }
+      }
+    }`;
+
+    // ── UI helpers ───────────────────────────────────────────────────────────
+    const loadingScreen = document.getElementById('loading-screen');
+    const loadingMsg    = document.getElementById('loading-msg');
+    const errorScreen   = document.getElementById('error-screen');
+    const errorMsg      = document.getElementById('error-msg');
+    const playerWrapper = document.getElementById('player-wrapper');
+
+    function showError(msg) {
+      loadingScreen.classList.add('hidden');
+      errorMsg.textContent = msg;
+      errorScreen.classList.add('visible');
+    }
+
+    function showPlayer() {
+      loadingScreen.classList.add('hidden');
+      playerWrapper.style.display = '';
+    }
+
+    // ── Extract filename from Sanity CDN URL ─────────────────────────────────
+    function extractFilename(url) {
+      if (!url) return null;
+      // CDN URLs look like: https://cdn.sanity.io/files/PROJECT/DATASET/abc123.mp4
+      const match = url.match(/\/([^/?#]+)$/);
+      return match ? match[1] : null;
+    }
+
+    function isLocal() {
+      return location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    }
+
+    // ── Resolve video URL (local Pi fallback) ────────────────────────────────
+    // Returns primary URL; caller must handle error event for CDN fallback.
+    function primaryVideoUrl(sanityUrl) {
+      if (isLocal()) {
+        const filename = extractFilename(sanityUrl);
+        if (filename) return `/videos/${filename}`;
+      }
+      return sanityUrl;
+    }
+
+    // ── Idle timeout ─────────────────────────────────────────────────────────
+    const IDLE_MS = 5 * 60 * 1000; // 5 minutes
+    let idleTimer = null;
+    let kioskIdForIdle = null;
+
+    function resetIdle() {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        const dest = kioskIdForIdle
+          ? `/kiosk/?id=${encodeURIComponent(kioskIdForIdle)}`
+          : '/kiosk/';
+        window.location.href = dest;
+      }, IDLE_MS);
+    }
+
+    ['mousemove', 'mousedown', 'keydown', 'touchstart', 'touchmove'].forEach(evt => {
+      document.addEventListener(evt, resetIdle, { passive: true });
+    });
+
+    // ── Bootstrap ────────────────────────────────────────────────────────────
+    async function init() {
+      loadingMsg.textContent = 'Kiosk wird gestartet…';
+
+      let config = null;
+      let kioskId = null;
+
+      // 1. Try local content cache (Pi: populated by sync-content.sh)
+      try {
+        const r = await fetch('/kiosk-content.json', { cache: 'no-store' });
+        if (r.ok) {
+          const cached = await r.json();
+          if (cached?.kioskId) {
+            config   = cached;
+            kioskId  = cached.kioskId;
+          }
+        }
+      } catch (_) {}
+
+      // 2. Fall back: kiosk-config.json / URL param → Sanity API (dev / first boot)
+      if (!config) {
+        try {
+          const cfgRes = await fetch('/kiosk-config.json', { cache: 'no-store' });
+          if (cfgRes.ok) {
+            const cfg = await cfgRes.json();
+            if (cfg?.kioskId) kioskId = cfg.kioskId;
+          }
+        } catch (_) {}
+
+        if (!kioskId) {
+          const params = new URLSearchParams(window.location.search);
+          kioskId = params.get('id') || null;
+        }
+
+        if (!kioskId) {
+          showError('Keine Kiosk-ID gefunden. Bitte ?id= Parameter angeben oder kiosk-config.json bereitstellen.');
+          return;
+        }
+
+        loadingMsg.textContent = 'Lade Kiosk-Konfiguration…';
+        try {
+          config = await sanityFetch(KIOSK_QUERY, { id: kioskId });
+        } catch (e) {
+          showError(`Fehler beim Laden der Konfiguration: ${e.message}`);
+          return;
+        }
+      }
+
+      kioskIdForIdle = kioskId;
+      resetIdle();
+
+      if (!config) {
+        showError(`Kiosk "${kioskId}" nicht gefunden`);
+        return;
+      }
+
+      // 4. Build playlist
+      const audioSettings = config?.konfiguration?.video_settings?.audio || {};
+      const audioVolume   = audioSettings.lautstaerke || 70;
+      const audioMuted    = audioSettings.stumm === true;
+      const showSubtitles = config?.konfiguration?.video_settings?.zeige_untertitel === true;
+      const loopPlaylist  = config?.konfiguration?.video_settings?.loop !== false;
+
+      const rawPlaylist = config?.konfiguration?.video_settings?.playlist || [];
+      const videos = rawPlaylist.map(item => {
+        let sanityUrl = null;
+        if (item.typ === 'video') {
+          sanityUrl = item.video_url || item.video?.asset?.url || null;
+        } else if (item.typ === 'image') {
+          sanityUrl = item.bild?.asset?.url || null;
+        }
+        return {
+          sanityUrl,
+          url: sanityUrl ? primaryVideoUrl(sanityUrl) : null,
+          title:       item.titel        || '',
+          description: item.beschreibung || '',
+          typ:         item.typ,
+          dauer:       item.dauer        || 10,
+          subtitles:   item.untertitel?.asset?.url || null
+        };
+      }).filter(v => v.url);
+
+      if (videos.length === 0) {
+        showError('Keine Videos in der Playlist');
+        return;
+      }
+
+      document.getElementById('total').textContent = videos.length;
+      showPlayer();
+      startPlayback(videos, audioVolume, audioMuted, showSubtitles, loopPlaylist);
+    }
+
+    // ── Video player ─────────────────────────────────────────────────────────
+    function startPlayback(videos, audioVolume, audioMuted, showSubtitles, loopPlaylist) {
+      console.log('Videos data:', videos);
+      console.log('Show subtitles:', showSubtitles);
+      console.log('Loop playlist:', loopPlaylist);
+      videos.forEach((v, i) => {
+        console.log(`Video ${i + 1}: ${v.title}, Subtitles: ${v.subtitles || 'none'}`);
+      });
+
+      let currentIndex = 0;
+      let currentMedia = null;
+      let started      = false;
+      let imageTimer   = null;
+
+      const media1      = document.getElementById('media1');
+      const media2      = document.getElementById('media2');
+      const img1        = document.getElementById('img1');
+      const img2        = document.getElementById('img2');
+      const titleEl     = document.getElementById('title');
+      const functionEl  = document.getElementById('function');
+      const currentEl   = document.getElementById('current');
+      const totalEl     = document.getElementById('total');
+      const startScreen = document.getElementById('startScreen');
+      const statusEl    = document.getElementById('status');
+      const subtitlesEl = document.getElementById('subtitles');
+
+      totalEl.textContent = videos.length;
+
+      function log(msg) {
+        console.log(msg);
+        statusEl.textContent = msg;
+      }
+
+      function updateOverlay(video) {
+        titleEl.textContent  = video.title;
+        functionEl.textContent = video.description || '';
+        currentEl.textContent  = currentIndex + 1;
+      }
+
+      function setupSubtitleDisplay(videoElement) {
+        if (!showSubtitles || !videoElement.textTracks || videoElement.textTracks.length === 0) {
+          return;
+        }
+        const track = videoElement.textTracks[0];
+        track.mode = 'showing';
+        log('Native subtitles enabled');
+      }
+
+      let firstPlay = true;
+
+      async function loadMedia(mediaElement, videoData) {
+        return new Promise((resolve, reject) => {
+          if (videoData.typ === 'video') {
+            mediaElement.preload = 'auto';
+            mediaElement.src     = videoData.url;
+            mediaElement.muted   = firstPlay ? true : audioMuted;
+            mediaElement.volume  = audioVolume / 100;
+
+            if (videoData.subtitles) {
+              log(`Adding subtitles: ${videoData.subtitles}`);
+              while (mediaElement.firstChild) {
+                mediaElement.removeChild(mediaElement.firstChild);
+              }
+              const track     = document.createElement('track');
+              track.kind      = 'subtitles';
+              track.label     = 'Deutsch';
+              track.srclang   = 'de';
+              track.src       = videoData.subtitles;
+              track.default   = true;
+
+              track.addEventListener('load', () => { log('Subtitles loaded successfully'); });
+              track.addEventListener('error', (e) => { log(`Subtitle error: ${e}`); });
+
+              mediaElement.appendChild(track);
+
+              setTimeout(() => {
+                if (mediaElement.textTracks[0]) {
+                  mediaElement.textTracks[0].mode = 'showing';
+                  log('Text track mode set to showing');
+                }
+              }, 100);
+            } else {
+              log('No subtitles for this video');
+            }
+
+            mediaElement.load();
+
+            mediaElement.addEventListener('loadedmetadata', () => {
+              log(`Video ${currentIndex + 1} metadata loaded`);
+              resolve();
+            }, { once: true });
+
+            mediaElement.addEventListener('error', () => {
+              // Local Pi fallback: if local file missing, try Sanity CDN
+              if (isLocal() && videoData.sanityUrl && videoData.url !== videoData.sanityUrl) {
+                log(`Lokale Datei nicht gefunden, CDN-Fallback: ${videoData.sanityUrl}`);
+                videoData.url = videoData.sanityUrl;
+                mediaElement.src = videoData.sanityUrl;
+                mediaElement.load();
+                mediaElement.addEventListener('loadedmetadata', () => {
+                  log(`Video ${currentIndex + 1} Metadaten geladen (CDN)`);
+                  resolve();
+                }, { once: true });
+                mediaElement.addEventListener('error', () => {
+                  const msg = mediaElement.error ? `Video-Fehler ${mediaElement.error.code}` : 'Video-Fehler';
+                  log(msg);
+                  reject(new Error(msg));
+                }, { once: true });
+                return;
+              }
+              const msg = mediaElement.error
+                ? `Video-Fehler ${mediaElement.error.code}: ${mediaElement.error.message}`
+                : 'Video-Fehler (unbekannt)';
+              log(msg);
+              reject(new Error(msg));
+            }, { once: true });
+          } else {
+            // Image
+            mediaElement.src    = videoData.url;
+            mediaElement.onload = () => {
+              log(`Image ${currentIndex + 1} ready`);
+              resolve();
+            };
+            mediaElement.onerror = (e) => {
+              log('Image error');
+              reject(e);
+            };
+          }
+
+          setTimeout(() => reject(new Error('Timeout')), 10000);
+        });
+      }
+
+      async function playMedia(index) {
+        if (index >= videos.length) {
+          if (loopPlaylist) {
+            index = 0;
+          } else {
+            log('Playlist beendet - Loop deaktiviert');
+            return;
+          }
+        }
+        if (index < 0) {
+          index = videos.length - 1;
+        }
+
+        currentIndex = index;
+        const videoData = videos[index];
+
+        log(`Loading ${videoData.typ} ${index + 1}/${videos.length}`);
+        updateOverlay(videoData);
+
+        let mediaEl, oldMedia;
+
+        if (videoData.typ === 'video') {
+          mediaEl = currentMedia === media1 ? media2 : media1;
+          img1.style.display = 'none';
+          img2.style.display = 'none';
+        } else {
+          mediaEl = currentMedia === img1 ? img2 : img1;
+          mediaEl.style.display = 'block';
+        }
+
+        oldMedia = currentMedia;
+
+        try {
+          await loadMedia(mediaEl, videoData);
+
+          if (oldMedia) {
+            oldMedia.classList.remove('active');
+          }
+
+          currentMedia = mediaEl;
+          currentMedia.classList.add('active');
+
+          if (videoData.typ === 'video') {
+            setupSubtitleDisplay(currentMedia);
+
+            await currentMedia.play();
+
+            if (firstPlay) {
+              firstPlay = false;
+              setTimeout(() => {
+                currentMedia.muted = audioMuted;
+                log('Audio enabled');
+              }, 100);
+            }
+
+            log(`Playing video ${index + 1}`);
+
+            currentMedia.addEventListener('ended', () => {
+              log('Video ended');
+              playMedia(index + 1);
+            }, { once: true });
+          } else {
+            log(`Showing image ${index + 1} for ${videoData.dauer}s`);
+            clearTimeout(imageTimer);
+            imageTimer = setTimeout(() => {
+              playMedia(index + 1);
+            }, videoData.dauer * 1000);
+          }
+        } catch (e) {
+          log(`Error: ${e.message}`);
+          setTimeout(() => playMedia(index + 1), 2000);
+        }
+      }
+
+      function start() {
+        if (started) return;
+        started = true;
+        log('Starting playback...');
+        startScreen.classList.add('hidden');
+        playMedia(0);
+      }
+
+      // Autoplay immediately for headless setup
+      setTimeout(() => {
+        if (!started) start();
+      }, 100);
+
+      startScreen.addEventListener('click', start);
+
+      // Auto-start via simulated click (counts as user gesture for audio)
+      setTimeout(() => {
+        log('Auto-starting in kiosk mode via simulated click...');
+        startScreen.click();
+      }, 1000);
+
+      // Keyboard controls
+      document.addEventListener('keydown', (e) => {
+        if (!started && (e.key === ' ' || e.key === 'Enter')) {
+          e.preventDefault();
+          start();
+        }
+
+        if (started) {
+          if (e.key === 'ArrowRight') {
+            if (currentMedia && currentMedia.tagName === 'VIDEO') currentMedia.pause();
+            clearTimeout(imageTimer);
+            playMedia(currentIndex + 1);
+          } else if (e.key === 'ArrowLeft') {
+            if (currentMedia && currentMedia.tagName === 'VIDEO') currentMedia.pause();
+            clearTimeout(imageTimer);
+            playMedia(currentIndex - 1);
+          } else if (e.key === ' ') {
+            e.preventDefault();
+            if (currentMedia && currentMedia.tagName === 'VIDEO') {
+              if (currentMedia.paused) {
+                currentMedia.play();
+              } else {
+                currentMedia.pause();
+              }
+            }
+          }
+        }
+      });
+
+      log('Ready - Click to start');
+    }
+
+    // ── Run ──────────────────────────────────────────────────────────────────
+    init().catch(e => showError(`Initialisierungsfehler: ${e.message}`));
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,22 @@
+[Unit]
+Description=Museum Content Sync (Boot)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# Sync build first (skips download if version unchanged)
+ExecStart=/usr/local/bin/sync-build.sh
+# Then fetch latest content from Sanity
+ExecStart=/usr/local/bin/sync-content.sh
+# Then download any missing videos locally
+ExecStart=/usr/local/bin/sync-videos.sh
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=600
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target

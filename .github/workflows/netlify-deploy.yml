@@ -1,12 +1,17 @@
-name: Deploy to Netlify
+name: Deploy to Netlify + GitHub Release
 
 on:
   push:
     branches: [ "main" ]
+  repository_dispatch:
+    types: [ sanity-publish ]   # triggered by Sanity webhook on content publish
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,3 +33,22 @@ jobs:
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         run: npx netlify-cli deploy --dir=dist --prod --site="$NETLIFY_SITE_ID"
 
+      - name: Create build zip
+        run: |
+          cd dist
+          zip -r ../museum-kiosk-build.zip .
+          cd ..
+
+      - name: Generate release tag
+        id: tag
+        run: echo "tag=build-$(date -u +'%Y%m%d-%H%M%S')" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: ${{ steps.tag.outputs.tag }}
+          body: |
+            Automated build from commit ${{ github.sha }}
+            Branch: ${{ github.ref_name }}
+          files: museum-kiosk-build.zip

@@ -1,6 +1,15 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { getAusstellung, urlFor } from '../../lib/sanity';
+import { client, getAusstellung, urlFor } from '../../lib/sanity';
+
+export async function getStaticPaths() {
+  try {
+    const ids = await client.fetch(`*[_type == "ausstellung"]._id`);
+    return ids.map((id) => ({ params: { id } }));
+  } catch (e) {
+    return [];
+  }
+}
 
 const { id } = Astro.params;
 const ausstellung = await getAusstellung(id);
