@@ -104,7 +104,10 @@ print(json.dumps(result))
 }
 
 # ── Add timestamp and write atomically ──────────────────────────────────────
-echo "$RESULT" | jq --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '. + {lastSync: $ts}' > "$CONTENT_TMP"
+echo "$RESULT" | jq --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '. + {lastSync: $ts}' > "$CONTENT_TMP" || {
+    error "jq failed — keeping existing content"
+    exit 0
+}
 
 mv "$CONTENT_TMP" "$CONTENT_FILE"
 chown www-data:www-data "$CONTENT_FILE" 2>/dev/null || true

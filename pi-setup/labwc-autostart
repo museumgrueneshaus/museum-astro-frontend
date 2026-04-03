@@ -8,4 +8,4 @@
 #   - Wayland socket polling (no race conditions)
 #   - Clean logs via: journalctl --user -u chromium-kiosk -f
 
-systemctl --user start chromium-kiosk.service &
+systemctl --user start chromium-kiosk.service

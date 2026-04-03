@@ -162,6 +162,21 @@ add_cron "0    2 * * * /usr/local/bin/sync-videos.sh >> /var/log/sync-videos.log
 crontab "$CRON_TMP"
 rm -f "$CRON_TMP"
 
+# ── Log rotation ──────────────────────────────────────────────────────────────
+log "Configuring log rotation..."
+cat > /etc/logrotate.d/museum-kiosk <<'LOGROTATE'
+/var/log/heartbeat.log
+/var/log/sync-content.log
+/var/log/sync-build.log
+/var/log/sync-videos.log {
+    daily
+    rotate 7
+    compress
+    missingok
+    notifempty
+}
+LOGROTATE
+
 # ── Initial sync ──────────────────────────────────────────────────────────────
 
 log "Running initial build sync..."

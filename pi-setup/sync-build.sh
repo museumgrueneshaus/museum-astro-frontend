@@ -18,7 +18,7 @@ trap cleanup EXIT
 
 # Fetch latest release metadata
 log "Checking GitHub for latest release..."
-HTTP_CODE=$(curl -s -o /tmp/_sync_release.json -w "%{http_code}" --max-time 30 "$GITHUB_API") || HTTP_CODE="000"
+HTTP_CODE=$(curl -s -o "$TMP_DIR/release.json" -w "%{http_code}" --max-time 30 "$GITHUB_API") || HTTP_CODE="000"
 
 if [ "$HTTP_CODE" = "000" ]; then
     # Network unreachable
@@ -37,7 +37,7 @@ elif [ "$HTTP_CODE" != "200" ]; then
     exit 0
 fi
 
-RELEASE_JSON=$(cat /tmp/_sync_release.json)
+RELEASE_JSON=$(cat "$TMP_DIR/release.json")
 
 LATEST_TAG=$(echo "$RELEASE_JSON" | jq -r '.tag_name')
 ASSET_URL=$(echo "$RELEASE_JSON" | jq -r '.assets[] | select(.name | endswith(".zip")) | .browser_download_url' | head -1)

@@ -30,6 +30,7 @@ ExecStartPre=/bin/bash -c '\
 
 ExecStart=/bin/bash -c '\
     CHROMIUM=$(which chromium chromium-browser 2>/dev/null | head -1); \
+    [ -n "$CHROMIUM" ] || { echo "Chromium not found"; exit 1; }; \
     exec $CHROMIUM \
         --kiosk \
         --noerrdialogs \
