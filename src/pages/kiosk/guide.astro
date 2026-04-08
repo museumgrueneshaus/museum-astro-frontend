@@ -1,0 +1,747 @@
+---
+---
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="description" content="Museum im Grünen Haus — Mobiler Guide" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#f7f6f3" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Museum Guide" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <title>Museum Guide</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" />
+  <style>
+    :root {
+      --accent: #3d6b4a;
+      --accent-light: #5a8a68;
+      --text: #1a1a18;
+      --text-secondary: #6b6b6b;
+      --bg: #fff;
+      --bg-warm: #f7f6f3;
+      --rule: #e0dfdc;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html {
+      font-family: var(--font);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      scroll-behavior: smooth;
+    }
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      background: var(--bg-warm);
+      color: var(--text);
+      line-height: 1.6;
+      padding-top: var(--safe-top);
+      padding-bottom: var(--safe-bottom);
+    }
+
+    /* ── Loading ── */
+    #loading-screen {
+      position: fixed; inset: 0; z-index: 99;
+      background: var(--bg-warm);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 12px;
+    }
+    .spinner {
+      width: 24px; height: 24px;
+      border: 2px solid var(--rule);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loading-screen p {
+      font-size: 11px; font-weight: 500;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #bbb;
+    }
+
+    /* ── Error ── */
+    #error-screen {
+      display: none; position: fixed; inset: 0; z-index: 99;
+      background: var(--bg-warm);
+      flex-direction: column; align-items: center; justify-content: center;
+      padding: 32px; text-align: center; gap: 12px;
+    }
+    #error-screen h2 { font-size: 18px; font-weight: 600; }
+    #error-screen p { font-size: 14px; color: var(--text-secondary); }
+
+    /* ── Header bar ── */
+    .guide-header {
+      position: sticky; top: 0; z-index: 10;
+      background: var(--bg-warm);
+      border-bottom: 1px solid var(--rule);
+      padding: 0 20px;
+    }
+    .guide-header-top {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 24px 0 16px;
+    }
+    .guide-back {
+      width: 32px; height: 32px;
+      display: grid; place-items: center;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 20px; cursor: pointer;
+      text-decoration: none;
+      margin-left: -6px;
+      opacity: 0.5;
+      transition: opacity .2s;
+    }
+    .guide-back:hover { opacity: 1; }
+    .guide-header-text {
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    /* ── Language toggle ── */
+    .lang-toggle {
+      display: flex; gap: 2px;
+    }
+    .lang-btn {
+      padding: 5px 10px;
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.06em;
+      background: transparent;
+      color: var(--text-secondary);
+      border: none;
+      cursor: pointer;
+      transition: all .2s var(--ease);
+      opacity: 0.45;
+    }
+    .lang-btn:hover { opacity: 0.7; }
+    .lang-btn.active {
+      color: var(--accent);
+      opacity: 1;
+    }
+
+    /* ── Hero image ── */
+    .hero {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background: #e8e4de;
+      overflow: hidden;
+    }
+    .hero img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .hero-credit {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 4px 16px;
+      font-size: 10px; color: rgba(255,255,255,0.6);
+      background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
+      text-align: right;
+    }
+
+    /* ── Content ── */
+    .content {
+      padding: 24px 20px 40px;
+      max-width: 600px;
+      margin: 0 auto;
+      overflow: visible;
+    }
+    .content-header { margin-bottom: 20px; }
+    .exponat-inv {
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+    .exponat-titel {
+      font-size: 26px; font-weight: 700;
+      line-height: 1.15; letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    .exponat-untertitel {
+      font-size: 16px; font-weight: 400;
+      color: var(--text-secondary);
+      margin-top: 6px;
+    }
+
+    /* Meta pills */
+    .meta-row {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      margin: 16px 0 24px;
+    }
+    .meta-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 12px;
+      background: var(--bg);
+      border: 1px solid var(--rule);
+      font-size: 12px; font-weight: 500;
+      color: var(--text-secondary);
+    }
+    .meta-pill strong { color: var(--text); font-weight: 600; }
+
+    /* Description */
+    .beschreibung {
+      font-size: 15px; line-height: 1.7;
+      color: var(--text);
+    }
+    .beschreibung p { margin-bottom: 14px; }
+    .beschreibung p:last-child { margin-bottom: 0; }
+    .beschreibung h2 { font-size: 20px; font-weight: 700; margin: 24px 0 10px; color: var(--text); }
+    .beschreibung h3 { font-size: 17px; font-weight: 600; margin: 20px 0 8px; color: var(--text); }
+    .beschreibung blockquote {
+      border-left: 3px solid var(--accent);
+      padding-left: 16px;
+      margin: 16px 0;
+      font-style: italic;
+      color: var(--text-secondary);
+    }
+    .beschreibung a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    /* ── Gallery ── */
+    .gallery-section {
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--rule);
+    }
+    .section-label {
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+    .gallery-scroll {
+      display: flex; gap: 10px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 8px;
+      margin: 0 -20px;
+      padding-left: 20px; padding-right: 20px;
+      scrollbar-width: none;
+    }
+    .gallery-scroll::-webkit-scrollbar { display: none; }
+    .gallery-thumb {
+      flex: 0 0 auto;
+      width: 220px; height: 165px;
+      object-fit: cover;
+      scroll-snap-align: start;
+      background: #e8e4de;
+      cursor: pointer;
+      border-radius: 2px;
+    }
+
+    /* ── Audio player ── */
+    .audio-section {
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--rule);
+    }
+    .audio-player {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px;
+      background: var(--bg);
+      border: 1px solid var(--rule);
+    }
+    .audio-play {
+      width: 40px; height: 40px;
+      background: var(--accent);
+      color: #fff;
+      border: none; cursor: pointer;
+      display: grid; place-items: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .audio-info { flex: 1; min-width: 0; }
+    .audio-label { font-size: 13px; font-weight: 600; color: var(--text); }
+    .audio-duration { font-size: 11px; color: var(--text-secondary); }
+    audio { display: none; }
+
+    /* ── Video player ── */
+    .video-section {
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--rule);
+    }
+    .video-player {
+      width: 100%;
+      background: #000;
+      aspect-ratio: 16 / 9;
+    }
+    .video-player video {
+      width: 100%; height: 100%;
+      object-fit: contain;
+    }
+    .video-info {
+      margin-top: 8px;
+      font-size: 13px; color: var(--text-secondary);
+    }
+
+    /* ── Footer ── */
+    .guide-footer {
+      padding: 24px 20px;
+      text-align: center;
+      border-top: 1px solid var(--rule);
+      margin-top: 40px;
+    }
+    .guide-footer p {
+      font-size: 12px; color: #bbb;
+    }
+    .guide-footer .museum-name {
+      font-weight: 600; color: var(--text-secondary);
+    }
+
+    /* ── Lightbox ── */
+    .lightbox {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(0,0,0,0.92);
+      display: none; place-items: center;
+      cursor: zoom-out;
+    }
+    .lightbox.open { display: grid; }
+    .lightbox img {
+      max-width: 95vw; max-height: 90vh;
+      object-fit: contain;
+    }
+    .lightbox-close {
+      position: absolute; top: 16px; right: 16px;
+      width: 40px; height: 40px;
+      background: rgba(255,255,255,0.15);
+      border: none; color: #fff;
+      font-size: 24px; cursor: pointer;
+      display: grid; place-items: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="loading-screen">
+    <div class="spinner"></div>
+    <p>Wird geladen</p>
+  </div>
+
+  <div id="error-screen">
+    <h2 id="error-title">Exponat nicht gefunden</h2>
+    <p id="error-msg">Bitte scannen Sie den QR-Code erneut.</p>
+  </div>
+
+  <div id="app" style="display:none;">
+    <!-- Header -->
+    <header class="guide-header">
+      <div class="guide-header-top">
+        <a class="guide-back" id="back-btn" href="/kiosk/guide" aria-label="Zurück">←</a>
+        <span class="guide-header-text">Museum im Grünen Haus</span>
+        <div class="lang-toggle">
+          <button class="lang-btn active" data-lang="de">DE</button>
+          <button class="lang-btn" data-lang="en">EN</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <div class="hero" id="hero">
+      <img id="hero-img" src="" alt="" />
+      <div class="hero-credit" id="hero-credit"></div>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+      <div class="content-header">
+        <div class="exponat-inv" id="exponat-inv"></div>
+        <h1 class="exponat-titel" id="exponat-titel"></h1>
+        <div class="exponat-untertitel" id="exponat-untertitel"></div>
+      </div>
+
+      <div class="meta-row" id="meta-row"></div>
+
+      <div class="beschreibung" id="beschreibung"></div>
+
+      <!-- Gallery -->
+      <div class="gallery-section" id="gallery-section" style="display:none;">
+        <div class="section-label" id="gallery-label">Weitere Bilder</div>
+        <div class="gallery-scroll" id="gallery-scroll"></div>
+      </div>
+
+      <!-- Video -->
+      <div class="video-section" id="video-section" style="display:none;">
+        <div class="section-label" id="video-label">Video</div>
+        <div class="video-player">
+          <video id="video-el" controls preload="metadata"></video>
+        </div>
+        <div class="video-info" id="video-info"></div>
+      </div>
+
+      <!-- Audio -->
+      <div class="audio-section" id="audio-section" style="display:none;">
+        <div class="section-label" id="audio-label">Audioguide</div>
+        <div class="audio-player">
+          <button class="audio-play" id="audio-play">▶</button>
+          <div class="audio-info">
+            <div class="audio-label" id="audio-listen-label">Anhören</div>
+            <div class="audio-duration" id="audio-duration"></div>
+          </div>
+        </div>
+        <audio id="audio-el"></audio>
+      </div>
+    </div>
+
+    <footer class="guide-footer">
+      <p><span class="museum-name">Museum im Grünen Haus</span> · Reutte, Tirol</p>
+    </footer>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox">
+    <button class="lightbox-close" id="lightbox-close">×</button>
+    <img id="lightbox-img" src="" alt="" />
+  </div>
+
+  <script>
+    const PROJECT = import.meta.env.PUBLIC_SANITY_PROJECT_ID || '832k5je1';
+    const DATASET = import.meta.env.PUBLIC_SANITY_DATASET || 'production';
+
+    function imgUrl(ref, w = 800) {
+      if (!ref) return '';
+      if (ref.asset?.url) return ref.asset.url + `?w=${w}&auto=format&fit=crop&q=85`;
+      const r = ref.asset?._ref; if (!r) return '';
+      const p = r.split('-');
+      return `https://cdn.sanity.io/images/${PROJECT}/${DATASET}/${p.slice(1,-2).join('-')}-${p[p.length-2]}.${p[p.length-1]}?w=${w}&auto=format&fit=crop&q=85`;
+    }
+
+    function fileUrl(ref) {
+      if (!ref?.asset?._ref) return '';
+      const r = ref.asset._ref;
+      const p = r.split('-');
+      return `https://cdn.sanity.io/files/${PROJECT}/${DATASET}/${p.slice(1,-2).join('-')}.${p[p.length-1]}`;
+    }
+
+    function esc(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // Portable Text → HTML
+    function renderPortableText(blocks) {
+      if (!blocks || !Array.isArray(blocks)) return '';
+      return blocks.map(block => {
+        if (block._type !== 'block') return '';
+        const markDefs = block.markDefs || [];
+        const style = block.style || 'normal';
+        const text = (block.children || []).map(child => {
+          let t = esc(child.text || '');
+          if (child.marks && child.marks.length) {
+            child.marks.forEach(m => {
+              const def = markDefs.find(d => d._key === m);
+              if (def && def._type === 'link') {
+                t = `<a href="${esc(def.href)}" target="_blank" rel="noopener">${t}</a>`;
+              } else if (m === 'strong') {
+                t = `<strong>${t}</strong>`;
+              } else if (m === 'em') {
+                t = `<em>${t}</em>`;
+              }
+            });
+          }
+          return t;
+        }).join('');
+        if (style === 'h2') return `<h2>${text}</h2>`;
+        if (style === 'h3') return `<h3>${text}</h3>`;
+        if (style === 'blockquote') return `<blockquote><p>${text}</p></blockquote>`;
+        return `<p>${text}</p>`;
+      }).join('');
+    }
+
+    // ── i18n labels ──
+    const i18n = {
+      de: {
+        gallery: 'Weitere Bilder',
+        video: 'Video',
+        audioguide: 'Audioguide',
+        listen: 'Anhören',
+        datierung: 'Datierung',
+        epoche: 'Epoche',
+        material: 'Material',
+        herkunft: 'Herkunft',
+        masse: 'Maße',
+        welcome: 'Willkommen',
+        welcomeMsg: 'Scannen Sie einen QR-Code an einem Exponat, um mehr zu erfahren.',
+        notFound: 'Nicht gefunden',
+        error: 'Fehler',
+        loadError: 'Daten konnten nicht geladen werden.',
+      },
+      en: {
+        gallery: 'More Images',
+        video: 'Video',
+        audioguide: 'Audio Guide',
+        listen: 'Listen',
+        datierung: 'Date',
+        epoche: 'Period',
+        material: 'Material',
+        herkunft: 'Origin',
+        masse: 'Dimensions',
+        welcome: 'Welcome',
+        welcomeMsg: 'Scan a QR code at an exhibit to learn more.',
+        notFound: 'Not found',
+        error: 'Error',
+        loadError: 'Could not load data.',
+      },
+    };
+
+    (async () => {
+      const loading = document.getElementById('loading-screen');
+      const errorScreen = document.getElementById('error-screen');
+      const errorTitle = document.getElementById('error-title');
+      const errorMsg = document.getElementById('error-msg');
+      const app = document.getElementById('app');
+
+      function showError(title, msg) {
+        loading.style.display = 'none';
+        errorTitle.textContent = title;
+        errorMsg.textContent = msg;
+        errorScreen.style.display = 'flex';
+      }
+
+      // Get exponat ID from URL
+      const params = new URLSearchParams(location.search);
+      const exponatId = params.get('exponat') || params.get('id') || params.get('e');
+      let currentLang = params.get('lang') === 'en' ? 'en' : 'de';
+
+      if (!exponatId) {
+        const t = i18n[currentLang];
+        showError(t.welcome, t.welcomeMsg);
+        return;
+      }
+
+      // Fetch exponat with EN translations
+      const QUERY = `*[_type=="exponat" && (_id==$id || inventarnummer==$id || slug.current==$id)][0]{
+        _id, titel, untertitel, inventarnummer,
+        beschreibung,
+        titel_en, untertitel_en, beschreibung_en,
+        datierung { epoche, jahr_text },
+        herstellung { entstehungsort, material },
+        hauptbild { ..., asset->{_id, _ref, url}, bildnachweis },
+        bilder[] { ..., asset->{_id, _ref, url}, caption },
+        audio[] { asset->{_ref, url}, sprache, dauer },
+        video { videodatei { asset->{_ref, url} }, videotitel, dauer },
+        physisch { masse },
+        kategorie,
+        tags
+      }`;
+
+      let exponat;
+      try {
+        const paramStr = `$id=${encodeURIComponent(JSON.stringify(exponatId))}`;
+        const url = `https://${PROJECT}.api.sanity.io/v2024-01-01/data/query/${DATASET}?query=${encodeURIComponent(QUERY)}&${paramStr}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        exponat = data.result;
+      } catch (e) {
+        showError(i18n[currentLang].error, i18n[currentLang].loadError);
+        return;
+      }
+
+      if (!exponat) {
+        showError(i18n[currentLang].notFound, `Exponat "${exponatId}" not found.`);
+        return;
+      }
+
+      // ── Render function (called on language switch) ──
+      function render(lang) {
+        const t = i18n[lang];
+        document.documentElement.lang = lang;
+
+        // Title
+        const titel = (lang === 'en' && exponat.titel_en) ? exponat.titel_en : exponat.titel;
+        const untertitel = (lang === 'en' && exponat.untertitel_en) ? exponat.untertitel_en : exponat.untertitel;
+        const beschreibung = (lang === 'en' && exponat.beschreibung_en) ? exponat.beschreibung_en : exponat.beschreibung;
+
+        document.getElementById('exponat-titel').textContent = titel || '';
+        document.getElementById('exponat-untertitel').textContent = untertitel || '';
+
+        // Description
+        const beschreibungHtml = renderPortableText(beschreibung);
+        document.getElementById('beschreibung').innerHTML = beschreibungHtml || '';
+
+        // Meta pills
+        const metaRow = document.getElementById('meta-row');
+        const pills = [];
+        if (exponat.datierung?.jahr_text) pills.push({ label: t.datierung, value: exponat.datierung.jahr_text });
+        if (exponat.datierung?.epoche) pills.push({ label: t.epoche, value: exponat.datierung.epoche });
+        if (exponat.herstellung?.material) pills.push({ label: t.material, value: exponat.herstellung.material });
+        if (exponat.herstellung?.entstehungsort) pills.push({ label: t.herkunft, value: exponat.herstellung.entstehungsort });
+        const masse = exponat.physisch?.masse;
+        if (masse) pills.push({ label: t.masse, value: masse });
+
+        if (pills.length) {
+          metaRow.innerHTML = pills.map(p =>
+            `<span class="meta-pill"><strong>${esc(p.label)}</strong> ${esc(p.value)}</span>`
+          ).join('');
+          metaRow.style.display = '';
+        } else {
+          metaRow.style.display = 'none';
+        }
+
+        // Section labels
+        const galleryLabel = document.getElementById('gallery-label');
+        const videoLabel = document.getElementById('video-label');
+        const audioLabel = document.getElementById('audio-label');
+        const audioListenLabel = document.getElementById('audio-listen-label');
+        if (galleryLabel) galleryLabel.textContent = t.gallery;
+        if (videoLabel) videoLabel.textContent = t.video;
+        if (audioLabel) audioLabel.textContent = t.audioguide;
+        if (audioListenLabel) audioListenLabel.textContent = t.listen;
+
+        // Switch audio track if available
+        setupAudio(lang);
+
+        // Update URL
+        const u = new URL(location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u);
+      }
+
+      // ── Hero image (static, doesn't change with language) ──
+      const heroImg = document.getElementById('hero-img');
+      const heroCredit = document.getElementById('hero-credit');
+      const heroSrc = imgUrl(exponat.hauptbild, 1200);
+      if (heroSrc) {
+        heroImg.src = heroSrc;
+        heroImg.alt = exponat.titel || '';
+        document.getElementById('hero').addEventListener('click', () => openLightbox(heroSrc.replace(/w=\d+/, 'w=2000')));
+      } else {
+        document.getElementById('hero').style.display = 'none';
+      }
+      if (exponat.hauptbild?.bildnachweis) {
+        heroCredit.textContent = '© ' + exponat.hauptbild.bildnachweis;
+      }
+
+      // Inventarnummer (static)
+      if (exponat.inventarnummer) {
+        document.getElementById('exponat-inv').textContent = exponat.inventarnummer;
+      }
+
+      // ── Gallery (static) ──
+      const bilder = exponat.bilder || [];
+      if (bilder.length > 0) {
+        const gallerySection = document.getElementById('gallery-section');
+        const galleryScroll = document.getElementById('gallery-scroll');
+        gallerySection.style.display = '';
+        bilder.forEach(img => {
+          const src = imgUrl(img, 600);
+          if (!src) return;
+          const thumb = document.createElement('img');
+          thumb.className = 'gallery-thumb';
+          thumb.src = src;
+          thumb.alt = img.caption || '';
+          thumb.addEventListener('click', () => openLightbox(src.replace(/w=\d+/, 'w=2000')));
+          galleryScroll.appendChild(thumb);
+        });
+      }
+
+      // ── Video (static) ──
+      if (exponat.video?.videodatei?.asset) {
+        const videoSection = document.getElementById('video-section');
+        const videoEl = document.getElementById('video-el');
+        const videoInfo = document.getElementById('video-info');
+        videoSection.style.display = '';
+
+        const videoSrc = fileUrl(exponat.video.videodatei) || exponat.video.videodatei.asset.url;
+        if (videoSrc) {
+          videoEl.src = videoSrc;
+        }
+        const parts = [];
+        if (exponat.video.videotitel) parts.push(exponat.video.videotitel);
+        if (exponat.video.dauer) parts.push(exponat.video.dauer);
+        videoInfo.textContent = parts.join(' · ');
+      }
+
+      // ── Audio (switches with language) ──
+      const audioSection = document.getElementById('audio-section');
+      const audioEl = document.getElementById('audio-el');
+      const audioPlay = document.getElementById('audio-play');
+      const audioDuration = document.getElementById('audio-duration');
+      const audioTracks = exponat.audio || [];
+
+      function setupAudio(lang) {
+        // Find track for current language, fallback to first track
+        const track = audioTracks.find(a => a.sprache === lang) || audioTracks[0];
+        if (!track?.asset) {
+          audioSection.style.display = 'none';
+          return;
+        }
+        audioSection.style.display = '';
+        const src = fileUrl(track) || track.asset?.url;
+        if (src && audioEl.src !== src) {
+          audioEl.src = src;
+          audioPlay.textContent = '▶';
+        }
+        if (track.dauer) {
+          audioDuration.textContent = track.dauer + ' Min.';
+        }
+      }
+
+      audioEl.addEventListener('loadedmetadata', () => {
+        const min = Math.floor(audioEl.duration / 60);
+        const sec = Math.floor(audioEl.duration % 60);
+        audioDuration.textContent = `${min}:${String(sec).padStart(2, '0')} Min.`;
+      });
+      audioPlay.addEventListener('click', () => {
+        if (audioEl.paused) { audioEl.play(); audioPlay.textContent = '⏸'; }
+        else { audioEl.pause(); audioPlay.textContent = '▶'; }
+      });
+      audioEl.addEventListener('ended', () => { audioPlay.textContent = '▶'; });
+
+      // ── Language toggle ──
+      const langBtns = document.querySelectorAll('.lang-btn');
+      langBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const lang = btn.dataset.lang;
+          if (lang === currentLang) return;
+          currentLang = lang;
+          langBtns.forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+          render(lang);
+        });
+      });
+
+      // Set initial active state
+      langBtns.forEach(b => b.classList.toggle('active', b.dataset.lang === currentLang));
+
+      // Back button
+      document.getElementById('back-btn').href = '/kiosk/guide';
+
+      // Show app & render
+      loading.style.display = 'none';
+      app.style.display = '';
+      render(currentLang);
+
+      // ── Lightbox ──
+      const lightbox = document.getElementById('lightbox');
+      const lightboxImg = document.getElementById('lightbox-img');
+      function openLightbox(src) {
+        lightboxImg.src = src;
+        lightbox.classList.add('open');
+      }
+      lightbox.addEventListener('click', () => lightbox.classList.remove('open'));
+      document.getElementById('lightbox-close').addEventListener('click', (e) => {
+        e.stopPropagation();
+        lightbox.classList.remove('open');
+      });
+    })();
+  </script>
+</body>
+</html>

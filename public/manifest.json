@@ -1,12 +1,12 @@
 {
-  "name": "Museum Kiosk",
-  "short_name": "Museum",
-  "start_url": "/",
+  "name": "Museum im Grünen Haus",
+  "short_name": "Museum Guide",
+  "start_url": "/kiosk/guide",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#111827",
-  "description": "Kiosk-Erlebnis für Museen – entdecken, stöbern, scannen.",
+  "background_color": "#f7f6f3",
+  "theme_color": "#f7f6f3",
+  "description": "Mobiler Guide – Museum im Grünen Haus, Reutte",
   "icons": [
     { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ]
