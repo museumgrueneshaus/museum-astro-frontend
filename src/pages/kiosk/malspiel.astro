@@ -412,9 +412,11 @@
   /* ── Tools ──────────────────────────────────────────────────────── */
   function buildTools(stifte, eraserSz) {
     const DEF = [
-      {bezeichnung:'Fein',   groesse:4,  standard:false},
-      {bezeichnung:'Mittel', groesse:16, standard:true},
-      {bezeichnung:'Breit',  groesse:38, standard:false},
+      {bezeichnung:'Fein',  groesse:4,  standard:false},
+      {bezeichnung:'S',     groesse:10, standard:false},
+      {bezeichnung:'M',     groesse:20, standard:true},
+      {bezeichnung:'L',     groesse:42, standard:false},
+      {bezeichnung:'XL',    groesse:70, standard:false},
     ];
     const all = stifte.length ? stifte : DEF;
 
