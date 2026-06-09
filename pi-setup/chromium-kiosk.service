@@ -42,6 +42,7 @@ ExecStart=/bin/bash -c '\
         --disable-component-update \
         --check-for-update-interval=31536000 \
         --autoplay-policy=no-user-gesture-required \
+        --kiosk-printing \
         --password-store=basic \
         --ozone-platform=wayland \
         --enable-features=OverlayScrollbar \
