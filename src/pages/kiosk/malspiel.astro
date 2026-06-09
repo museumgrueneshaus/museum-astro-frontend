@@ -1,0 +1,540 @@
+---
+---
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Malspiel</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #1a1a1a;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+
+    /* ── Layout ─────────────────────────────────────────────────── */
+    #app {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Left Panel ─────────────────────────────────────────────── */
+    #sidebar {
+      width: 110px;
+      background: #111;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 10px;
+      gap: 20px;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+
+    #color-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .color-swatch {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      cursor: pointer;
+      transition: transform 0.1s, border-color 0.1s;
+    }
+
+    .color-swatch:active { transform: scale(0.9); }
+
+    .color-swatch.selected {
+      border-color: #fff;
+      transform: scale(1.1);
+    }
+
+    .sidebar-divider {
+      width: 70%;
+      height: 1px;
+      background: #333;
+      flex-shrink: 0;
+    }
+
+    #tool-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .tool-btn {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      padding: 8px 4px;
+      border-radius: 10px;
+      border: 2px solid transparent;
+      background: transparent;
+      color: #aaa;
+      font-size: 11px;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    .tool-btn:hover { background: #222; }
+
+    .tool-btn.selected {
+      border-color: #fff;
+      color: #fff;
+      background: #222;
+    }
+
+    .pen-dot {
+      background: #fff;
+      border-radius: 50%;
+      display: block;
+    }
+
+    .eraser-icon {
+      width: 28px;
+      height: 20px;
+      border: 3px solid currentColor;
+      border-radius: 4px;
+      position: relative;
+    }
+
+    /* ── Canvas Area ─────────────────────────────────────────────── */
+    #canvas-area {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #222;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #canvas-wrapper {
+      position: relative;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    }
+
+    /* Template image – bottom layer, not interactive */
+    #canvas-template {
+      position: absolute;
+      top: 0; left: 0;
+      pointer-events: none;
+    }
+
+    /* Paint layer – on top */
+    #canvas-paint {
+      position: relative;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    /* ── Bottom Bar ──────────────────────────────────────────────── */
+    #bottom-bar {
+      height: 72px;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      flex-shrink: 0;
+      gap: 12px;
+    }
+
+    #titel-label {
+      font-size: 15px;
+      color: #888;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .action-btn {
+      height: 46px;
+      padding: 0 28px;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      transition: opacity 0.15s, transform 0.1s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .action-btn:active { transform: scale(0.97); opacity: 0.85; }
+
+    #btn-reset {
+      background: #333;
+      color: #fff;
+    }
+
+    #btn-send {
+      background: #e8c84a;
+      color: #1a1a1a;
+    }
+
+    /* ── Loading / Error ─────────────────────────────────────────── */
+    #overlay {
+      position: fixed;
+      inset: 0;
+      background: #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .spinner {
+      width: 48px; height: 48px;
+      border: 4px solid rgba(255,255,255,0.15);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #overlay.hidden { display: none; }
+
+    /* ── Print styles ────────────────────────────────────────────── */
+    @media print {
+      body { background: #fff; }
+      #sidebar, #bottom-bar, #overlay { display: none !important; }
+      #canvas-area {
+        width: 100vw;
+        height: 100vh;
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #print-img {
+        max-width: 100%;
+        max-height: 100%;
+        display: block !important;
+      }
+      #canvas-wrapper { display: none; }
+    }
+
+    #print-img { display: none; }
+  </style>
+</head>
+<body>
+
+  <div id="overlay">
+    <div class="spinner"></div>
+    <span style="color:#888;font-size:14px;">Wird geladen…</span>
+  </div>
+
+  <div id="app">
+    <!-- Left sidebar -->
+    <div id="sidebar">
+      <div id="color-grid"></div>
+      <div class="sidebar-divider"></div>
+      <div id="tool-group"></div>
+    </div>
+
+    <!-- Canvas -->
+    <div id="canvas-area">
+      <div id="canvas-wrapper">
+        <canvas id="canvas-template"></canvas>
+        <canvas id="canvas-paint"></canvas>
+      </div>
+      <img id="print-img" alt="Ausgemalt" />
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div id="bottom-bar">
+    <span id="titel-label"></span>
+    <button class="action-btn" id="btn-reset">Neu anfangen</button>
+    <button class="action-btn" id="btn-send">An Kassa senden 🖨</button>
+  </div>
+
+<script>
+(function () {
+  const SANITY_PROJECT_ID = '832k5je1';
+  const SANITY_DATASET    = 'production';
+  const SANITY_API        = '2024-01-01';
+
+  const overlay     = document.getElementById('overlay');
+  const colorGrid   = document.getElementById('color-grid');
+  const toolGroup   = document.getElementById('tool-group');
+  const titelLabel  = document.getElementById('titel-label');
+  const btnReset    = document.getElementById('btn-reset');
+  const btnSend     = document.getElementById('btn-send');
+  const canvasArea  = document.getElementById('canvas-area');
+  const wrapper     = document.getElementById('canvas-wrapper');
+  const tmplCanvas  = document.getElementById('canvas-template');
+  const paintCanvas = document.getElementById('canvas-paint');
+  const tmplCtx     = tmplCanvas.getContext('2d');
+  const paintCtx    = paintCanvas.getContext('2d');
+
+  let currentColor  = '#1a1a1a';
+  let currentSize   = 14;
+  let isEraser      = false;
+  let isDrawing     = false;
+  let lastX = 0, lastY = 0;
+  let templateImg   = null;
+
+  // ── Fetch Malspiel from Sanity ─────────────────────────────────
+  async function loadMalspiel() {
+    const params  = new URLSearchParams(window.location.search);
+    const id      = params.get('id');
+
+    if (!id) { showError('Kein Malspiel ausgewählt.'); return; }
+
+    const query = encodeURIComponent(
+      `*[_type=="malspiel" && _id==$id][0]{_id,titel,ausmalbild{asset->{_id,url,metadata{dimensions}}},farben,stifte,radierer_groesse}`
+    );
+    const idParam = encodeURIComponent(JSON.stringify(id));
+    const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v${SANITY_API}/data/query/${SANITY_DATASET}?query=${query}&$id=${idParam}`;
+
+    let data;
+    try {
+      const res = await fetch(url);
+      data = await res.json();
+    } catch (e) {
+      showError('Netzwerkfehler. Bitte Verbindung prüfen.'); return;
+    }
+
+    const spiel = data?.result;
+    if (!spiel) { showError('Malspiel nicht gefunden.'); return; }
+
+    init(spiel);
+  }
+
+  function showError(msg) {
+    overlay.innerHTML = `<span style="font-size:1.5rem">⚠️</span><span style="color:#aaa">${msg}</span>`;
+  }
+
+  // ── Init ───────────────────────────────────────────────────────
+  function init(spiel) {
+    titelLabel.textContent = spiel.titel || 'Malspiel';
+
+    buildColors(spiel.farben || []);
+    buildTools(spiel.stifte || [], spiel.radierer_groesse || 40);
+
+    // Load template image, then setup canvas
+    const imgUrl = spiel.ausmalbild?.asset?.url;
+    const dims   = spiel.ausmalbild?.asset?.metadata?.dimensions;
+
+    if (!imgUrl) { setupCanvas(800, 800, null); return; }
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      templateImg = img;
+      const w = dims?.width  || img.naturalWidth  || 800;
+      const h = dims?.height || img.naturalHeight || 800;
+      setupCanvas(w, h, img);
+      overlay.classList.add('hidden');
+    };
+    img.onerror = () => { setupCanvas(800, 800, null); overlay.classList.add('hidden'); };
+    img.src = imgUrl;
+  }
+
+  // ── Canvas Setup ───────────────────────────────────────────────
+  function setupCanvas(imgW, imgH, img) {
+    // Fit into available space with padding
+    const areaW = canvasArea.clientWidth  - 40;
+    const areaH = canvasArea.clientHeight - 40;
+    const scale = Math.min(areaW / imgW, areaH / imgH, 1);
+    const w = Math.round(imgW * scale);
+    const h = Math.round(imgH * scale);
+
+    [tmplCanvas, paintCanvas].forEach(c => {
+      c.width  = w;
+      c.height = h;
+      c.style.width  = w + 'px';
+      c.style.height = h + 'px';
+    });
+
+    wrapper.style.width  = w + 'px';
+    wrapper.style.height = h + 'px';
+
+    // Draw template (once, locked)
+    if (img) {
+      tmplCtx.drawImage(img, 0, 0, w, h);
+    } else {
+      tmplCtx.fillStyle = '#fff';
+      tmplCtx.fillRect(0, 0, w, h);
+    }
+
+    // Paint canvas: white with full opacity so template shows through cleared areas via CSS
+    // Actually: keep paint canvas transparent, template shows underneath
+    paintCtx.clearRect(0, 0, w, h);
+  }
+
+  // ── Color Palette ──────────────────────────────────────────────
+  function buildColors(farben) {
+    // Always start with white
+    const allColors = farben.length ? farben : [
+      {hex:'#1a1a1a'},{hex:'#CC2200'},{hex:'#E87820'},{hex:'#F5C800'},
+      {hex:'#5DB85D'},{hex:'#2E6B2E'},{hex:'#5BA4D4'},{hex:'#1A3D8F'},
+      {hex:'#7B3FA0'},{hex:'#F0A0C0'},{hex:'#5C3317'},{hex:'#A0522D'},
+      {hex:'#CCCCCC'},{hex:'#FFFFFF'}
+    ];
+
+    colorGrid.innerHTML = '';
+    allColors.forEach((c, i) => {
+      const sw = document.createElement('div');
+      sw.className = 'color-swatch' + (i === 0 ? ' selected' : '');
+      sw.style.background = c.hex;
+      if (c.hex === '#FFFFFF' || c.hex === '#fff') {
+        sw.style.border = '3px solid #444';
+      }
+      sw.addEventListener('pointerdown', () => selectColor(c.hex, sw));
+      colorGrid.appendChild(sw);
+    });
+
+    currentColor = allColors[0]?.hex || '#1a1a1a';
+  }
+
+  function selectColor(hex, el) {
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+    el.classList.add('selected');
+    currentColor = hex;
+    isEraser = false;
+    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('selected'));
+  }
+
+  // ── Tools ──────────────────────────────────────────────────────
+  function buildTools(stifte, radiererGroesse) {
+    toolGroup.innerHTML = '';
+
+    const allStifte = stifte.length ? stifte : [
+      {bezeichnung:'Fein',   groesse:4,  standard:false},
+      {bezeichnung:'Mittel', groesse:14, standard:true},
+      {bezeichnung:'Breit',  groesse:32, standard:false}
+    ];
+
+    allStifte.forEach(s => {
+      const btn = document.createElement('button');
+      btn.className = 'tool-btn' + (s.standard ? ' selected' : '');
+      const dotSize = Math.min(Math.max(s.groesse * 0.8, 6), 28);
+      btn.innerHTML = `<span class="pen-dot" style="width:${dotSize}px;height:${dotSize}px"></span><span>${s.bezeichnung}</span>`;
+      btn.addEventListener('pointerdown', () => {
+        currentSize = s.groesse;
+        isEraser = false;
+        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+      });
+      toolGroup.appendChild(btn);
+      if (s.standard) currentSize = s.groesse;
+    });
+
+    // Eraser
+    const eraserBtn = document.createElement('button');
+    eraserBtn.className = 'tool-btn';
+    eraserBtn.innerHTML = `<div class="eraser-icon"></div><span>Radierer</span>`;
+    eraserBtn.addEventListener('pointerdown', () => {
+      isEraser = true;
+      document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('selected'));
+      eraserBtn.classList.add('selected');
+    });
+    toolGroup.appendChild(eraserBtn);
+  }
+
+  // ── Drawing ────────────────────────────────────────────────────
+  function getPos(e) {
+    const rect = paintCanvas.getBoundingClientRect();
+    const scaleX = paintCanvas.width  / rect.width;
+    const scaleY = paintCanvas.height / rect.height;
+    const src = e.touches ? e.touches[0] : e;
+    return {
+      x: (src.clientX - rect.left) * scaleX,
+      y: (src.clientY - rect.top)  * scaleY
+    };
+  }
+
+  function startDraw(e) {
+    e.preventDefault();
+    isDrawing = true;
+    const {x, y} = getPos(e);
+    lastX = x; lastY = y;
+    // Draw a dot on tap
+    drawSegment(x, y, x, y);
+  }
+
+  function draw(e) {
+    if (!isDrawing) return;
+    e.preventDefault();
+    const {x, y} = getPos(e);
+    drawSegment(lastX, lastY, x, y);
+    lastX = x; lastY = y;
+  }
+
+  function stopDraw() { isDrawing = false; }
+
+  function drawSegment(x1, y1, x2, y2) {
+    paintCtx.beginPath();
+    paintCtx.moveTo(x1, y1);
+    paintCtx.lineTo(x2, y2);
+    paintCtx.strokeStyle = isEraser ? 'rgba(0,0,0,1)' : currentColor;
+    paintCtx.globalCompositeOperation = isEraser ? 'destination-out' : 'source-over';
+    paintCtx.lineWidth   = isEraser ? currentSize * 2.5 : currentSize;
+    paintCtx.lineCap     = 'round';
+    paintCtx.lineJoin    = 'round';
+    paintCtx.stroke();
+  }
+
+  paintCanvas.addEventListener('pointerdown', startDraw);
+  paintCanvas.addEventListener('pointermove', draw);
+  paintCanvas.addEventListener('pointerup',   stopDraw);
+  paintCanvas.addEventListener('pointerout',  stopDraw);
+
+  // Touch fallback
+  paintCanvas.addEventListener('touchstart', startDraw, {passive:false});
+  paintCanvas.addEventListener('touchmove',  draw,      {passive:false});
+  paintCanvas.addEventListener('touchend',   stopDraw);
+
+  // ── Reset ──────────────────────────────────────────────────────
+  btnReset.addEventListener('click', () => {
+    if (!confirm('Bild löschen und neu starten?')) return;
+    paintCtx.clearRect(0, 0, paintCanvas.width, paintCanvas.height);
+  });
+
+  // ── Senden / Drucken ───────────────────────────────────────────
+  btnSend.addEventListener('click', () => {
+    // Composite template + paint into one image
+    const offscreen = document.createElement('canvas');
+    offscreen.width  = tmplCanvas.width;
+    offscreen.height = tmplCanvas.height;
+    const ctx = offscreen.getContext('2d');
+    ctx.drawImage(tmplCanvas,  0, 0);
+    ctx.drawImage(paintCanvas, 0, 0);
+
+    const printImg = document.getElementById('print-img');
+    printImg.src = offscreen.toDataURL('image/png');
+    window.print();
+  });
+
+  loadMalspiel();
+})();
+</script>
+</body>
+</html>

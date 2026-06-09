@@ -370,6 +370,7 @@ export async function getKioskConfig(identifier) {
     "name": kioskId,
     "standort": location,
     "modus": ausstellung->kioskTemplate.template,
+    "malspiel_id": ausstellung->kioskTemplate.malspielSettings.malspiel._ref,
     "konfiguration": {
       "video_settings": {
         "playlist": ausstellung->videos[]{
@@ -434,6 +435,31 @@ export function fileUrl(ref) {
   if (!ref || !ref.asset) return null;
   const [_file, id, extension] = ref.asset._ref.split('-');
   return `https://cdn.sanity.io/files/${projectId}/${dataset}/${id}.${extension}`;
+}
+
+export async function getMalspiel(id) {
+  const query = `*[_type == "malspiel" && _id == $id][0]{
+    _id,
+    titel,
+    ausmalbild{ asset->{ _id, url, metadata{ dimensions } } },
+    farben,
+    stifte,
+    radierer_groesse,
+    "bezug": bezug_exponat->{ _id, titel, inventarnummer }
+  }`;
+  return await client.fetch(query, { id });
+}
+
+export async function getMalspiele() {
+  const query = `*[_type == "malspiel" && veroeffentlichung.status == "aktiv"] | order(reihenfolge asc) {
+    _id,
+    titel,
+    ausmalbild{ asset->{ _id, url, metadata{ dimensions } } },
+    farben,
+    stifte,
+    radierer_groesse
+  }`;
+  return await client.fetch(query);
 }
 
 // Real-time subscription (for live updates)

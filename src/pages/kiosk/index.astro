@@ -174,7 +174,7 @@
         }
 
         async function fetchModus(kioskId) {
-          const query = `*[_type=="kioskDevice" && (kioskId==$id || hostname==$id || _id==$id)][0]{ "modus": ausstellung->kioskTemplate.template }`;
+          const query = `*[_type=="kioskDevice" && (kioskId==$id || hostname==$id || _id==$id)][0]{ "geraet_modus": modus, "modus": ausstellung->kioskTemplate.template, "malspiel_id": select(modus=="malspiel" => malspiel._ref, ausstellung->kioskTemplate.malspielSettings.malspiel._ref) }`;
           const encodedQuery = encodeURIComponent(query);
           const encodedId = encodeURIComponent(JSON.stringify(kioskId));
           const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v${SANITY_API_VERSION}/data/query/${SANITY_DATASET}?query=${encodedQuery}&$id=${encodedId}`;
@@ -182,7 +182,7 @@
           const res = await fetch(url);
           if (!res.ok) throw new Error(`Sanity API responded with status ${res.status}`);
           const data = await res.json();
-          return data.result ? data.result.modus : null;
+          return data.result || null;
         }
 
         async function init() {
@@ -220,21 +220,33 @@
 
           setStatus(`Konfiguration wird geladen…`);
 
-          let modus;
+          let result;
           try {
-            modus = await fetchModus(kioskId);
+            result = await fetchModus(kioskId);
           } catch (err) {
             showError(...ERRORS.network(err.message));
             return;
           }
 
-          if (!modus) {
+          if (!result) {
             showError(...ERRORS.notConfigured(kioskId));
             return;
           }
 
           setStatus('Weiterleiten…');
-          window.location.replace(`/kiosk/${modus}?id=${encodeURIComponent(kioskId)}`);
+          const finalModus = result.geraet_modus === 'malspiel' ? 'malspiel' : result.modus;
+          const malspielId = result.malspiel_id;
+
+          if (!finalModus) {
+            showError(...ERRORS.notConfigured(kioskId));
+            return;
+          }
+
+          if (finalModus === 'malspiel' && malspielId) {
+            window.location.replace(`/kiosk/malspiel?id=${encodeURIComponent(malspielId)}`);
+          } else {
+            window.location.replace(`/kiosk/${finalModus}?id=${encodeURIComponent(kioskId)}`);
+          }
         }
 
         retryBtn.addEventListener('click', init);
