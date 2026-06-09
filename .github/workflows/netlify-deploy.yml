@@ -37,6 +37,9 @@ jobs:
         id: tag
         run: echo "tag=build-$(date -u +'%Y%m%d-%H%M%S')" >> "$GITHUB_OUTPUT"
 
+      - name: Deploy to Netlify
+        run: npx netlify-cli deploy --prod --dir=dist --auth=${{ secrets.NETLIFY_AUTH_TOKEN }} --site=${{ secrets.NETLIFY_SITE_ID }}
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
