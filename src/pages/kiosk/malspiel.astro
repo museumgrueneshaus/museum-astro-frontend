@@ -568,7 +568,7 @@
 
   btnSend.addEventListener('click', () => {
     if (printLocked) return;
-    if (!confirm('Bild an die Kassa senden und drucken?')) return;
+    if (!confirm('Bild drucken?\nSie können Ihr Bild an der Museumskassa abholen.')) return;
 
     // Composite and print
     const off = document.createElement('canvas');
