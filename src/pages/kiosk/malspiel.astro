@@ -562,7 +562,15 @@
   });
 
   /* ── Print ──────────────────────────────────────────────────────── */
+  const PRINT_LOCK_SEC = 60;
+  let printLocked = false;
+  let printTimer  = null;
+
   btnSend.addEventListener('click', () => {
+    if (printLocked) return;
+    if (!confirm('Bild an die Kassa senden und drucken?')) return;
+
+    // Composite and print
     const off = document.createElement('canvas');
     off.width = cvs.width; off.height = cvs.height;
     const oc  = off.getContext('2d');
@@ -572,6 +580,27 @@
     }
     document.getElementById('pimg').src = off.toDataURL('image/png');
     window.print();
+
+    // Lock button for 60 seconds
+    printLocked = true;
+    let remaining = PRINT_LOCK_SEC;
+    btnSend.disabled = true;
+    btnSend.style.opacity = '0.4';
+    btnSend.style.cursor  = 'not-allowed';
+    btnSend.textContent   = `Gesendet — bitte warten (${remaining}s)`;
+
+    printTimer = setInterval(() => {
+      remaining--;
+      btnSend.textContent = `Gesendet — bitte warten (${remaining}s)`;
+      if (remaining <= 0) {
+        clearInterval(printTimer);
+        printLocked = false;
+        btnSend.disabled = false;
+        btnSend.style.opacity = '';
+        btnSend.style.cursor  = '';
+        btnSend.textContent   = 'An Kassa senden ↑';
+      }
+    }, 1000);
   });
 
   boot();
