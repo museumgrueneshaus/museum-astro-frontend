@@ -219,14 +219,6 @@
       cursor: crosshair;
     }
 
-    /* Wet layer: live stroke preview, above base but below template */
-    #cvs-wet {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      display: block;
-    }
-
     /* Template always on top, never interactive */
     #tmpl {
       position: absolute;
@@ -303,11 +295,7 @@
     <!-- Canvas -->
     <div id="canvas-area">
       <div id="canvas-wrap">
-        <!-- Base: committed strokes -->
         <canvas id="cvs"></canvas>
-        <!-- Wet layer: current stroke at full opacity, lifted to base on pointerup -->
-        <canvas id="cvs-wet"></canvas>
-        <!-- Template always on top -->
         <img id="tmpl" alt="" crossorigin="anonymous" />
       </div>
       <img id="pimg" alt="" />
@@ -332,17 +320,19 @@
   const cArea    = document.getElementById('canvas-area');
   const wrap     = document.getElementById('canvas-wrap');
   const cvs      = document.getElementById('cvs');
-  const wet      = document.getElementById('cvs-wet');
   const tmpl     = document.getElementById('tmpl');
   const ctx      = cvs.getContext('2d');
-  const wetCtx   = wet.getContext('2d');
 
-  let color   = '#e53935';
-  let size    = 14;
-  let eraser  = false;
-  let drawing = false;
-  let lx = 0, ly = 0;
+  let color    = '#e53935';
+  let size     = 14;
+  let eraser   = false;
+  let drawing  = false;
   let lastPenBtn = null;
+
+  // Snapshot-based drawing: save canvas state on pointerdown,
+  // restore + redraw full path on every move → live preview = final result
+  let snapshot  = null;
+  let strokePts = [];
 
 
   /* ── Fetch ──────────────────────────────────────────────────────── */
@@ -404,11 +394,6 @@
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, w, h);
 
-    // Keep wet canvas in sync
-    wet.width  = w;
-    wet.height = h;
-    wet.style.width  = w + 'px';
-    wet.style.height = h + 'px';
   }
 
   /* ── Colors ─────────────────────────────────────────────────────── */
@@ -514,41 +499,48 @@
   function dn(e) {
     e.preventDefault();
     if (e.pointerId != null) cvs.setPointerCapture(e.pointerId);
-    drawing = true;
-    wetCtx.clearRect(0, 0, wet.width, wet.height);
-    // Show transparency effect live via CSS opacity on wet canvas
-    wet.style.opacity = eraser ? '1' : '0.65';
-    const {x,y} = pt(e); lx = x; ly = y;
-    seg(x, y, x, y);
+    drawing   = true;
+    snapshot  = ctx.getImageData(0, 0, cvs.width, cvs.height);
+    strokePts = [];
+    const {x,y} = pt(e);
+    strokePts.push({x,y});
+    renderStroke();
   }
 
   function mv(e) {
     if (!drawing) return;
     e.preventDefault();
     const {x,y} = pt(e);
-    seg(lx, ly, x, y); lx = x; ly = y;
+    strokePts.push({x,y});
+    renderStroke();
   }
 
   function up() {
     if (!drawing) return;
-    drawing = false;
-    wet.style.opacity = '1'; // reset before commit
-    ctx.globalAlpha = eraser ? 1.0 : 0.65;
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.drawImage(wet, 0, 0);
-    ctx.globalAlpha = 1;
-    wetCtx.clearRect(0, 0, wet.width, wet.height);
+    drawing  = false;
+    snapshot = null;
+    strokePts = [];
   }
 
-  function seg(x1, y1, x2, y2) {
-    // Everything goes through the wet layer — eraser is just white at the selected size
-    wetCtx.globalCompositeOperation = 'source-over';
-    wetCtx.beginPath();
-    wetCtx.moveTo(x1, y1); wetCtx.lineTo(x2, y2);
-    wetCtx.strokeStyle = eraser ? '#ffffff' : color;
-    wetCtx.lineWidth   = size;
-    wetCtx.lineCap = 'round'; wetCtx.lineJoin = 'round';
-    wetCtx.stroke();
+  // Restore snapshot, draw entire current path at target alpha →
+  // live preview is identical to the committed result
+  function renderStroke() {
+    if (!snapshot || strokePts.length === 0) return;
+    ctx.putImageData(snapshot, 0, 0);
+
+    ctx.globalAlpha = eraser ? 1.0 : 0.65;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.beginPath();
+    ctx.moveTo(strokePts[0].x, strokePts[0].y);
+    for (let i = 1; i < strokePts.length; i++) {
+      ctx.lineTo(strokePts[i].x, strokePts[i].y);
+    }
+    ctx.strokeStyle = eraser ? '#ffffff' : color;
+    ctx.lineWidth   = size;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
+    ctx.stroke();
+    ctx.globalAlpha = 1;
   }
 
   cvs.addEventListener('pointerdown',   dn, { passive: false });
