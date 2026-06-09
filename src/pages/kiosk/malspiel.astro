@@ -418,8 +418,7 @@
       {bezeichnung:'L',     groesse:42, standard:false},
       {bezeichnung:'XL',    groesse:70, standard:false},
     ];
-    // Always use DEF — ignore whatever is stored in Sanity for pen sizes
-    const all = DEF;
+    const all = stifte.length ? stifte : DEF;
 
     tList.innerHTML = '';
     all.forEach(s => {
