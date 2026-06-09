@@ -322,7 +322,7 @@
     const id = new URLSearchParams(location.search).get('id');
     if (!id) { fail('Kein Malspiel ausgewählt.'); return; }
 
-    const q  = encodeURIComponent(`*[_type=="malspiel"&&_id==$id][0]{titel,ausmalbild{asset->{url,metadata{dimensions}}},farben,stifte,radierer_groesse}`);
+    const q  = encodeURIComponent(`*[_type=="malspiel"&&_id==$id][0]{titel,ausmalbild{asset->{url}},farben,stifte,radierer_groesse}`);
     const ip = encodeURIComponent(JSON.stringify(id));
     let spiel;
     try {
@@ -344,16 +344,14 @@
     buildColors(spiel.farben || []);
     buildTools(spiel.stifte  || [], spiel.radierer_groesse || 40);
 
-    const url  = spiel.ausmalbild?.asset?.url;
-    const dims = spiel.ausmalbild?.asset?.metadata?.dimensions;
+    const url = spiel.ausmalbild?.asset?.url;
 
     if (!url) { initCanvas(800, 800); ov.classList.add('gone'); return; }
 
     const probe = new Image();
     probe.crossOrigin = 'anonymous';
     probe.onload = () => {
-      initCanvas(dims?.width || probe.naturalWidth || 800,
-                 dims?.height || probe.naturalHeight || 800);
+      initCanvas(probe.naturalWidth || 800, probe.naturalHeight || 800);
       tmpl.src = url;
       ov.classList.add('gone');
     };
