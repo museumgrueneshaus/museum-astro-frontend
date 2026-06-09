@@ -15,13 +15,13 @@
     html, body {
       width: 100%; height: 100%;
       overflow: hidden;
-      background: #f0ebe0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1c1c1e;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       user-select: none;
       -webkit-user-select: none;
     }
 
-    /* ─── App shell ─────────────────────────────────────────────── */
+    /* ─── Shell ─────────────────────────────────────────────────── */
     #app {
       display: flex;
       flex-direction: column;
@@ -33,43 +33,155 @@
     #top-bar {
       display: flex;
       align-items: center;
-      padding: 0 20px;
-      height: 64px;
-      background: #fff;
-      border-bottom: 1px solid #ddd;
+      height: 56px;
+      padding: 0 16px;
+      background: #1c1c1e;
+      gap: 10px;
       flex-shrink: 0;
-      gap: 12px;
       touch-action: manipulation;
     }
 
     #titel-label {
-      font-size: 17px;
-      font-weight: 700;
-      color: #1a1a1a;
-      letter-spacing: -0.02em;
       flex: 1;
+      font-size: 16px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.75);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      letter-spacing: -0.01em;
     }
 
-    .action-btn {
-      height: 48px;
-      padding: 0 20px;
+    .top-btn {
+      height: 38px;
+      padding: 0 16px;
       border: none;
-      border-radius: 12px;
-      font-size: 15px;
+      border-radius: 10px;
+      font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       white-space: nowrap;
       flex-shrink: 0;
       touch-action: manipulation;
+      transition: opacity 0.1s;
     }
 
-    .action-btn:active { opacity: 0.65; }
+    .top-btn:active { opacity: 0.55; }
 
-    #btn-reset  { background: #efefef; color: #444; }
-    #btn-send   { background: #1a1a1a; color: #fff; }
+    #btn-reset { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); }
+    #btn-send  { background: #f5c400; color: #1a1a00; }
+
+    /* ─── Main row ───────────────────────────────────────────────── */
+    #main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ─── Left panel ─────────────────────────────────────────────── */
+    #panel {
+      width: 80px;
+      background: #2c2c2e;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 14px 0 14px;
+      gap: 0;
+      flex-shrink: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: none;
+      touch-action: pan-y;
+    }
+
+    #panel::-webkit-scrollbar { display: none; }
+
+    /* Color swatches: 2-column mini-grid */
+    #color-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 0 10px;
+      width: 100%;
+    }
+
+    .sw {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2.5px solid transparent;
+      outline: 2.5px solid transparent;
+      outline-offset: 2px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+      transition: transform 0.08s, outline-color 0.08s;
+      touch-action: manipulation;
+    }
+
+    .sw:active { transform: scale(0.82); }
+    .sw.on {
+      outline-color: #ffffff;
+      transform: scale(1.18);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+
+    /* Panel divider */
+    .pdiv {
+      width: 44px;
+      height: 1px;
+      background: rgba(255,255,255,0.1);
+      margin: 14px 0;
+      flex-shrink: 0;
+    }
+
+    /* Tool buttons */
+    .tbtn {
+      width: 56px;
+      height: 56px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      border: 2px solid transparent;
+      border-radius: 14px;
+      background: transparent;
+      cursor: pointer;
+      touch-action: manipulation;
+      padding: 0;
+      transition: background 0.08s, border-color 0.08s;
+      flex-shrink: 0;
+    }
+
+    .tbtn:active { background: rgba(255,255,255,0.08); }
+    .tbtn.on {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.5);
+    }
+
+    /* Stroke preview line — shows actual brush width visually */
+    .stroke-preview {
+      width: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stroke-line {
+      background: rgba(255,255,255,0.85);
+      border-radius: 99px;
+      width: 100%;
+      flex-shrink: 0;
+    }
+
+    .tbtn-lbl {
+      font-size: 9px;
+      color: rgba(255,255,255,0.45);
+      letter-spacing: 0.04em;
+      font-weight: 500;
+    }
+
+    .tbtn.on .tbtn-lbl { color: rgba(255,255,255,0.9); }
 
     /* ─── Canvas area ────────────────────────────────────────────── */
     #canvas-area {
@@ -77,25 +189,25 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #e4dfd3;
+      background: #3a3a3c;
       overflow: hidden;
       position: relative;
     }
 
-    #canvas-wrapper {
+    #canvas-wrap {
       position: relative;
-      box-shadow: 0 4px 32px rgba(0,0,0,0.22), 0 1px 6px rgba(0,0,0,0.1);
+      box-shadow: 0 8px 48px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.3);
     }
 
-    /* Paint layer: white fill, interactive */
-    #canvas-paint {
+    /* Paint layer — white fill, touch-action none for drawing */
+    #cvs {
       display: block;
-      touch-action: none;   /* ← only here, prevents scroll during draw */
+      touch-action: none;
       cursor: crosshair;
     }
 
-    /* Template always on top, never touched */
-    #template-img {
+    /* Template always on top, never interactive */
+    #tmpl {
       position: absolute;
       inset: 0;
       width: 100%;
@@ -104,377 +216,281 @@
       display: block;
     }
 
-    /* ─── Palette bar ────────────────────────────────────────────── */
-    #palette-bar {
-      background: #fff;
-      border-top: 1px solid #ddd;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      padding: 12px 16px;
-      gap: 12px;
-      touch-action: manipulation;
-    }
-
-    /* 2-row color grid — all colors always visible, no scroll */
-    #color-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-content: center;
-      flex: 1;
-    }
-
-    .color-swatch {
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      cursor: pointer;
-      border: 3px solid transparent;
-      outline: 3px solid transparent;
-      outline-offset: 3px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      transition: transform 0.08s, outline-color 0.08s;
-      touch-action: manipulation;
-      /* ensure tap fires without delay */
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .color-swatch:active  { transform: scale(0.88); }
-    .color-swatch.active  {
-      outline-color: #1a1a1a;
-      transform: scale(1.18);
-      box-shadow: 0 4px 14px rgba(0,0,0,0.3);
-    }
-
-    /* Vertical separator */
-    .sep {
-      width: 1px;
-      align-self: stretch;
-      background: #ddd;
-      flex-shrink: 0;
-      margin: 4px 4px;
-    }
-
-    /* Tool group */
-    #tool-group {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-shrink: 0;
-    }
-
-    .tool-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-      width: 60px;
-      height: 72px;
-      border: 2.5px solid transparent;
-      border-radius: 14px;
-      background: transparent;
-      cursor: pointer;
-      touch-action: manipulation;
-      padding: 0;
-      transition: background 0.08s, border-color 0.08s;
-    }
-
-    .tool-btn:active  { background: #f0f0f0; }
-    .tool-btn.active  { background: #f5f5f0; border-color: #1a1a1a; }
-
-    .dot {
-      background: #1a1a1a;
-      border-radius: 50%;
-      display: block;
-      flex-shrink: 0;
-    }
-
-    .tool-lbl {
-      font-size: 10px;
-      color: #999;
-      font-weight: 500;
-      letter-spacing: 0.04em;
-    }
-
-    .tool-btn.active .tool-lbl { color: #1a1a1a; }
-
     /* ─── Overlay ─────────────────────────────────────────────────── */
-    #overlay {
+    #ov {
       position: fixed; inset: 0;
-      background: #f0ebe0;
+      background: #1c1c1e;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 18px;
-      z-index: 100;
+      gap: 16px;
+      z-index: 200;
     }
 
-    #overlay.gone { display: none; }
+    #ov.gone { display: none; }
 
-    .spinner {
-      width: 44px; height: 44px;
-      border: 4px solid rgba(0,0,0,0.1);
-      border-top-color: #1a1a1a;
+    .spin {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(255,255,255,0.15);
+      border-top-color: rgba(255,255,255,0.8);
       border-radius: 50%;
-      animation: spin 0.75s linear infinite;
+      animation: rot 0.7s linear infinite;
     }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes rot { to { transform: rotate(360deg); } }
 
     /* ─── Print ───────────────────────────────────────────────────── */
-    #print-img { display: none; }
+    #pimg { display: none; }
 
     @media print {
-      #top-bar, #palette-bar, #overlay { display: none !important; }
+      #top-bar, #panel, #ov { display: none !important; }
+      #main { display: block; width: 100vw; height: 100vh; }
       #canvas-area {
-        width: 100vw; height: 100vh; background: #fff;
+        width: 100%; height: 100%;
+        background: #fff;
         display: flex; align-items: center; justify-content: center;
       }
-      #print-img { display: block !important; max-width: 100%; max-height: 100%; }
-      #canvas-wrapper { display: none; }
+      #pimg { display: block !important; max-width: 100%; max-height: 100%; }
+      #canvas-wrap { display: none; }
     }
   </style>
 </head>
 <body>
 
-<div id="overlay">
-  <div class="spinner"></div>
-  <span style="color:#999;font-size:14px">Wird geladen…</span>
+<div id="ov">
+  <div class="spin"></div>
+  <span style="color:rgba(255,255,255,0.4);font-size:13px;letter-spacing:0.06em">WIRD GELADEN</span>
 </div>
 
 <div id="app">
   <div id="top-bar">
     <span id="titel-label">Malspiel</span>
-    <button class="action-btn" id="btn-reset">Neu anfangen</button>
-    <button class="action-btn" id="btn-send">An Kassa senden 🖨</button>
+    <button class="top-btn" id="btn-reset">Neu anfangen</button>
+    <button class="top-btn" id="btn-send">An Kassa senden ↑</button>
   </div>
 
-  <div id="canvas-area">
-    <div id="canvas-wrapper">
-      <canvas id="canvas-paint"></canvas>
-      <img id="template-img" alt="" crossorigin="anonymous" />
+  <div id="main">
+
+    <!-- Left tool panel -->
+    <div id="panel">
+      <div id="color-grid"></div>
+      <div class="pdiv"></div>
+      <div id="tool-list"></div>
     </div>
-    <img id="print-img" alt="" />
-  </div>
 
-  <div id="palette-bar">
-    <div id="color-grid"></div>
-    <div class="sep"></div>
-    <div id="tool-group"></div>
+    <!-- Canvas -->
+    <div id="canvas-area">
+      <div id="canvas-wrap">
+        <canvas id="cvs"></canvas>
+        <img id="tmpl" alt="" crossorigin="anonymous" />
+      </div>
+      <img id="pimg" alt="" />
+    </div>
+
   </div>
 </div>
 
 <script>
 // @ts-nocheck
 (function () {
-  const PROJECT  = '832k5je1';
-  const DATASET  = 'production';
-  const API_VER  = '2024-01-01';
+  const PROJECT = '832k5je1';
+  const DATASET = 'production';
+  const APIV    = '2024-01-01';
 
-  const overlay     = document.getElementById('overlay');
-  const colorGrid   = document.getElementById('color-grid');
-  const toolGroup   = document.getElementById('tool-group');
-  const titelLabel  = document.getElementById('titel-label');
-  const btnReset    = document.getElementById('btn-reset');
-  const btnSend     = document.getElementById('btn-send');
-  const canvasArea  = document.getElementById('canvas-area');
-  const wrapper     = document.getElementById('canvas-wrapper');
-  const cvs         = document.getElementById('canvas-paint');
-  const tmpl        = document.getElementById('template-img');
-  const ctx         = cvs.getContext('2d');
+  const ov       = document.getElementById('ov');
+  const cGrid    = document.getElementById('color-grid');
+  const tList    = document.getElementById('tool-list');
+  const titleEl  = document.getElementById('titel-label');
+  const btnReset = document.getElementById('btn-reset');
+  const btnSend  = document.getElementById('btn-send');
+  const cArea    = document.getElementById('canvas-area');
+  const wrap     = document.getElementById('canvas-wrap');
+  const cvs      = document.getElementById('cvs');
+  const tmpl     = document.getElementById('tmpl');
+  const ctx      = cvs.getContext('2d');
 
-  let color    = '#e53935';
-  let size     = 14;
-  let eraser   = false;
-  let drawing  = false;
+  let color   = '#e53935';
+  let size    = 14;
+  let eraser  = false;
+  let drawing = false;
   let lx = 0, ly = 0;
-  let activePenBtn = null;
+  let lastPenBtn = null;
 
-  /* ── Fetch ─────────────────────────────────────────────────────── */
+  /* ── Fetch ──────────────────────────────────────────────────────── */
   async function boot() {
     const id = new URLSearchParams(location.search).get('id');
-    if (!id) { err('Kein Malspiel ausgewählt.'); return; }
+    if (!id) { fail('Kein Malspiel ausgewählt.'); return; }
 
-    const q   = encodeURIComponent(`*[_type=="malspiel"&&_id==$id][0]{titel,ausmalbild{asset->{url,metadata{dimensions}}},farben,stifte,radierer_groesse}`);
-    const idp = encodeURIComponent(JSON.stringify(id));
+    const q  = encodeURIComponent(`*[_type=="malspiel"&&_id==$id][0]{titel,ausmalbild{asset->{url,metadata{dimensions}}},farben,stifte,radierer_groesse}`);
+    const ip = encodeURIComponent(JSON.stringify(id));
     let spiel;
     try {
-      const r = await fetch(`https://${PROJECT}.api.sanity.io/v${API_VER}/data/query/${DATASET}?query=${q}&$id=${idp}`);
+      const r = await fetch(`https://${PROJECT}.api.sanity.io/v${APIV}/data/query/${DATASET}?query=${q}&$id=${ip}`);
       spiel = (await r.json())?.result;
-    } catch { err('Netzwerkfehler – Verbindung prüfen.'); return; }
-
-    if (!spiel) { err('Malspiel nicht gefunden.'); return; }
-    setup(spiel);
+    } catch { fail('Netzwerkfehler – Verbindung prüfen.'); return; }
+    if (!spiel) { fail('Malspiel nicht gefunden.'); return; }
+    init(spiel);
   }
 
-  function err(msg) {
-    overlay.innerHTML = `<span style="font-size:2.5rem">⚠️</span>
-      <span style="color:#888;font-size:15px;text-align:center;max-width:280px;line-height:1.6">${msg}</span>`;
+  function fail(msg) {
+    ov.innerHTML = `<span style="font-size:2.5rem">⚠️</span>
+      <span style="color:rgba(255,255,255,0.5);font-size:14px;text-align:center;max-width:260px;line-height:1.6">${msg}</span>`;
   }
 
-  /* ── Setup ─────────────────────────────────────────────────────── */
-  function setup(spiel) {
-    titelLabel.textContent = spiel.titel || 'Malspiel';
+  /* ── Init ───────────────────────────────────────────────────────── */
+  function init(spiel) {
+    titleEl.textContent = spiel.titel || 'Malspiel';
     buildColors(spiel.farben || []);
-    buildTools(spiel.stifte || [], spiel.radierer_groesse || 40);
+    buildTools(spiel.stifte  || [], spiel.radierer_groesse || 40);
 
     const url  = spiel.ausmalbild?.asset?.url;
     const dims = spiel.ausmalbild?.asset?.metadata?.dimensions;
 
-    if (!url) { initCanvas(800, 800); overlay.classList.add('gone'); return; }
+    if (!url) { initCanvas(800, 800); ov.classList.add('gone'); return; }
 
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      initCanvas(dims?.width || img.naturalWidth || 800,
-                 dims?.height || img.naturalHeight || 800);
+    const probe = new Image();
+    probe.crossOrigin = 'anonymous';
+    probe.onload = () => {
+      initCanvas(dims?.width || probe.naturalWidth || 800,
+                 dims?.height || probe.naturalHeight || 800);
       tmpl.src = url;
-      overlay.classList.add('gone');
+      ov.classList.add('gone');
     };
-    img.onerror = () => { initCanvas(800, 800); overlay.classList.add('gone'); };
-    img.src = url;
+    probe.onerror = () => { initCanvas(800, 800); ov.classList.add('gone'); };
+    probe.src = url;
   }
 
-  /* ── Canvas ────────────────────────────────────────────────────── */
+  /* ── Canvas ─────────────────────────────────────────────────────── */
   function initCanvas(iw, ih) {
-    const aw = canvasArea.clientWidth  - 24;
-    const ah = canvasArea.clientHeight - 24;
+    const aw = cArea.clientWidth  - 20;
+    const ah = cArea.clientHeight - 20;
     const s  = Math.min(aw / iw, ah / ih, 1);
     const w  = Math.round(iw * s);
     const h  = Math.round(ih * s);
 
-    cvs.width  = w; cvs.height  = h;
+    cvs.width = w; cvs.height = h;
     cvs.style.width  = w + 'px';
     cvs.style.height = h + 'px';
-    wrapper.style.width  = w + 'px';
-    wrapper.style.height = h + 'px';
+    wrap.style.width  = w + 'px';
+    wrap.style.height = h + 'px';
 
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, w, h);
   }
 
-  /* ── Colors ────────────────────────────────────────────────────── */
+  /* ── Colors ─────────────────────────────────────────────────────── */
   function buildColors(farben) {
-    const defaults = [
-      '#e53935','#e91e8c','#9c27b0','#3f51b5',
-      '#2196f3','#00bcd4','#4caf50','#8bc34a',
-      '#ffeb3b','#ff9800','#ff5722','#795548',
-      '#1a1a1a','#ffffff',
+    const DEF = [
+      '#e53935','#ff5722','#ff9800','#ffd600',
+      '#76c442','#26a69a','#2196f3','#7c4dff',
+      '#e91e63','#795548','#90a4ae','#1a1a1a',
     ];
-    const all = farben.length
-      ? farben.map(f => f.hex || f)
-      : defaults;
+    const all = farben.length ? farben.map(f => f.hex || f) : DEF;
 
-    colorGrid.innerHTML = '';
+    cGrid.innerHTML = '';
     all.forEach((hex, i) => {
-      const sw = document.createElement('div');
-      sw.className = 'color-swatch' + (i === 0 ? ' active' : '');
-      sw.style.background = hex;
-      if (/^#fff(fff)?$/i.test(hex.trim())) {
-        sw.style.boxShadow = '0 2px 6px rgba(0,0,0,0.18), inset 0 0 0 1.5px #ccc';
-      }
-      // Both click (mouse) and touchend (touch) for maximum compatibility
-      sw.addEventListener('click', () => pick(hex, sw));
-      colorGrid.appendChild(sw);
+      const el = document.createElement('div');
+      el.className = 'sw' + (i === 0 ? ' on' : '');
+      el.style.background = hex;
+      el.addEventListener('click', () => pickColor(hex, el));
+      cGrid.appendChild(el);
     });
 
     color = all[0] || '#e53935';
   }
 
-  function pick(hex, el) {
-    colorGrid.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
-    el.classList.add('active');
+  function pickColor(hex, el) {
+    cGrid.querySelectorAll('.sw').forEach(s => s.classList.remove('on'));
+    el.classList.add('on');
     color  = hex;
     eraser = false;
-    if (activePenBtn) {
-      toolGroup.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-      activePenBtn.classList.add('active');
+    if (lastPenBtn) {
+      tList.querySelectorAll('.tbtn').forEach(b => b.classList.remove('on'));
+      lastPenBtn.classList.add('on');
     }
   }
 
-  /* ── Tools ─────────────────────────────────────────────────────── */
-  function buildTools(stifte, eraserSize) {
-    const defaults = [
+  /* ── Tools ──────────────────────────────────────────────────────── */
+  function buildTools(stifte, eraserSz) {
+    const DEF = [
       {bezeichnung:'Fein',   groesse:4,  standard:false},
-      {bezeichnung:'Mittel', groesse:14, standard:true},
-      {bezeichnung:'Breit',  groesse:36, standard:false},
+      {bezeichnung:'Mittel', groesse:16, standard:true},
+      {bezeichnung:'Breit',  groesse:38, standard:false},
     ];
-    const all = stifte.length ? stifte : defaults;
+    const all = stifte.length ? stifte : DEF;
 
-    toolGroup.innerHTML = '';
+    tList.innerHTML = '';
     all.forEach(s => {
       const btn = document.createElement('button');
-      btn.className = 'tool-btn';
-      const ds = Math.min(Math.max(s.groesse * 0.85, 5), 30);
-      btn.innerHTML = `<span class="dot" style="width:${ds}px;height:${ds}px"></span>
-                       <span class="tool-lbl">${s.bezeichnung}</span>`;
+      btn.className = 'tbtn';
+      // Stroke preview: line height = stroke size capped visually
+      const lh = Math.min(Math.max(s.groesse, 2), 22);
+      btn.innerHTML = `
+        <div class="stroke-preview">
+          <div class="stroke-line" style="height:${lh}px"></div>
+        </div>
+        <span class="tbtn-lbl">${s.bezeichnung}</span>`;
       btn.addEventListener('click', () => {
         size   = s.groesse;
         eraser = false;
-        toolGroup.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        activePenBtn = btn;
+        tList.querySelectorAll('.tbtn').forEach(b => b.classList.remove('on'));
+        btn.classList.add('on');
+        lastPenBtn = btn;
       });
-      toolGroup.appendChild(btn);
+      tList.appendChild(btn);
       if (s.standard) {
-        btn.classList.add('active');
-        activePenBtn = btn;
+        btn.classList.add('on');
+        lastPenBtn = btn;
         size = s.groesse;
       }
     });
 
-    // Eraser — paints white; template stays on top always
+    // Eraser
     const eb = document.createElement('button');
-    eb.className = 'tool-btn';
-    eb.innerHTML = `<svg width="32" height="26" viewBox="0 0 32 26" fill="none">
-      <rect x="2" y="6" width="28" height="14" rx="4" stroke="currentColor" stroke-width="2.5"/>
-      <line x1="13" y1="6" x2="13" y2="20" stroke="currentColor" stroke-width="2"/>
-    </svg>
-    <span class="tool-lbl">Radierer</span>`;
+    eb.className = 'tbtn';
+    eb.innerHTML = `
+      <svg width="28" height="20" viewBox="0 0 28 20" fill="none">
+        <rect x="1.5" y="3" width="25" height="14" rx="4" stroke="rgba(255,255,255,0.75)" stroke-width="2"/>
+        <line x1="11" y1="3" x2="11" y2="17" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"/>
+      </svg>
+      <span class="tbtn-lbl">Rad.</span>`;
     eb.addEventListener('click', () => {
       eraser = true;
-      toolGroup.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-      eb.classList.add('active');
-      colorGrid.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+      tList.querySelectorAll('.tbtn').forEach(b => b.classList.remove('on'));
+      eb.classList.add('on');
+      cGrid.querySelectorAll('.sw').forEach(s => s.classList.remove('on'));
     });
-    toolGroup.appendChild(eb);
+    tList.appendChild(eb);
   }
 
-  /* ── Drawing ────────────────────────────────────────────────────── */
-  function pos(e) {
+  /* ── Draw ───────────────────────────────────────────────────────── */
+  function pt(e) {
     const r  = cvs.getBoundingClientRect();
     const sx = cvs.width  / r.width;
     const sy = cvs.height / r.height;
-    // prefer pointer coords, fall back to first touch
     const p  = e.touches ? e.touches[0] : e;
-    return { x: (p.clientX - r.left) * sx,
-             y: (p.clientY - r.top)  * sy };
+    return { x: (p.clientX - r.left) * sx, y: (p.clientY - r.top) * sy };
   }
 
-  function down(e) {
+  function dn(e) {
     e.preventDefault();
     if (e.pointerId != null) cvs.setPointerCapture(e.pointerId);
     drawing = true;
-    const {x, y} = pos(e);
-    lx = x; ly = y;
-    stroke(x, y, x, y);
+    const {x,y} = pt(e); lx = x; ly = y;
+    seg(x, y, x, y);
   }
 
-  function move(e) {
+  function mv(e) {
     if (!drawing) return;
     e.preventDefault();
-    const {x, y} = pos(e);
-    stroke(lx, ly, x, y);
-    lx = x; ly = y;
+    const {x,y} = pt(e);
+    seg(lx, ly, x, y); lx = x; ly = y;
   }
 
   function up() { drawing = false; }
 
-  function stroke(x1, y1, x2, y2) {
+  function seg(x1, y1, x2, y2) {
     ctx.globalCompositeOperation = 'source-over';
     ctx.beginPath();
     ctx.moveTo(x1, y1);
@@ -486,10 +502,9 @@
     ctx.stroke();
   }
 
-  // Pointer events cover mouse + stylus + touch when touch-action:none is set on the element
-  cvs.addEventListener('pointerdown', down,  { passive: false });
-  cvs.addEventListener('pointermove', move,  { passive: false });
-  cvs.addEventListener('pointerup',   up);
+  cvs.addEventListener('pointerdown',   dn, { passive: false });
+  cvs.addEventListener('pointermove',   mv, { passive: false });
+  cvs.addEventListener('pointerup',     up);
   cvs.addEventListener('pointercancel', up);
 
   /* ── Reset ──────────────────────────────────────────────────────── */
@@ -508,7 +523,7 @@
     if (tmpl.complete && tmpl.naturalWidth > 0) {
       oc.drawImage(tmpl, 0, 0, off.width, off.height);
     }
-    document.getElementById('print-img').src = off.toDataURL('image/png');
+    document.getElementById('pimg').src = off.toDataURL('image/png');
     window.print();
   });
 
