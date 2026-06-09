@@ -7,480 +7,542 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Malspiel</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-    body {
-      background: #1a1a1a;
-      color: #fff;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    html, body {
+      width: 100%; height: 100%;
       overflow: hidden;
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
+      background: #f0ebe0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
     }
 
-    /* ── Layout ─────────────────────────────────────────────────── */
+    /* ── Layout ────────────────────────────────────────────────── */
     #app {
       display: flex;
-      flex: 1;
+      flex-direction: column;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* ── Top bar ────────────────────────────────────────────────── */
+    #top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      height: 68px;
+      background: #ffffff;
+      border-bottom: 1px solid #e5e0d8;
+      flex-shrink: 0;
+      gap: 16px;
+    }
+
+    #titel-label {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1a1a1a;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
       overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
     }
 
-    /* ── Left Panel ─────────────────────────────────────────────── */
-    #sidebar {
-      width: 110px;
-      background: #111;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 16px 10px;
-      gap: 20px;
-      overflow-y: auto;
+    .action-btn {
+      height: 46px;
+      padding: 0 22px;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: -0.01em;
+      transition: opacity 0.12s, transform 0.1s;
+      white-space: nowrap;
       flex-shrink: 0;
     }
 
-    #color-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      width: 100%;
+    .action-btn:active { transform: scale(0.95); opacity: 0.75; }
+
+    #btn-reset {
+      background: #f0f0f0;
+      color: #555;
     }
 
-    .color-swatch {
-      width: 100%;
-      aspect-ratio: 1;
-      border-radius: 50%;
-      border: 3px solid transparent;
-      cursor: pointer;
-      transition: transform 0.1s, border-color 0.1s;
-    }
-
-    .color-swatch:active { transform: scale(0.9); }
-
-    .color-swatch.selected {
-      border-color: #fff;
-      transform: scale(1.1);
-    }
-
-    .sidebar-divider {
-      width: 70%;
-      height: 1px;
-      background: #333;
-      flex-shrink: 0;
-    }
-
-    #tool-group {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-    }
-
-    .tool-btn {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 5px;
-      cursor: pointer;
-      padding: 8px 4px;
-      border-radius: 10px;
-      border: 2px solid transparent;
-      background: transparent;
-      color: #aaa;
-      font-size: 11px;
-      transition: background 0.15s, border-color 0.15s, color 0.15s;
-    }
-
-    .tool-btn:hover { background: #222; }
-
-    .tool-btn.selected {
-      border-color: #fff;
+    #btn-send {
+      background: #1a1a1a;
       color: #fff;
-      background: #222;
     }
 
-    .pen-dot {
-      background: #fff;
-      border-radius: 50%;
-      display: block;
-    }
-
-    .eraser-icon {
-      width: 28px;
-      height: 20px;
-      border: 3px solid currentColor;
-      border-radius: 4px;
-      position: relative;
-    }
-
-    /* ── Canvas Area ─────────────────────────────────────────────── */
+    /* ── Canvas area ────────────────────────────────────────────── */
     #canvas-area {
       flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #222;
-      position: relative;
+      background: #e8e3d8;
       overflow: hidden;
+      position: relative;
+    }
+
+    /* subtle paper texture via repeating gradient */
+    #canvas-area::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.015) 2px,
+        rgba(0,0,0,0.015) 4px
+      );
+      pointer-events: none;
     }
 
     #canvas-wrapper {
       position: relative;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+      box-shadow:
+        0 2px 8px rgba(0,0,0,0.12),
+        0 12px 40px rgba(0,0,0,0.2);
+      border-radius: 2px;
     }
 
-    /* Template image – bottom layer, not interactive */
-    #canvas-template {
-      position: absolute;
-      top: 0; left: 0;
-      pointer-events: none;
-    }
-
-    /* Paint layer – on top */
+    /* Paint layer: bottom, white background */
     #canvas-paint {
-      position: relative;
+      display: block;
       cursor: crosshair;
       touch-action: none;
+      background: #fff;
     }
 
-    /* ── Bottom Bar ──────────────────────────────────────────────── */
-    #bottom-bar {
-      height: 72px;
-      background: #111;
+    /* Template always on top — never interactive */
+    #template-img {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      display: block;
+    }
+
+    /* ── Bottom palette ─────────────────────────────────────────── */
+    #palette-bar {
+      height: 92px;
+      background: #ffffff;
+      border-top: 1px solid #e5e0d8;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 0 24px;
+      padding: 0 20px;
       flex-shrink: 0;
-      gap: 12px;
+      gap: 0;
     }
 
-    #titel-label {
-      font-size: 15px;
-      color: #888;
+    /* Scrollable color row */
+    #color-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
       flex: 1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      overflow-x: auto;
+      padding: 6px 2px;
+      scrollbar-width: none;
+    }
+    #color-row::-webkit-scrollbar { display: none; }
+
+    .color-swatch {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      cursor: pointer;
+      border: 3px solid transparent;
+      outline: 3px solid transparent;
+      outline-offset: 2px;
+      transition: transform 0.1s, outline-color 0.1s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
     }
 
-    .action-btn {
-      height: 46px;
-      padding: 0 28px;
-      border: none;
-      border-radius: 8px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      letter-spacing: 0.02em;
-      transition: opacity 0.15s, transform 0.1s;
-      white-space: nowrap;
+    .color-swatch:active { transform: scale(0.88); }
+
+    .color-swatch.selected {
+      outline-color: #1a1a1a;
+      transform: scale(1.15);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    }
+
+    /* Divider between colors and tools */
+    .palette-divider {
+      width: 1px;
+      height: 60px;
+      background: #e5e0d8;
+      flex-shrink: 0;
+      margin: 0 16px;
+    }
+
+    /* Tool buttons */
+    #tool-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
       flex-shrink: 0;
     }
 
-    .action-btn:active { transform: scale(0.97); opacity: 0.85; }
-
-    #btn-reset {
-      background: #333;
-      color: #fff;
+    .tool-btn {
+      width: 58px;
+      height: 70px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: 2.5px solid transparent;
+      border-radius: 14px;
+      background: transparent;
+      cursor: pointer;
+      transition: background 0.1s, border-color 0.1s;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    #btn-send {
-      background: #e8c84a;
-      color: #1a1a1a;
+    .tool-btn:active { background: #f5f5f5; }
+
+    .tool-btn.selected {
+      background: #f5f5f0;
+      border-color: #1a1a1a;
     }
 
-    /* ── Loading / Error ─────────────────────────────────────────── */
+    .pen-dot {
+      background: #1a1a1a;
+      border-radius: 50%;
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .tool-label {
+      font-size: 10px;
+      color: #999;
+      letter-spacing: 0.03em;
+      font-weight: 500;
+    }
+
+    .tool-btn.selected .tool-label { color: #1a1a1a; }
+
+    /* ── Overlay ─────────────────────────────────────────────────── */
     #overlay {
       position: fixed;
       inset: 0;
-      background: #1a1a1a;
+      background: #f0ebe0;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      z-index: 100;
-      flex-direction: column;
-      gap: 16px;
+      z-index: 200;
+      gap: 18px;
     }
 
     .spinner {
-      width: 48px; height: 48px;
-      border: 4px solid rgba(255,255,255,0.15);
-      border-top-color: #fff;
+      width: 44px; height: 44px;
+      border: 4px solid rgba(0,0,0,0.1);
+      border-top-color: #1a1a1a;
       border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+      animation: spin 0.75s linear infinite;
     }
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
     #overlay.hidden { display: none; }
 
-    /* ── Print styles ────────────────────────────────────────────── */
+    /* ── Print ───────────────────────────────────────────────────── */
+    #print-img { display: none; }
+
     @media print {
       body { background: #fff; }
-      #sidebar, #bottom-bar, #overlay { display: none !important; }
+      #top-bar, #palette-bar, #overlay { display: none !important; }
       #canvas-area {
-        width: 100vw;
-        height: 100vh;
+        width: 100vw; height: 100vh;
         background: #fff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: flex; align-items: center; justify-content: center;
       }
       #print-img {
-        max-width: 100%;
-        max-height: 100%;
+        max-width: 100%; max-height: 100%;
         display: block !important;
       }
       #canvas-wrapper { display: none; }
     }
-
-    #print-img { display: none; }
   </style>
 </head>
 <body>
 
-  <div id="overlay">
-    <div class="spinner"></div>
-    <span style="color:#888;font-size:14px;">Wird geladen…</span>
-  </div>
+<div id="overlay">
+  <div class="spinner"></div>
+  <span style="color:#999;font-size:14px;letter-spacing:0.04em">Wird geladen…</span>
+</div>
 
-  <div id="app">
-    <!-- Left sidebar -->
-    <div id="sidebar">
-      <div id="color-grid"></div>
-      <div class="sidebar-divider"></div>
-      <div id="tool-group"></div>
-    </div>
+<div id="app">
 
-    <!-- Canvas -->
-    <div id="canvas-area">
-      <div id="canvas-wrapper">
-        <canvas id="canvas-template"></canvas>
-        <canvas id="canvas-paint"></canvas>
-      </div>
-      <img id="print-img" alt="Ausgemalt" />
-    </div>
-  </div>
-
-  <!-- Bottom bar -->
-  <div id="bottom-bar">
-    <span id="titel-label"></span>
+  <div id="top-bar">
+    <span id="titel-label">Malspiel</span>
     <button class="action-btn" id="btn-reset">Neu anfangen</button>
     <button class="action-btn" id="btn-send">An Kassa senden 🖨</button>
   </div>
 
+  <div id="canvas-area">
+    <div id="canvas-wrapper">
+      <!-- Colors painted here, always BELOW the template -->
+      <canvas id="canvas-paint"></canvas>
+      <!-- Template image always on top — outlines never erasable -->
+      <img id="template-img" alt="" crossorigin="anonymous" />
+    </div>
+    <img id="print-img" alt="Ausgemalt" />
+  </div>
+
+  <div id="palette-bar">
+    <div id="color-row"></div>
+    <div class="palette-divider"></div>
+    <div id="tool-row"></div>
+  </div>
+
+</div>
+
 <script>
+// @ts-nocheck
 (function () {
   const SANITY_PROJECT_ID = '832k5je1';
   const SANITY_DATASET    = 'production';
   const SANITY_API        = '2024-01-01';
 
   const overlay     = document.getElementById('overlay');
-  const colorGrid   = document.getElementById('color-grid');
-  const toolGroup   = document.getElementById('tool-group');
+  const colorRow    = document.getElementById('color-row');
+  const toolRow     = document.getElementById('tool-row');
   const titelLabel  = document.getElementById('titel-label');
   const btnReset    = document.getElementById('btn-reset');
   const btnSend     = document.getElementById('btn-send');
   const canvasArea  = document.getElementById('canvas-area');
   const wrapper     = document.getElementById('canvas-wrapper');
-  const tmplCanvas  = document.getElementById('canvas-template');
+  /** @type {HTMLCanvasElement} */
   const paintCanvas = document.getElementById('canvas-paint');
-  const tmplCtx     = tmplCanvas.getContext('2d');
+  /** @type {HTMLImageElement} */
+  const templateImg = document.getElementById('template-img');
   const paintCtx    = paintCanvas.getContext('2d');
 
-  let currentColor  = '#1a1a1a';
+  let currentColor  = '#e53935';
   let currentSize   = 14;
   let isEraser      = false;
   let isDrawing     = false;
   let lastX = 0, lastY = 0;
-  let templateImg   = null;
+  let activePenBtn  = null;
 
-  // ── Fetch Malspiel from Sanity ─────────────────────────────────
+  // ── Load from Sanity ───────────────────────────────────────────
   async function loadMalspiel() {
-    const params  = new URLSearchParams(window.location.search);
-    const id      = params.get('id');
-
+    const id = new URLSearchParams(window.location.search).get('id');
     if (!id) { showError('Kein Malspiel ausgewählt.'); return; }
 
     const query = encodeURIComponent(
-      `*[_type=="malspiel" && _id==$id][0]{_id,titel,ausmalbild{asset->{_id,url,metadata{dimensions}}},farben,stifte,radierer_groesse}`
+      `*[_type=="malspiel" && _id==$id][0]{_id,titel,ausmalbild{asset->{url,metadata{dimensions}}},farben,stifte,radierer_groesse}`
     );
     const idParam = encodeURIComponent(JSON.stringify(id));
     const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v${SANITY_API}/data/query/${SANITY_DATASET}?query=${query}&$id=${idParam}`;
 
-    let data;
+    let spiel;
     try {
       const res = await fetch(url);
-      data = await res.json();
-    } catch (e) {
-      showError('Netzwerkfehler. Bitte Verbindung prüfen.'); return;
+      spiel = (await res.json())?.result;
+    } catch {
+      showError('Netzwerkfehler – bitte Verbindung prüfen.'); return;
     }
 
-    const spiel = data?.result;
     if (!spiel) { showError('Malspiel nicht gefunden.'); return; }
-
     init(spiel);
   }
 
   function showError(msg) {
-    overlay.innerHTML = `<span style="font-size:1.5rem">⚠️</span><span style="color:#aaa">${msg}</span>`;
+    overlay.innerHTML = `
+      <span style="font-size:2.5rem">⚠️</span>
+      <span style="color:#888;font-size:15px;text-align:center;max-width:300px;line-height:1.5">${msg}</span>`;
   }
 
-  // ── Init ───────────────────────────────────────────────────────
+  // ── Initialise ─────────────────────────────────────────────────
   function init(spiel) {
     titelLabel.textContent = spiel.titel || 'Malspiel';
-
     buildColors(spiel.farben || []);
     buildTools(spiel.stifte || [], spiel.radierer_groesse || 40);
 
-    // Load template image, then setup canvas
     const imgUrl = spiel.ausmalbild?.asset?.url;
     const dims   = spiel.ausmalbild?.asset?.metadata?.dimensions;
 
-    if (!imgUrl) { setupCanvas(800, 800, null); return; }
+    if (!imgUrl) {
+      setupCanvas(800, 800);
+      overlay.classList.add('hidden');
+      return;
+    }
 
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      templateImg = img;
-      const w = dims?.width  || img.naturalWidth  || 800;
-      const h = dims?.height || img.naturalHeight || 800;
-      setupCanvas(w, h, img);
+    // Probe natural dimensions then display
+    const probe = new Image();
+    probe.crossOrigin = 'anonymous';
+    probe.onload = () => {
+      const w = dims?.width  || probe.naturalWidth  || 800;
+      const h = dims?.height || probe.naturalHeight || 800;
+      setupCanvas(w, h);
+      templateImg.src = imgUrl;   // set after canvas is sized
       overlay.classList.add('hidden');
     };
-    img.onerror = () => { setupCanvas(800, 800, null); overlay.classList.add('hidden'); };
-    img.src = imgUrl;
+    probe.onerror = () => {
+      setupCanvas(800, 800);
+      overlay.classList.add('hidden');
+    };
+    probe.src = imgUrl;
   }
 
-  // ── Canvas Setup ───────────────────────────────────────────────
-  function setupCanvas(imgW, imgH, img) {
-    // Fit into available space with padding
-    const areaW = canvasArea.clientWidth  - 40;
-    const areaH = canvasArea.clientHeight - 40;
+  // ── Canvas setup ───────────────────────────────────────────────
+  function setupCanvas(imgW, imgH) {
+    const pad  = 32;
+    const areaW = canvasArea.clientWidth  - pad;
+    const areaH = canvasArea.clientHeight - pad;
     const scale = Math.min(areaW / imgW, areaH / imgH, 1);
     const w = Math.round(imgW * scale);
     const h = Math.round(imgH * scale);
 
-    [tmplCanvas, paintCanvas].forEach(c => {
-      c.width  = w;
-      c.height = h;
-      c.style.width  = w + 'px';
-      c.style.height = h + 'px';
-    });
-
+    paintCanvas.width  = w;
+    paintCanvas.height = h;
+    paintCanvas.style.width  = w + 'px';
+    paintCanvas.style.height = h + 'px';
     wrapper.style.width  = w + 'px';
     wrapper.style.height = h + 'px';
 
-    // Draw template (once, locked)
-    if (img) {
-      tmplCtx.drawImage(img, 0, 0, w, h);
-    } else {
-      tmplCtx.fillStyle = '#fff';
-      tmplCtx.fillRect(0, 0, w, h);
-    }
-
-    // Paint canvas: white with full opacity so template shows through cleared areas via CSS
-    // Actually: keep paint canvas transparent, template shows underneath
-    paintCtx.clearRect(0, 0, w, h);
+    // Always start with white — erasing = painting white
+    paintCtx.fillStyle = '#ffffff';
+    paintCtx.fillRect(0, 0, w, h);
   }
 
-  // ── Color Palette ──────────────────────────────────────────────
+  // ── Color palette ──────────────────────────────────────────────
   function buildColors(farben) {
-    // Always start with white
-    const allColors = farben.length ? farben : [
-      {hex:'#1a1a1a'},{hex:'#CC2200'},{hex:'#E87820'},{hex:'#F5C800'},
-      {hex:'#5DB85D'},{hex:'#2E6B2E'},{hex:'#5BA4D4'},{hex:'#1A3D8F'},
-      {hex:'#7B3FA0'},{hex:'#F0A0C0'},{hex:'#5C3317'},{hex:'#A0522D'},
-      {hex:'#CCCCCC'},{hex:'#FFFFFF'}
+    const defaults = [
+      {hex:'#e53935', name:'Rot'},
+      {hex:'#e91e8c', name:'Pink'},
+      {hex:'#9c27b0', name:'Lila'},
+      {hex:'#3f51b5', name:'Indigo'},
+      {hex:'#2196f3', name:'Blau'},
+      {hex:'#00bcd4', name:'Türkis'},
+      {hex:'#4caf50', name:'Grün'},
+      {hex:'#8bc34a', name:'Hellgrün'},
+      {hex:'#ffeb3b', name:'Gelb'},
+      {hex:'#ff9800', name:'Orange'},
+      {hex:'#795548', name:'Braun'},
+      {hex:'#607d8b', name:'Grau'},
+      {hex:'#1a1a1a', name:'Schwarz'},
+      {hex:'#ffffff', name:'Weiß'},
     ];
+    const all = farben.length ? farben : defaults;
 
-    colorGrid.innerHTML = '';
-    allColors.forEach((c, i) => {
+    colorRow.innerHTML = '';
+    all.forEach((c, i) => {
       const sw = document.createElement('div');
       sw.className = 'color-swatch' + (i === 0 ? ' selected' : '');
       sw.style.background = c.hex;
-      if (c.hex === '#FFFFFF' || c.hex === '#fff') {
-        sw.style.border = '3px solid #444';
+      // white swatch needs visible border
+      const isWhite = /^#fff(fff)?$/i.test(c.hex.trim());
+      if (isWhite) {
+        sw.style.boxShadow = '0 2px 8px rgba(0,0,0,0.18), inset 0 0 0 1.5px #ccc';
       }
-      sw.addEventListener('pointerdown', () => selectColor(c.hex, sw));
-      colorGrid.appendChild(sw);
+      sw.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        selectColor(c.hex, sw);
+      });
+      colorRow.appendChild(sw);
     });
 
-    currentColor = allColors[0]?.hex || '#1a1a1a';
+    currentColor = all[0]?.hex || '#e53935';
   }
 
   function selectColor(hex, el) {
-    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+    colorRow.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
     el.classList.add('selected');
     currentColor = hex;
     isEraser = false;
-    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('selected'));
+    // Re-activate the last used pen (not eraser)
+    toolRow.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('selected'));
+    if (activePenBtn) activePenBtn.classList.add('selected');
   }
 
-  // ── Tools ──────────────────────────────────────────────────────
+  // ── Tool buttons ───────────────────────────────────────────────
   function buildTools(stifte, radiererGroesse) {
-    toolGroup.innerHTML = '';
+    toolRow.innerHTML = '';
 
-    const allStifte = stifte.length ? stifte : [
-      {bezeichnung:'Fein',   groesse:4,  standard:false},
-      {bezeichnung:'Mittel', groesse:14, standard:true},
-      {bezeichnung:'Breit',  groesse:32, standard:false}
+    const defaults = [
+      {bezeichnung: 'Fein',   groesse: 4,  standard: false},
+      {bezeichnung: 'Mittel', groesse: 14, standard: true},
+      {bezeichnung: 'Breit',  groesse: 32, standard: false},
     ];
+    const all = stifte.length ? stifte : defaults;
 
-    allStifte.forEach(s => {
+    all.forEach(s => {
       const btn = document.createElement('button');
-      btn.className = 'tool-btn' + (s.standard ? ' selected' : '');
-      const dotSize = Math.min(Math.max(s.groesse * 0.8, 6), 28);
-      btn.innerHTML = `<span class="pen-dot" style="width:${dotSize}px;height:${dotSize}px"></span><span>${s.bezeichnung}</span>`;
-      btn.addEventListener('pointerdown', () => {
+      btn.className = 'tool-btn';
+      btn.dataset.size = String(s.groesse);
+      const dotSize = Math.min(Math.max(s.groesse * 0.85, 5), 28);
+      btn.innerHTML = `
+        <span class="pen-dot" style="width:${dotSize}px;height:${dotSize}px"></span>
+        <span class="tool-label">${s.bezeichnung}</span>`;
+      btn.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
         currentSize = s.groesse;
         isEraser = false;
-        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('selected'));
+        toolRow.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
+        activePenBtn = btn;
       });
-      toolGroup.appendChild(btn);
-      if (s.standard) currentSize = s.groesse;
+      toolRow.appendChild(btn);
+      if (s.standard) {
+        btn.classList.add('selected');
+        activePenBtn = btn;
+        currentSize = s.groesse;
+      }
     });
 
-    // Eraser
+    // Eraser — paints white (background never affected, template always on top)
     const eraserBtn = document.createElement('button');
     eraserBtn.className = 'tool-btn';
-    eraserBtn.innerHTML = `<div class="eraser-icon"></div><span>Radierer</span>`;
-    eraserBtn.addEventListener('pointerdown', () => {
+    eraserBtn.innerHTML = `
+      <svg width="30" height="24" viewBox="0 0 30 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="1.5" y="5.5" width="27" height="13" rx="3.5" stroke="currentColor" stroke-width="2.5"/>
+        <line x1="11" y1="5.5" x2="11" y2="18.5" stroke="currentColor" stroke-width="2"/>
+      </svg>
+      <span class="tool-label">Radierer</span>`;
+    eraserBtn.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
       isEraser = true;
-      document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('selected'));
+      toolRow.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('selected'));
       eraserBtn.classList.add('selected');
+      colorRow.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
     });
-    toolGroup.appendChild(eraserBtn);
+    toolRow.appendChild(eraserBtn);
   }
 
   // ── Drawing ────────────────────────────────────────────────────
   function getPos(e) {
-    const rect = paintCanvas.getBoundingClientRect();
+    const rect   = paintCanvas.getBoundingClientRect();
     const scaleX = paintCanvas.width  / rect.width;
     const scaleY = paintCanvas.height / rect.height;
-    const src = e.touches ? e.touches[0] : e;
+    const src    = e.touches ? e.touches[0] : e;
     return {
       x: (src.clientX - rect.left) * scaleX,
-      y: (src.clientY - rect.top)  * scaleY
+      y: (src.clientY - rect.top)  * scaleY,
     };
   }
 
   function startDraw(e) {
     e.preventDefault();
+    paintCanvas.setPointerCapture(e.pointerId);
     isDrawing = true;
     const {x, y} = getPos(e);
     lastX = x; lastY = y;
-    // Draw a dot on tap
-    drawSegment(x, y, x, y);
+    drawSegment(x, y, x, y);  // single dot on tap
   }
 
-  function draw(e) {
+  function moveDraw(e) {
     if (!isDrawing) return;
     e.preventDefault();
     const {x, y} = getPos(e);
@@ -491,48 +553,50 @@
   function stopDraw() { isDrawing = false; }
 
   function drawSegment(x1, y1, x2, y2) {
+    // Eraser = paint white; template img stays on top regardless
+    paintCtx.globalCompositeOperation = 'source-over';
     paintCtx.beginPath();
     paintCtx.moveTo(x1, y1);
     paintCtx.lineTo(x2, y2);
-    paintCtx.strokeStyle = isEraser ? 'rgba(0,0,0,1)' : currentColor;
-    paintCtx.globalCompositeOperation = isEraser ? 'destination-out' : 'source-over';
-    paintCtx.lineWidth   = isEraser ? currentSize * 2.5 : currentSize;
+    paintCtx.strokeStyle = isEraser ? '#ffffff' : currentColor;
+    paintCtx.lineWidth   = isEraser ? currentSize * 2.2 : currentSize;
     paintCtx.lineCap     = 'round';
     paintCtx.lineJoin    = 'round';
     paintCtx.stroke();
   }
 
   paintCanvas.addEventListener('pointerdown', startDraw);
-  paintCanvas.addEventListener('pointermove', draw);
+  paintCanvas.addEventListener('pointermove', moveDraw);
   paintCanvas.addEventListener('pointerup',   stopDraw);
-  paintCanvas.addEventListener('pointerout',  stopDraw);
-
-  // Touch fallback
-  paintCanvas.addEventListener('touchstart', startDraw, {passive:false});
-  paintCanvas.addEventListener('touchmove',  draw,      {passive:false});
-  paintCanvas.addEventListener('touchend',   stopDraw);
+  paintCanvas.addEventListener('pointercancel', stopDraw);
 
   // ── Reset ──────────────────────────────────────────────────────
   btnReset.addEventListener('click', () => {
-    if (!confirm('Bild löschen und neu starten?')) return;
-    paintCtx.clearRect(0, 0, paintCanvas.width, paintCanvas.height);
+    if (!confirm('Bild löschen und neu anfangen?')) return;
+    paintCtx.fillStyle = '#ffffff';
+    paintCtx.fillRect(0, 0, paintCanvas.width, paintCanvas.height);
   });
 
-  // ── Senden / Drucken ───────────────────────────────────────────
+  // ── Print / Send ───────────────────────────────────────────────
   btnSend.addEventListener('click', () => {
-    // Composite template + paint into one image
-    const offscreen = document.createElement('canvas');
-    offscreen.width  = tmplCanvas.width;
-    offscreen.height = tmplCanvas.height;
-    const ctx = offscreen.getContext('2d');
-    ctx.drawImage(tmplCanvas,  0, 0);
+    const off = document.createElement('canvas');
+    off.width  = paintCanvas.width;
+    off.height = paintCanvas.height;
+    const ctx = off.getContext('2d');
+
+    // 1. Color layer
     ctx.drawImage(paintCanvas, 0, 0);
 
-    const printImg = document.getElementById('print-img');
-    printImg.src = offscreen.toDataURL('image/png');
+    // 2. Template outlines on top (same z-order as on screen)
+    if (templateImg.complete && templateImg.naturalWidth > 0) {
+      ctx.drawImage(templateImg, 0, 0, off.width, off.height);
+    }
+
+    /** @type {HTMLImageElement} */ (document.getElementById('print-img')).src = off.toDataURL('image/png');
     window.print();
   });
 
+  // ── Boot ───────────────────────────────────────────────────────
   loadMalspiel();
 })();
 </script>
