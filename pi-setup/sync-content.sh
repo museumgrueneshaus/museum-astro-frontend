@@ -71,7 +71,10 @@ GROQ='*[_type=="kioskDevice" && kioskId==$kioskId][0]{
   "slideshowSettings": ausstellung->kioskTemplate.slideshowSettings,
   "explorerSettings":  ausstellung->kioskTemplate.explorerSettings,
 
-  "pdf_url": ausstellung->kioskTemplate.readerSettings.pdf_url
+  "pdf_url":     ausstellung->kioskTemplate.readerSettings.pdf_url,
+  "website_url": ausstellung->kioskTemplate.websiteSettings.url,
+
+  "wlanNetworks": wlanNetworks[]{ ssid, password, priority, description }
 }'
 
 SANITY_URL=$(python3 - <<PYEOF
@@ -110,5 +113,138 @@ echo "$RESULT" | jq --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '. + {lastSync: $t
 mv "$CONTENT_TMP" "$CONTENT_FILE"
 chown www-data:www-data "$CONTENT_FILE" 2>/dev/null || true
 
+# ── Update nginx website-proxy if URL changed ────────────────────────────────
+WEBSITE_URL=$(echo "$RESULT" | python3 -c "
+import json, sys
+data = json.loads(sys.stdin.read())
+print(data.get('website_url') or '')
+" 2>/dev/null || echo "")
+
+PROXY_CONF="/etc/museum-kiosk/website-proxy.conf"
+SUBFILTER_CONF="/etc/museum-kiosk/website-subfilter.conf"
+if [ -n "$WEBSITE_URL" ]; then
+    # Extract just the domain for sub_filter (strip trailing slash and path)
+    WEBSITE_DOMAIN=$(python3 -c "
+from urllib.parse import urlparse
+u = urlparse('$WEBSITE_URL')
+print(u.scheme + '://' + u.netloc)
+" 2>/dev/null || echo "$WEBSITE_URL")
+
+    NEW_CONF="proxy_pass ${WEBSITE_URL}/;"
+    NEW_SF="sub_filter '${WEBSITE_DOMAIN}' '/website-proxy';"
+
+    OLD_CONF=$(cat "$PROXY_CONF" 2>/dev/null || echo "")
+    if [ "$NEW_CONF" != "$OLD_CONF" ]; then
+        echo "$NEW_CONF" > "$PROXY_CONF"
+        echo "$NEW_SF"  > "$SUBFILTER_CONF"
+        nginx -t -q 2>/dev/null && systemctl reload nginx.service && \
+            log "nginx website-proxy aktualisiert: $WEBSITE_URL" || \
+            log "nginx reload fehlgeschlagen — Konfiguration prüfen"
+    fi
+fi
+
 MODUS=$(echo "$RESULT" | python3 -c "import json,sys; print(json.loads(sys.stdin.read()).get('modus','?'))" 2>/dev/null || echo "?")
 log "Done — modus: $MODUS, saved to $CONTENT_FILE"
+
+# ── WiFi: sync WLAN networks from Sanity kioskDevice.wlanNetworks ──────────
+WLAN_JSON=$(echo "$RESULT" | python3 -c "
+import json, sys
+data = json.loads(sys.stdin.read())
+networks = data.get('wlanNetworks') or []
+if networks:
+    print(json.dumps(networks))
+else:
+    sys.exit(1)
+" 2>/dev/null) && {
+    WLAN_HASH=$(echo "$WLAN_JSON" | md5sum | cut -d' ' -f1)
+    WLAN_HASH_FILE="/etc/museum-kiosk/wlan-hash"
+    OLD_HASH=$(cat "$WLAN_HASH_FILE" 2>/dev/null || echo "")
+
+    if [ "$WLAN_HASH" != "$OLD_HASH" ]; then
+        log "WLAN-Konfiguration geändert — aktualisiere..."
+        echo "$WLAN_JSON" | python3 -c "
+import json, sys, subprocess, shutil
+
+networks = json.load(sys.stdin)
+use_nmcli = shutil.which('nmcli') is not None
+
+for net in networks:
+    ssid = net.get('ssid', '')
+    pw   = net.get('password', '')
+    prio = str(net.get('priority', 10))
+    if not ssid or not pw:
+        continue
+    if use_nmcli:
+        # Remove existing connection with same name (idempotent)
+        subprocess.run(['nmcli', 'con', 'delete', ssid], capture_output=True)
+        r = subprocess.run([
+            'nmcli', 'con', 'add', 'type', 'wifi', 'ifname', 'wlan0',
+            'con-name', ssid, 'ssid', ssid,
+            'wifi-sec.key-mgmt', 'wpa-psk', 'wifi-sec.psk', pw,
+            'connection.autoconnect', 'yes',
+            'connection.autoconnect-priority', prio
+        ], capture_output=True)
+        status = 'OK' if r.returncode == 0 else 'FEHLER'
+        print(f'  WLAN {ssid} (Prio {prio}): {status}')
+    else:
+        import os
+        wpa_conf = '/etc/wpa_supplicant/wpa_supplicant.conf'
+        r = subprocess.run(['wpa_passphrase', ssid, pw], capture_output=True, text=True)
+        if r.returncode == 0:
+            with open(wpa_conf, 'a') as f:
+                f.write(r.stdout)
+            print(f'  WLAN {ssid}: gespeichert (wpa_supplicant)')
+        subprocess.run(['wpa_cli', '-i', 'wlan0', 'reconfigure'], capture_output=True)
+" 2>&1 | while read -r line; do log "$line"; done
+
+        echo "$WLAN_HASH" > "$WLAN_HASH_FILE"
+        log "WLAN-Konfiguration aktualisiert."
+    fi
+} || true  # no wlanNetworks is fine
+
+# ── Signage: fetch and cache museum-wide data if this is a signage kiosk ────
+if [ "$MODUS" = "signage" ]; then
+    log "Signage modus — fetching museum-wide data..."
+    SIGNAGE_FILE="/var/www/museum/signage-content.json"
+    SIGNAGE_TMP="/var/www/museum/signage-content.tmp.json"
+
+    SIGNAGE_GROQ='{
+      "museumInfo": *[_type=="museumInfo"][0]{ name, untertitel, oeffnungszeiten_text, logo },
+      "signage": *[_type=="signageKonfiguration"][0]{
+        "sonderausstellung": {
+          "titel": sonderausstellung.titel,
+          "zeitraum_text": sonderausstellung.zeitraum_text,
+          "titelbild": sonderausstellung.titelbild{ asset->{ _id, url } }
+        },
+        "veranstaltungen": veranstaltungen[]{ titel, datum, typ },
+        "weitere_ausstellungen": weitere_ausstellungen[]{ titel, zeitraum_text, "titelbild": titelbild{ asset->{ _id, url } } },
+        "wechsel_aktiv": wechsel_aktiv,
+        "wechsel_intervall": wechsel_intervall
+      }
+    }'
+
+    SIGNAGE_URL=$(python3 - <<PYEOF
+import urllib.parse
+query = '''$SIGNAGE_GROQ'''
+params = urllib.parse.urlencode({"query": query})
+print("$SANITY_API?" + params)
+PYEOF
+)
+
+    SIGNAGE_RESPONSE=$(curl -sf --max-time 15 "$SIGNAGE_URL") || {
+        log "Sanity not reachable for signage data — keeping existing file."
+        exit 0
+    }
+
+    echo "$SIGNAGE_RESPONSE" | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+result = data.get('result')
+if result is None:
+    sys.exit(1)
+print(json.dumps(result))
+" 2>/dev/null | jq --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '. + {lastSync: $ts}' > "$SIGNAGE_TMP" && \
+        mv "$SIGNAGE_TMP" "$SIGNAGE_FILE" && \
+        chown www-data:www-data "$SIGNAGE_FILE" 2>/dev/null || true && \
+        log "Signage content saved to $SIGNAGE_FILE"
+fi

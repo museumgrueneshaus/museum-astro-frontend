@@ -29,6 +29,8 @@ jobs:
 
       - name: Create build zip
         run: |
+          # Pi-Skripte mit ins ZIP — Pis aktualisieren sich damit selbst (sync-build.sh)
+          cp -r pi-setup dist/pi-setup
           cd dist
           zip -r ../museum-kiosk-build.zip .
           cd ..

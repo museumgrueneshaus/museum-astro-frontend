@@ -36,18 +36,98 @@ fi
 
 log "Kiosk ID: $KIOSK_ID"
 
+# ── WiFi (Bootstrap) ─────────────────────────────────────────────────────────
+# Initiale WLAN-Konfiguration um den Pi online zu bekommen.
+# Danach übernimmt sync-content.sh die WLAN-Pflege aus Sanity
+# (kioskDevice → wlanNetworks). Hier nur Bootstrap für Erstinstallation.
+
+add_wifi() {
+    local SSID="$1" PASS="$2" PRIO="$3"
+    if command -v nmcli &>/dev/null; then
+        nmcli dev wifi connect "$SSID" password "$PASS" 2>/dev/null || \
+            nmcli con add type wifi ifname wlan0 ssid "$SSID" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PASS" 2>/dev/null || \
+            { error "WLAN '$SSID' konnte nicht hinzugefügt werden."; return 1; }
+        nmcli con modify "$SSID" connection.autoconnect yes
+        nmcli con modify "$SSID" connection.autoconnect-priority "$PRIO"
+        log "WLAN '$SSID' gespeichert (Priorität $PRIO)."
+    elif [ -f /etc/wpa_supplicant/wpa_supplicant.conf ]; then
+        wpa_passphrase "$SSID" "$PASS" >> /etc/wpa_supplicant/wpa_supplicant.conf
+        log "WLAN '$SSID' gespeichert (wpa_supplicant)."
+    else
+        error "Weder NetworkManager noch wpa_supplicant gefunden."
+        return 1
+    fi
+}
+
+# Prüfe ob bereits WLAN verbunden
+WIFI_CONNECTED=false
+if command -v nmcli &>/dev/null; then
+    nmcli -t -f TYPE,STATE dev 2>/dev/null | grep -q "wifi:connected" && WIFI_CONNECTED=true
+elif iwconfig wlan0 2>/dev/null | grep -q "ESSID:\""; then
+    WIFI_CONNECTED=true
+fi
+
+if [ "$WIFI_CONNECTED" = true ]; then
+    log "WLAN bereits verbunden — Bootstrap übersprungen."
+    log "Weitere Netze werden über Sanity (kioskDevice → WLAN-Netzwerke) verwaltet."
+else
+    echo ""
+    echo "WLAN wird für die Erstinstallation benötigt."
+    echo "WLAN SSID:"
+    read -r WIFI_SSID
+    echo "WLAN Passwort:"
+    read -rs WIFI_PASS
+    echo ""
+    if [ -n "$WIFI_SSID" ]; then
+        add_wifi "$WIFI_SSID" "$WIFI_PASS" 50
+        # dhcpcd neu starten falls wpa_supplicant benutzt
+        if ! command -v nmcli &>/dev/null && [ -f /etc/wpa_supplicant/wpa_supplicant.conf ]; then
+            if ! grep -q "interface wlan0" /etc/dhcpcd.conf 2>/dev/null; then
+                echo -e "\ninterface wlan0\nenv ifwireless=1\nenv wpa_supplicant_driver=nl80211" >> /etc/dhcpcd.conf
+            fi
+            systemctl restart dhcpcd 2>/dev/null || true
+            wpa_cli -i wlan0 reconfigure 2>/dev/null || true
+        fi
+    else
+        error "SSID darf nicht leer sein — WLAN übersprungen."
+    fi
+fi
+log "Hinweis: WLAN-Netze können zentral über Sanity Studio verwaltet werden."
+
 # ── Packages ─────────────────────────────────────────────────────────────────
 
 log "Installing packages..."
 apt-get update -qq
 apt-get install -y nginx chromium jq wget rsync unzip curl python3 unclutter labwc
 
+# ── MQTT Broker ───────────────────────────────────────────────────────────────
+# Der MQTT-Broker läuft auf einem dedizierten Pi (mqtt-broker-setup.sh).
+# Hier nur die IP des Brokers eintragen.
+
+echo ""
+echo "IP-Adresse des MQTT-Brokers (z.B. 192.168.1.50):"
+echo "(Leer lassen wenn kein MQTT benötigt wird)"
+read -r MQTT_BROKER_IP
+MQTT_BROKER_IP="${MQTT_BROKER_IP:-}"
+
 # ── Kiosk identity ────────────────────────────────────────────────────────────
 
 log "Writing kiosk identity..."
 mkdir -p /etc/museum-kiosk
+
+# Placeholder damit nginx nicht abbricht — wird von sync-content.sh überschrieben
+if [ ! -f /etc/museum-kiosk/website-proxy.conf ]; then
+    echo "proxy_pass http://127.0.0.1/;" > /etc/museum-kiosk/website-proxy.conf
+fi
+if [ ! -f /etc/museum-kiosk/website-subfilter.conf ]; then
+    echo "# sub_filter placeholder" > /etc/museum-kiosk/website-subfilter.conf
+fi
+MQTT_BROKER_ENTRY=""
+if [ -n "$MQTT_BROKER_IP" ]; then
+    MQTT_BROKER_ENTRY=", \"mqttBroker\": \"ws://${MQTT_BROKER_IP}:9001\""
+fi
 cat > /etc/museum-kiosk/kiosk-id.json <<EOF
-{"kioskId": "$KIOSK_ID"}
+{"kioskId": "$KIOSK_ID"${MQTT_BROKER_ENTRY}}
 EOF
 
 # ── nginx ─────────────────────────────────────────────────────────────────────
@@ -138,8 +218,12 @@ if [ -f /etc/systemd/system/kiosk.service ]; then
     rm -f /etc/systemd/system/kiosk.service
 fi
 
+# ── museum-sync service (boot-time content sync) ────────────────────────────
+log "Installing museum-sync service..."
+cp "$SCRIPT_DIR/museum-sync.service" /etc/systemd/system/museum-sync.service
+
 systemctl daemon-reload
-systemctl enable nginx.service
+systemctl enable nginx.service museum-sync.service
 
 # ── Cron jobs ─────────────────────────────────────────────────────────────────
 
@@ -203,6 +287,8 @@ echo "════════════════════════�
 echo " Kiosk ID    : $KIOSK_ID"
 echo " Version     : $(cat /etc/museum-kiosk/current-version 2>/dev/null || echo 'unknown')"
 echo " nginx       : $(systemctl is-active nginx.service)"
+echo " WLAN        : $(nmcli -t -f NAME con show --active 2>/dev/null | head -1 || echo 'nicht verbunden')"
+echo " MQTT Broker : ${MQTT_BROKER_IP:-nicht konfiguriert}"
 echo " chromium    : (starts via labwc autostart on next reboot)"
 echo " Videos      : $(ls /var/www/museum/videos/ 2>/dev/null | wc -l) file(s)"
 echo " Token       : $(test -f /etc/museum-kiosk/sanity-token && echo 'gesetzt ✓' || echo 'FEHLT – Heartbeat inaktiv ⚠')"

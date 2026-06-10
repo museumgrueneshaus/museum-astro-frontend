@@ -84,20 +84,51 @@ unzip -q "$ZIP_PATH" -d "$STAGE_DIR" || {
 # Preserve the videos directory across deployments
 mkdir -p "$DEPLOY_DIR/videos"
 
+KIOSK_USER="museumgh"
+KIOSK_UID=$(id -u "$KIOSK_USER" 2>/dev/null || echo "1000")
+
 log "Deploying to $DEPLOY_DIR..."
-# Copy everything except the videos directory
-rsync -a --delete --exclude='/videos/' "$STAGE_DIR/" "$DEPLOY_DIR/" || {
+# Copy everything except videos (persistent) and pi-setup (system scripts, not web content)
+rsync -a --delete --exclude='/videos/' --exclude='/pi-setup/' "$STAGE_DIR/" "$DEPLOY_DIR/" || {
     error "rsync deploy failed"
     exit 1
 }
+
+# ── Self-update: install pi scripts shipped with the build ──────────────────
+# Allows fixing every Pi via `git push` — no SSH needed.
+SCRIPTS_SRC="$STAGE_DIR/pi-setup"
+if [ -d "$SCRIPTS_SRC" ]; then
+    for s in sync-content.sh sync-videos.sh heartbeat.sh; do
+        if [ -f "$SCRIPTS_SRC/$s" ] && ! cmp -s "$SCRIPTS_SRC/$s" "/usr/local/bin/$s"; then
+            install -m 755 "$SCRIPTS_SRC/$s" "/usr/local/bin/$s"
+            log "Updated script: $s"
+        fi
+    done
+
+    # Chromium user service (e.g. new flags like --kiosk-printing)
+    UNIT_SRC="$SCRIPTS_SRC/chromium-kiosk.service"
+    UNIT_DST="/home/$KIOSK_USER/.config/systemd/user/chromium-kiosk.service"
+    if [ -f "$UNIT_SRC" ] && [ -d "$(dirname "$UNIT_DST")" ] && ! cmp -s "$UNIT_SRC" "$UNIT_DST"; then
+        install -o "$KIOSK_USER" -g "$KIOSK_USER" -m 644 "$UNIT_SRC" "$UNIT_DST"
+        XDG_RUNTIME_DIR="/run/user/$KIOSK_UID" sudo -u "$KIOSK_USER" \
+            systemctl --user daemon-reload 2>/dev/null || true
+        log "Updated unit: chromium-kiosk.service"
+    fi
+
+    # Update self LAST, atomically via mv (running script keeps its old inode;
+    # the new version takes effect on the next run)
+    if [ -f "$SCRIPTS_SRC/sync-build.sh" ] && ! cmp -s "$SCRIPTS_SRC/sync-build.sh" "/usr/local/bin/sync-build.sh"; then
+        install -m 755 "$SCRIPTS_SRC/sync-build.sh" "/usr/local/bin/.sync-build.sh.new"
+        mv -f "/usr/local/bin/.sync-build.sh.new" "/usr/local/bin/sync-build.sh"
+        log "Updated script: sync-build.sh (active on next run)"
+    fi
+fi
 
 # Record the new version
 echo "$LATEST_TAG" > "$VERSION_FILE"
 log "Deployed version: $LATEST_TAG"
 
 # Restart Chromium so it picks up the new build (user service under museumgh)
-KIOSK_USER="museumgh"
-KIOSK_UID=$(id -u "$KIOSK_USER" 2>/dev/null || echo "1000")
 if XDG_RUNTIME_DIR="/run/user/$KIOSK_UID" sudo -u "$KIOSK_USER" systemctl --user is-active --quiet chromium-kiosk.service 2>/dev/null; then
     log "Restarting chromium-kiosk service..."
     XDG_RUNTIME_DIR="/run/user/$KIOSK_UID" sudo -u "$KIOSK_USER" systemctl --user restart chromium-kiosk.service
