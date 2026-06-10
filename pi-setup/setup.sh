@@ -25,13 +25,28 @@ if ! grep -qi "raspberry" /proc/device-tree/model 2>/dev/null; then
     sleep 5
 fi
 
-# Prompt for kiosk ID
-echo ""
-echo "Enter the kiosk ID for this device (e.g. RPI_01):"
-read -r KIOSK_ID
+# ── Kiosk ID ─────────────────────────────────────────────────────────────────
+# Priority: existing config (idempotent re-run) → interactive prompt →
+# auto-derived from hardware serial (golden image / non-interactive path).
+KIOSK_ID=""
+if [ -f /etc/museum-kiosk/kiosk-id.json ]; then
+    KIOSK_ID=$(python3 -c "import json; print(json.load(open('/etc/museum-kiosk/kiosk-id.json')).get('kioskId',''))" 2>/dev/null || true)
+fi
+
+if [ -z "$KIOSK_ID" ] && [ -t 0 ]; then
+    echo ""
+    echo "Enter the kiosk ID for this device (e.g. RPI_01)."
+    echo "(Leer lassen = automatisch aus der Hardware-Seriennummer ableiten)"
+    read -r KIOSK_ID
+fi
 
 if [ -z "$KIOSK_ID" ]; then
-    die "Kiosk ID cannot be empty."
+    SERIAL=$(awk '/^Serial/ {print $3}' /proc/cpuinfo 2>/dev/null || true)
+    if [ -n "$SERIAL" ]; then
+        KIOSK_ID="PI-$(echo "${SERIAL: -4}" | tr '[:lower:]' '[:upper:]')"
+    else
+        die "Keine Kiosk-ID angegeben und keine Hardware-Seriennummer gefunden."
+    fi
 fi
 
 log "Kiosk ID: $KIOSK_ID"
@@ -70,6 +85,8 @@ fi
 if [ "$WIFI_CONNECTED" = true ]; then
     log "WLAN bereits verbunden — Bootstrap übersprungen."
     log "Weitere Netze werden über Sanity (kioskDevice → WLAN-Netzwerke) verwaltet."
+elif [ ! -t 0 ]; then
+    log "Non-interaktiv und kein WLAN — Ethernet oder Imager-WLAN wird vorausgesetzt."
 else
     echo ""
     echo "WLAN wird für die Erstinstallation benötigt."
@@ -98,17 +115,35 @@ log "Hinweis: WLAN-Netze können zentral über Sanity Studio verwaltet werden."
 
 log "Installing packages..."
 apt-get update -qq
-apt-get install -y nginx chromium jq wget rsync unzip curl python3 unclutter labwc
+apt-get install -y nginx chromium jq wget rsync unzip curl python3 unclutter labwc wayvnc
 
-# ── MQTT Broker ───────────────────────────────────────────────────────────────
-# Der MQTT-Broker läuft auf einem dedizierten Pi (mqtt-broker-setup.sh).
-# Hier nur die IP des Brokers eintragen.
+# ── Tailscale (Fernwartung: SSH + Remote Desktop von überall) ────────────────
+# Auth-Key liegt unter /etc/museum-kiosk/tailscale-authkey (Golden Image oder
+# manuell). Ohne Key wird Tailscale installiert, aber nicht verbunden.
 
-echo ""
-echo "IP-Adresse des MQTT-Brokers (z.B. 192.168.1.50):"
-echo "(Leer lassen wenn kein MQTT benötigt wird)"
-read -r MQTT_BROKER_IP
-MQTT_BROKER_IP="${MQTT_BROKER_IP:-}"
+if ! command -v tailscale &>/dev/null; then
+    log "Installing Tailscale..."
+    curl -fsSL https://tailscale.com/install.sh | sh || error "Tailscale-Installation fehlgeschlagen (Fernwartung deaktiviert)"
+fi
+
+TS_KEYFILE="/etc/museum-kiosk/tailscale-authkey"
+if command -v tailscale &>/dev/null; then
+    systemctl enable --now tailscaled 2>/dev/null || true
+    if ! tailscale status &>/dev/null; then
+        if [ -f "$TS_KEYFILE" ]; then
+            TS_HOSTNAME=$(echo "$KIOSK_ID" | tr '[:upper:]_' '[:lower:]-')
+            log "Joining Tailscale network as '$TS_HOSTNAME'..."
+            tailscale up --authkey "$(tr -d '[:space:]' < "$TS_KEYFILE")" \
+                --hostname "$TS_HOSTNAME" --ssh 2>/dev/null \
+                && log "Tailscale verbunden." \
+                || error "Tailscale-Anmeldung fehlgeschlagen — Key prüfen."
+        else
+            log "Kein Tailscale-Key unter $TS_KEYFILE — Fernwartung später aktivierbar."
+        fi
+    else
+        log "Tailscale bereits verbunden."
+    fi
+fi
 
 # ── Kiosk identity ────────────────────────────────────────────────────────────
 
@@ -122,12 +157,8 @@ fi
 if [ ! -f /etc/museum-kiosk/website-subfilter.conf ]; then
     echo "# sub_filter placeholder" > /etc/museum-kiosk/website-subfilter.conf
 fi
-MQTT_BROKER_ENTRY=""
-if [ -n "$MQTT_BROKER_IP" ]; then
-    MQTT_BROKER_ENTRY=", \"mqttBroker\": \"ws://${MQTT_BROKER_IP}:9001\""
-fi
 cat > /etc/museum-kiosk/kiosk-id.json <<EOF
-{"kioskId": "$KIOSK_ID"${MQTT_BROKER_ENTRY}}
+{"kioskId": "$KIOSK_ID"}
 EOF
 
 # ── nginx ─────────────────────────────────────────────────────────────────────
@@ -158,17 +189,22 @@ chmod +x /usr/local/bin/sync-build.sh /usr/local/bin/sync-videos.sh /usr/local/b
 
 # ── Sanity write token ────────────────────────────────────────────────────────
 
-echo ""
-echo "Enter the Sanity write token for this device (from sanity.io/manage → API → Tokens):"
-echo "(Leave empty to skip — you can add it later: echo 'sk...' > /etc/museum-kiosk/sanity-token)"
-read -r SANITY_TOKEN
-
-if [ -n "$SANITY_TOKEN" ]; then
-    echo "$SANITY_TOKEN" > /etc/museum-kiosk/sanity-token
-    chmod 600 /etc/museum-kiosk/sanity-token
-    log "Sanity token saved."
+if [ -f /etc/museum-kiosk/sanity-token ]; then
+    log "Sanity token already present — keeping it."
+elif [ -t 0 ]; then
+    echo ""
+    echo "Enter the Sanity write token for this device (from sanity.io/manage → API → Tokens):"
+    echo "(Leave empty to skip — you can add it later: echo 'sk...' > /etc/museum-kiosk/sanity-token)"
+    read -r SANITY_TOKEN
+    if [ -n "$SANITY_TOKEN" ]; then
+        echo "$SANITY_TOKEN" > /etc/museum-kiosk/sanity-token
+        chmod 600 /etc/museum-kiosk/sanity-token
+        log "Sanity token saved."
+    else
+        log "Skipped — heartbeat/self-registration inactive until token is set."
+    fi
 else
-    log "Skipped — heartbeat will not work until token is set."
+    log "Non-interaktiv, kein Token vorhanden — heartbeat/self-registration inaktiv bis Token gesetzt."
 fi
 
 # ── Kiosk: systemd user service + labwc autostart ────────────────────────────
@@ -192,9 +228,10 @@ KIOSK_UID=$(id -u "$KIOSK_USER")
 USER_SYSTEMD_DIR="/home/$KIOSK_USER/.config/systemd/user"
 LABWC_DIR="/home/$KIOSK_USER/.config/labwc"
 
-log "Installing chromium user service..."
+log "Installing user services (chromium, wayvnc)..."
 mkdir -p "$USER_SYSTEMD_DIR"
 cp "$SCRIPT_DIR/chromium-kiosk.service" "$USER_SYSTEMD_DIR/chromium-kiosk.service"
+cp "$SCRIPT_DIR/wayvnc.service"         "$USER_SYSTEMD_DIR/wayvnc.service"
 chown -R "$KIOSK_USER:$KIOSK_USER" "/home/$KIOSK_USER/.config/systemd"
 
 log "Configuring labwc autostart..."
@@ -207,7 +244,7 @@ log "Enabling chromium user service (loginctl linger)..."
 loginctl enable-linger "$KIOSK_USER"
 # Enable the service in the user unit store
 sudo -u "$KIOSK_USER" XDG_RUNTIME_DIR="/run/user/$KIOSK_UID" \
-    systemctl --user enable chromium-kiosk.service || \
+    systemctl --user enable chromium-kiosk.service wayvnc.service || \
     log "Note: enable will take effect after first login/reboot"
 
 # Remove old system-level kiosk service if present
@@ -242,9 +279,41 @@ add_cron "* * * * * /usr/local/bin/heartbeat.sh    >> /var/log/heartbeat.log 2>&
 add_cron "*/5  * * * * /usr/local/bin/sync-content.sh >> /var/log/sync-content.log 2>&1"
 add_cron "*/15 * * * * /usr/local/bin/sync-build.sh  >> /var/log/sync-build.log 2>&1"
 add_cron "0    2 * * * /usr/local/bin/sync-videos.sh >> /var/log/sync-videos.log 2>&1"
+# Nacht-Reboot: Kiosk-Hygiene (Speicher + Chromium frisch, fängt Hänger ab)
+add_cron "0    3 * * * /sbin/reboot"
 
 crontab "$CRON_TMP"
 rm -f "$CRON_TMP"
+
+# ── Härtung: Watchdog, Logs ins RAM, kein Swap ───────────────────────────────
+
+log "Enabling hardware watchdog..."
+# Pi-Hardware-Watchdog: reboots automatically if the system freezes
+if ! grep -q "^dtparam=watchdog=on" /boot/firmware/config.txt 2>/dev/null; then
+    if [ -f /boot/firmware/config.txt ]; then
+        echo "dtparam=watchdog=on" >> /boot/firmware/config.txt
+    elif [ -f /boot/config.txt ]; then
+        grep -q "^dtparam=watchdog=on" /boot/config.txt || echo "dtparam=watchdog=on" >> /boot/config.txt
+    fi
+fi
+mkdir -p /etc/systemd/system.conf.d
+cat > /etc/systemd/system.conf.d/10-museum-watchdog.conf <<'WATCHDOG'
+[Manager]
+RuntimeWatchdogSec=15
+RebootWatchdogSec=120
+WATCHDOG
+
+log "Moving journald logs to RAM (SD-Karten-Schonung)..."
+mkdir -p /etc/systemd/journald.conf.d
+cat > /etc/systemd/journald.conf.d/10-museum-volatile.conf <<'JOURNALD'
+[Journal]
+Storage=volatile
+RuntimeMaxUse=32M
+JOURNALD
+systemctl restart systemd-journald 2>/dev/null || true
+
+log "Disabling swap (SD-Karten-Schonung)..."
+systemctl disable --now dphys-swapfile 2>/dev/null || true
 
 # ── Log rotation ──────────────────────────────────────────────────────────────
 log "Configuring log rotation..."
@@ -288,8 +357,9 @@ echo " Kiosk ID    : $KIOSK_ID"
 echo " Version     : $(cat /etc/museum-kiosk/current-version 2>/dev/null || echo 'unknown')"
 echo " nginx       : $(systemctl is-active nginx.service)"
 echo " WLAN        : $(nmcli -t -f NAME con show --active 2>/dev/null | head -1 || echo 'nicht verbunden')"
-echo " MQTT Broker : ${MQTT_BROKER_IP:-nicht konfiguriert}"
+echo " Tailscale   : $(tailscale ip -4 2>/dev/null | head -1 || echo 'nicht verbunden')"
 echo " chromium    : (starts via labwc autostart on next reboot)"
+echo " RemoteDesk  : wayvnc auf Tailscale-IP:5900 (nach Reboot)"
 echo " Videos      : $(ls /var/www/museum/videos/ 2>/dev/null | wc -l) file(s)"
 echo " Token       : $(test -f /etc/museum-kiosk/sanity-token && echo 'gesetzt ✓' || echo 'FEHLT – Heartbeat inaktiv ⚠')"
 echo "══════════════════════════════════════════"

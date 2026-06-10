@@ -105,14 +105,29 @@ if [ -d "$SCRIPTS_SRC" ]; then
         fi
     done
 
-    # Chromium user service (e.g. new flags like --kiosk-printing)
-    UNIT_SRC="$SCRIPTS_SRC/chromium-kiosk.service"
-    UNIT_DST="/home/$KIOSK_USER/.config/systemd/user/chromium-kiosk.service"
-    if [ -f "$UNIT_SRC" ] && [ -d "$(dirname "$UNIT_DST")" ] && ! cmp -s "$UNIT_SRC" "$UNIT_DST"; then
-        install -o "$KIOSK_USER" -g "$KIOSK_USER" -m 644 "$UNIT_SRC" "$UNIT_DST"
+    # User services (e.g. new chromium flags, wayvnc remote desktop)
+    UNITS_CHANGED=0
+    USER_UNIT_DIR="/home/$KIOSK_USER/.config/systemd/user"
+    for u in chromium-kiosk.service wayvnc.service; do
+        UNIT_SRC="$SCRIPTS_SRC/$u"
+        UNIT_DST="$USER_UNIT_DIR/$u"
+        if [ -f "$UNIT_SRC" ] && [ -d "$USER_UNIT_DIR" ] && ! cmp -s "$UNIT_SRC" "$UNIT_DST"; then
+            install -o "$KIOSK_USER" -g "$KIOSK_USER" -m 644 "$UNIT_SRC" "$UNIT_DST"
+            UNITS_CHANGED=1
+            log "Updated unit: $u"
+        fi
+    done
+    if [ "$UNITS_CHANGED" = "1" ]; then
         XDG_RUNTIME_DIR="/run/user/$KIOSK_UID" sudo -u "$KIOSK_USER" \
             systemctl --user daemon-reload 2>/dev/null || true
-        log "Updated unit: chromium-kiosk.service"
+    fi
+
+    # labwc autostart (starts the user services)
+    AUTO_SRC="$SCRIPTS_SRC/labwc-autostart"
+    AUTO_DST="/home/$KIOSK_USER/.config/labwc/autostart"
+    if [ -f "$AUTO_SRC" ] && [ -d "$(dirname "$AUTO_DST")" ] && ! cmp -s "$AUTO_SRC" "$AUTO_DST"; then
+        install -o "$KIOSK_USER" -g "$KIOSK_USER" -m 644 "$AUTO_SRC" "$AUTO_DST"
+        log "Updated: labwc autostart"
     fi
 
     # Update self LAST, atomically via mv (running script keeps its old inode;

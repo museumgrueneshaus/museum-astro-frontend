@@ -1,0 +1,44 @@
+# systemd USER unit — lives at ~/.config/systemd/user/wayvnc.service
+# Remote Desktop für Fernwartung: wayvnc (Wayland/labwc-kompatibel).
+#
+# Sicherheit: bindet AUSSCHLIESSLICH an die Tailscale-IP — im Museums-LAN
+# unsichtbar, Verschlüsselung übernimmt das VPN. Ohne Tailscale-Anmeldung
+# bleibt der Dienst harmlos im Leerlauf.
+#
+# Zugriff vom Mac: Finder → Cmd+K → vnc://<tailscale-name>:5900
+# Logs: journalctl --user -u wayvnc -f
+
+[Unit]
+Description=Museum Remote Desktop (wayvnc via Tailscale)
+
+[Service]
+Type=simple
+
+# Wait for the Wayland socket (same pattern as chromium-kiosk.service)
+ExecStartPre=/bin/bash -c '\
+    SOCK="/run/user/$(id -u)/${WAYLAND_DISPLAY:-wayland-0}"; \
+    echo "Waiting for Wayland socket: $SOCK"; \
+    until [ -S "$SOCK" ]; do sleep 0.5; done; \
+    echo "Wayland socket ready."'
+
+# Wait up to 2 min for a Tailscale IP, then bind wayvnc to it only.
+# No Tailscale → idle harmlessly (kiosk works fine without remote desktop).
+ExecStart=/bin/bash -c '\
+    IP=""; \
+    for i in $(seq 1 60); do \
+        IP=$(tailscale ip -4 2>/dev/null | head -1); \
+        [ -n "$IP" ] && break; \
+        sleep 2; \
+    done; \
+    if [ -z "$IP" ]; then \
+        echo "Tailscale nicht aktiv — Remote Desktop deaktiviert."; \
+        exec sleep infinity; \
+    fi; \
+    echo "wayvnc lauscht auf $IP:5900 (nur Tailscale)"; \
+    exec wayvnc "$IP" 5900'
+
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target
