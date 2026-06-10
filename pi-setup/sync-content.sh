@@ -52,7 +52,16 @@ GROQ='*[_type=="kioskDevice" && kioskId==$kioskId][0]{
   _id,
   "kioskId": kioskId,
   "befehl": befehl,
-  "modus": ausstellung->kioskTemplate.template,
+  "modus": select(
+    modus == "malspiel" => "malspiel",
+    modus == "signage"  => "signage",
+    modus == "website"  => "website",
+    ausstellung->kioskTemplate.template
+  ),
+  "malspiel_id": select(
+    modus == "malspiel" => malspiel._ref,
+    ausstellung->kioskTemplate.malspielSettings.malspiel._ref
+  ),
   "idle_timeout": 300000,
 
   "konfiguration": {
@@ -83,7 +92,7 @@ GROQ='*[_type=="kioskDevice" && kioskId==$kioskId][0]{
   "explorerSettings":  ausstellung->kioskTemplate.explorerSettings,
 
   "pdf_url":     ausstellung->kioskTemplate.readerSettings.pdf_url,
-  "website_url": ausstellung->kioskTemplate.websiteSettings.url,
+  "website_url": coalesce(websiteUrl, ausstellung->kioskTemplate.websiteSettings.url),
 
   "wlanNetworks": wlanNetworks[]{ ssid, password, priority, description }
 }'

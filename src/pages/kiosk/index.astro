@@ -174,7 +174,7 @@
         }
 
         async function fetchModus(kioskId) {
-          const query = `*[_type=="kioskDevice" && (kioskId==$id || hostname==$id || _id==$id)][0]{ "geraet_modus": modus, "modus": ausstellung->kioskTemplate.template, "malspiel_id": select(modus=="malspiel" => malspiel._ref, ausstellung->kioskTemplate.malspielSettings.malspiel._ref) }`;
+          const query = `*[_type=="kioskDevice" && (kioskId==$id || hostname==$id || _id==$id)][0]{ "geraet_modus": modus, "modus": ausstellung->kioskTemplate.template, "malspiel_id": select(modus=="malspiel" => malspiel._ref, ausstellung->kioskTemplate.malspielSettings.malspiel._ref), "website_url": coalesce(websiteUrl, ausstellung->kioskTemplate.websiteSettings.url) }`;
           const encodedQuery = encodeURIComponent(query);
           const encodedId = encodeURIComponent(JSON.stringify(kioskId));
           const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v${SANITY_API_VERSION}/data/query/${SANITY_DATASET}?query=${encodedQuery}&$id=${encodedId}`;
@@ -200,7 +200,11 @@
               return;
             }
             setStatus('Weiterleiten…');
-            window.location.replace(`/kiosk/${cached.modus}?id=${encodeURIComponent(cached.kioskId)}`);
+            if (cached.modus === 'malspiel' && cached.malspiel_id) {
+              window.location.replace(`/kiosk/malspiel?id=${encodeURIComponent(cached.malspiel_id)}`);
+            } else {
+              window.location.replace(`/kiosk/${cached.modus}?id=${encodeURIComponent(cached.kioskId)}`);
+            }
             return;
           }
 
@@ -234,7 +238,10 @@
           }
 
           setStatus('Weiterleiten…');
-          const finalModus = result.geraet_modus === 'malspiel' ? 'malspiel' : result.modus;
+          // Geräte-Modus hat Vorrang: malspiel/signage/website direkt am Gerät,
+          // "ausstellung" (oder leer = Altbestand) → Darstellung kommt aus der Ausstellung
+          const deviceModus = result.geraet_modus;
+          const finalModus = (deviceModus && deviceModus !== 'ausstellung') ? deviceModus : result.modus;
           const malspielId = result.malspiel_id;
 
           if (!finalModus) {
@@ -244,6 +251,8 @@
 
           if (finalModus === 'malspiel' && malspielId) {
             window.location.replace(`/kiosk/malspiel?id=${encodeURIComponent(malspielId)}`);
+          } else if (finalModus === 'website' && result.website_url) {
+            window.location.replace(`/kiosk/website?id=${encodeURIComponent(kioskId)}&url=${encodeURIComponent(result.website_url)}`);
           } else {
             window.location.replace(`/kiosk/${finalModus}?id=${encodeURIComponent(kioskId)}`);
           }
