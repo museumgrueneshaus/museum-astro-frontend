@@ -1,0 +1,463 @@
+---
+---
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kiosk Template Preview</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+  <style>
+    :root {
+      --accent: #3d6b4a;
+      --accent-light: #5a8a68;
+      --text: #1a1a18;
+      --text-dim: #999;
+      --bg: #fff;
+      --bg-warm: #f7f6f3;
+      --rule: #e0dfdc;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      font-family: var(--font);
+      background: #000;
+      height: 100%; overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Fullscreen iframe ── */
+    #preview-frame {
+      position: fixed; inset: 0;
+      width: 100%; height: 100%;
+      border: 0; display: block;
+      background: #0b0f17;
+    }
+
+    /* ── Toggle button (always visible) ── */
+    .toggle-btn {
+      position: fixed; top: 16px; right: 16px; z-index: 200;
+      width: 40px; height: 40px;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #fff; font-size: 18px;
+      cursor: pointer;
+      display: grid; place-items: center;
+      transition: background .2s, transform .2s;
+      border-radius: 0;
+    }
+    .toggle-btn:hover { background: rgba(0,0,0,0.75); }
+    .toggle-btn.open { transform: rotate(45deg); }
+
+    /* ── Overlay panel ── */
+    .overlay {
+      position: fixed; top: 0; right: 0; z-index: 150;
+      width: 320px; height: 100%;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-left: 1px solid var(--rule);
+      box-shadow: -8px 0 40px rgba(0,0,0,0.12);
+      transform: translateX(100%);
+      transition: transform .35s var(--ease);
+      display: flex; flex-direction: column;
+      overflow-y: auto;
+    }
+    .overlay.visible { transform: translateX(0); }
+
+    .overlay-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--rule);
+    }
+    .overlay-header h2 {
+      font-size: 15px; font-weight: 700; color: var(--text);
+      letter-spacing: -0.01em;
+    }
+    .overlay-header p {
+      font-size: 11px; color: var(--text-dim); margin-top: 4px;
+    }
+
+    /* Sections */
+    .section {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--rule);
+    }
+    .section-label {
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-dim); margin-bottom: 10px;
+    }
+
+    /* Template list */
+    .tmpl-list { display: flex; flex-direction: column; gap: 4px; }
+    .tmpl-btn {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px;
+      background: transparent;
+      border: 1px solid transparent;
+      cursor: pointer;
+      font-family: var(--font);
+      font-size: 13px; font-weight: 500;
+      color: var(--text);
+      transition: all .15s;
+      text-align: left;
+      width: 100%;
+    }
+    .tmpl-btn:hover { background: var(--bg-warm); }
+    .tmpl-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .tmpl-btn .tmpl-hint {
+      font-size: 11px; font-weight: 400;
+      color: var(--text-dim);
+      margin-left: auto;
+    }
+    .tmpl-btn.active .tmpl-hint { color: rgba(255,255,255,0.6); }
+
+    /* Viewport buttons */
+    .vp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .vp-btn {
+      padding: 8px 10px;
+      border: 1px solid var(--rule);
+      background: #fff;
+      font-size: 11px; font-weight: 500;
+      cursor: pointer;
+      font-family: var(--font);
+      color: var(--text);
+      transition: all .15s;
+      text-align: center;
+    }
+    .vp-btn:hover { border-color: var(--accent-light); }
+    .vp-btn.active { background: var(--text); color: #fff; border-color: var(--text); }
+    .vp-grid-label {
+      font-size: 10px; font-weight: 500; color: var(--text-dim);
+      margin-bottom: 4px; margin-top: 10px;
+    }
+    .vp-grid-label:first-child { margin-top: 0; }
+    .vp-sub { font-size: 9px; color: var(--text-dim); display: block; margin-top: 2px; }
+    .vp-btn.active .vp-sub { color: rgba(255,255,255,0.5); }
+
+    /* ID input */
+    .id-input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--rule);
+      background: var(--bg-warm);
+      font-size: 13px;
+      font-family: var(--font);
+      color: var(--text);
+    }
+    .id-input:focus { outline: none; border-color: var(--accent); }
+    .sample-btn {
+      width: 38px; height: 38px; flex-shrink: 0;
+      background: var(--accent);
+      border: none; color: #fff;
+      font-size: 16px; cursor: pointer;
+      font-family: var(--font);
+      display: grid; place-items: center;
+      transition: background .15s;
+    }
+    .sample-btn:hover { background: var(--accent-light); }
+    .id-hint {
+      font-size: 11px; color: var(--text-dim); margin-top: 6px; line-height: 1.4;
+    }
+
+    /* Status bar */
+    .status {
+      margin-top: auto;
+      padding: 14px 24px;
+      border-top: 1px solid var(--rule);
+      font-size: 11px; color: var(--text-dim);
+      background: var(--bg-warm);
+    }
+    .status-dot {
+      display: inline-block;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent); margin-right: 6px;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Fullscreen preview -->
+  <iframe id="preview-frame" src="about:blank"></iframe>
+
+  <!-- Toggle button -->
+  <button class="toggle-btn" id="toggle-btn" title="Menü ein/ausblenden">+</button>
+
+  <!-- Overlay panel -->
+  <div class="overlay" id="overlay">
+    <div class="overlay-header">
+      <h2>Kiosk Preview</h2>
+      <p>Templates testen und vergleichen</p>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Template</div>
+      <div class="tmpl-list">
+        <button class="tmpl-btn" data-tmpl="explorer">Explorer <span class="tmpl-hint">Grid</span></button>
+        <button class="tmpl-btn" data-tmpl="slideshow">Slideshow <span class="tmpl-hint">Bilder</span></button>
+        <button class="tmpl-btn" data-tmpl="signage">Signage <span class="tmpl-hint">Display</span></button>
+        <button class="tmpl-btn" data-tmpl="reader">Reader <span class="tmpl-hint">PDF</span></button>
+        <button class="tmpl-btn" data-tmpl="video">Video <span class="tmpl-hint">Player</span></button>
+        <button class="tmpl-btn" data-tmpl="guide">Guide <span class="tmpl-hint">QR Mobile</span></button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Viewport</div>
+      <div class="vp-grid-label">Kiosk / Display</div>
+      <div class="vp-grid">
+        <button class="vp-btn active" data-vp="full">Fullscreen <span class="vp-sub">100%</span></button>
+        <button class="vp-btn" data-vp="4k">4K <span class="vp-sub">3840 x 2160</span></button>
+        <button class="vp-btn" data-vp="fhd">Full HD <span class="vp-sub">1920 x 1080</span></button>
+        <button class="vp-btn" data-vp="tablet">Tablet <span class="vp-sub">1024 x 768</span></button>
+      </div>
+      <div class="vp-grid-label">Mobile (QR-Guide)</div>
+      <div class="vp-grid">
+        <button class="vp-btn" data-vp="iphone-15">iPhone 15 <span class="vp-sub">393 x 852</span></button>
+        <button class="vp-btn" data-vp="iphone-se">iPhone SE <span class="vp-sub">375 x 667</span></button>
+        <button class="vp-btn" data-vp="android">Android <span class="vp-sub">412 x 915</span></button>
+        <button class="vp-btn" data-vp="ipad-mini">iPad Mini <span class="vp-sub">744 x 1133</span></button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">ID <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></div>
+      <div style="display:flex;gap:6px;">
+        <input class="id-input" id="kiosk-id" type="text" placeholder="Auto-Sample aktiv" style="flex:1" />
+        <button class="sample-btn" id="sample-btn" title="Zufälliges Sample laden">↻</button>
+      </div>
+      <div class="id-hint">Leer lassen = automatisch passendes Sample. Manuell: Kiosk-ID oder Exponat-ID eingeben.</div>
+    </div>
+
+    <div class="status" id="status">
+      <span class="status-dot"></span> Bereit — Template auswählen
+    </div>
+  </div>
+
+  <script>
+    const PROJECT = '832k5je1';
+    const DATASET = 'production';
+
+    const templates = {
+      explorer:  { label: 'Explorer',  path: '/kiosk/explorer',  needsId: true,  sampleType: 'kiosk' },
+      slideshow: { label: 'Slideshow', path: '/kiosk/slideshow', needsId: true,  sampleType: 'kiosk' },
+      signage:   { label: 'Signage',   path: '/kiosk/signage',   needsId: false, sampleType: null },
+      reader:    { label: 'Reader',    path: '/kiosk/reader',    needsId: true,  sampleType: 'kiosk' },
+      video:     { label: 'Video',     path: '/kiosk/video',     needsId: true,  sampleType: 'kiosk' },
+      guide:     { label: 'Guide',     path: '/kiosk/guide',     needsId: false, sampleType: 'exponat', idParam: 'exponat' },
+    };
+
+    // Sample data (loaded from Sanity once)
+    let sampleKiosks = [];
+    let sampleExponate = [];
+    let samplesLoaded = false;
+
+    async function loadSamples() {
+      if (samplesLoaded) return;
+      try {
+        const q = encodeURIComponent(`{
+          "kiosks": *[_type=="kioskDevice"]{kioskId, hostname},
+          "exponate": *[_type=="exponat"][0...10]{_id, titel, inventarnummer}
+        }`);
+        const r = await fetch(`https://${PROJECT}.api.sanity.io/v2024-01-01/data/query/${DATASET}?query=${q}`);
+        const data = (await r.json()).result;
+        sampleKiosks = data.kiosks || [];
+        sampleExponate = data.exponate || [];
+        samplesLoaded = true;
+      } catch (_) {}
+    }
+
+    function getRandomSample(type) {
+      if (type === 'kiosk' && sampleKiosks.length) {
+        const k = sampleKiosks[Math.floor(Math.random() * sampleKiosks.length)];
+        return k.kioskId || k.hostname;
+      }
+      if (type === 'exponat' && sampleExponate.length) {
+        const e = sampleExponate[Math.floor(Math.random() * sampleExponate.length)];
+        return e._id;
+      }
+      return '';
+    }
+
+    function getAutoId(tmpl) {
+      if (!tmpl) return '';
+      const t = templates[tmpl];
+      if (!t || !t.sampleType) return '';
+      return getRandomSample(t.sampleType);
+    }
+
+    const viewports = {
+      'full':       { w: null, h: null },
+      '4k':         { w: 3840, h: 2160 },
+      'fhd':        { w: 1920, h: 1080 },
+      'tablet':     { w: 1024, h: 768 },
+      'iphone-15':  { w: 393,  h: 852 },
+      'iphone-se':  { w: 375,  h: 667 },
+      'android':    { w: 412,  h: 915 },
+      'ipad-mini':  { w: 744,  h: 1133 },
+    };
+
+    let currentTmpl = null;
+    let currentVp = 'full';
+
+    const frame = document.getElementById('preview-frame');
+    const overlay = document.getElementById('overlay');
+    const toggleBtn = document.getElementById('toggle-btn');
+    const idInput = document.getElementById('kiosk-id');
+    const status = document.getElementById('status');
+
+    // URL state restore
+    const urlParams = new URLSearchParams(location.search);
+    if (urlParams.get('kiosk')) idInput.value = urlParams.get('kiosk');
+
+    // Toggle overlay
+    let overlayOpen = true;
+    overlay.classList.add('visible');
+    toggleBtn.classList.add('open');
+
+    toggleBtn.addEventListener('click', () => {
+      overlayOpen = !overlayOpen;
+      overlay.classList.toggle('visible', overlayOpen);
+      toggleBtn.classList.toggle('open', overlayOpen);
+    });
+
+    function buildSrc() {
+      if (!currentTmpl) return 'about:blank';
+      const tmpl = templates[currentTmpl];
+      const manualId = idInput.value.trim();
+      // Use manual ID, or auto-sample, or nothing
+      const id = manualId || (tmpl.sampleType ? getAutoId(currentTmpl) : '');
+      if (id) {
+        const param = tmpl.idParam || 'id';
+        return tmpl.path + '?' + param + '=' + encodeURIComponent(id);
+      }
+      return tmpl.path;
+    }
+
+    function applyViewport() {
+      const vp = viewports[currentVp];
+      if (!vp.w) {
+        // Fullscreen
+        frame.style.width = '100%';
+        frame.style.height = '100%';
+        frame.style.transform = 'none';
+        frame.style.transformOrigin = '';
+        frame.style.position = 'fixed';
+        frame.style.top = '0';
+        frame.style.left = '0';
+      } else {
+        // Scaled viewport
+        const winW = window.innerWidth;
+        const winH = window.innerHeight;
+        const scale = Math.min(winW / vp.w, winH / vp.h, 1);
+        frame.style.width = vp.w + 'px';
+        frame.style.height = vp.h + 'px';
+        frame.style.transform = `scale(${scale})`;
+        frame.style.transformOrigin = 'top left';
+        frame.style.position = 'fixed';
+        frame.style.top = ((winH - vp.h * scale) / 2) + 'px';
+        frame.style.left = ((winW - vp.w * scale) / 2) + 'px';
+      }
+    }
+
+    function render() {
+      frame.src = buildSrc();
+      applyViewport();
+      updateUrl();
+      updateStatus();
+    }
+
+    function updateUrl() {
+      const url = new URL(location.href);
+      if (currentTmpl) url.searchParams.set('template', currentTmpl);
+      url.searchParams.set('viewport', currentVp);
+      if (idInput.value.trim()) url.searchParams.set('kiosk', idInput.value.trim());
+      else url.searchParams.delete('kiosk');
+      history.replaceState(null, '', url);
+    }
+
+    function updateStatus() {
+      if (!currentTmpl) {
+        status.innerHTML = '<span class="status-dot"></span> Bereit — Template auswählen';
+        return;
+      }
+      const tmpl = templates[currentTmpl];
+      const vp = viewports[currentVp];
+      const vpLabel = vp.w ? `${vp.w}x${vp.h}` : 'Fullscreen';
+      status.innerHTML = `<span class="status-dot"></span> ${tmpl.label} — ${vpLabel}`;
+    }
+
+    // Template buttons
+    document.querySelectorAll('.tmpl-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        document.querySelectorAll('.tmpl-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTmpl = btn.dataset.tmpl;
+        await loadSamples(); // ensure samples ready
+        render();
+      });
+    });
+
+    // Viewport buttons
+    document.querySelectorAll('.vp-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.vp-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentVp = btn.dataset.vp;
+        applyViewport();
+        updateUrl();
+        updateStatus();
+      });
+    });
+
+    // Sample button — reload with new random sample
+    document.getElementById('sample-btn').addEventListener('click', async () => {
+      await loadSamples();
+      idInput.value = ''; // clear manual → forces auto-sample
+      if (currentTmpl) render();
+    });
+
+    // ID input
+    let idTimer;
+    idInput.addEventListener('input', () => {
+      clearTimeout(idTimer);
+      idTimer = setTimeout(() => { if (currentTmpl) render(); }, 600);
+    });
+
+    // Pre-load samples
+    loadSamples();
+
+    // Resize handler
+    window.addEventListener('resize', () => { if (currentTmpl) applyViewport(); });
+
+    // Keyboard: Escape toggles overlay
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        overlayOpen = !overlayOpen;
+        overlay.classList.toggle('visible', overlayOpen);
+        toggleBtn.classList.toggle('open', overlayOpen);
+      }
+    });
+
+    // Restore from URL
+    if (urlParams.get('template') && templates[urlParams.get('template')]) {
+      currentTmpl = urlParams.get('template');
+      document.querySelector(`[data-tmpl="${currentTmpl}"]`)?.classList.add('active');
+      if (urlParams.get('viewport') && viewports[urlParams.get('viewport')]) {
+        currentVp = urlParams.get('viewport');
+        document.querySelectorAll('.vp-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`[data-vp="${currentVp}"]`)?.classList.add('active');
+      }
+      render();
+    }
+  </script>
+</body>
+</html>

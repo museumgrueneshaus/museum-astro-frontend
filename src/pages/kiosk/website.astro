@@ -1,0 +1,433 @@
+---
+---
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <title>Website</title>
+  <script src="/register-sw.js" defer></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100vw; height: 100vh; overflow: hidden; background: #fff;
+      font-family: 'Inter', -apple-system, sans-serif;
+    }
+    [hidden] { display: none !important; }
+
+    /* ── Fullscreen iframe ── */
+    #site-frame {
+      position: fixed; inset: 0;
+      width: 100%; height: 100%;
+      border: none; background: #fff;
+    }
+
+    /* ── Loading ── */
+    #loading-screen {
+      position: fixed; inset: 0; z-index: 999;
+      background: #fff;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 1rem; color: #111;
+    }
+    #loading-screen p { opacity: .55; font-size: 14px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid #e5e5e5; border-top-color: #111;
+      border-radius: 50%; animation: spin .9s linear infinite;
+    }
+
+    /* ── Offline screen ── */
+    #offline-screen {
+      position: fixed; inset: 0; z-index: 990;
+      background: #fff;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 0;
+      text-align: center;
+      padding: 3rem 2rem;
+    }
+
+    /* Logo */
+    #offline-logo {
+      max-width: min(240px, 40vw);
+      max-height: 120px;
+      object-fit: contain;
+      margin-bottom: 2.5rem;
+    }
+    #offline-logo[src=""] { display: none; }
+
+    /* Museum name */
+    #offline-name {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 900;
+      line-height: 1.05;
+      color: #111;
+      margin-bottom: .75rem;
+    }
+
+    /* Subtitle / info text */
+    #offline-text {
+      font-size: clamp(.95rem, 1.5vw, 1.2rem);
+      color: #555;
+      line-height: 1.6;
+      max-width: 520px;
+      white-space: pre-line; /* preserve newlines from CMS */
+    }
+
+    /* Status badge */
+    .offline-badge {
+      margin-top: 3rem;
+      display: inline-flex; align-items: center; gap: .5rem;
+      background: #f4f4f4; border: 1px solid #e5e5e5;
+      padding: 6px 14px; font-size: 13px; color: #666;
+      letter-spacing: .02em;
+    }
+    .offline-badge::before {
+      content: '';
+      display: inline-block; width: 8px; height: 8px;
+      border-radius: 50%; background: #f59e0b; flex-shrink: 0;
+    }
+
+    /* Retry row */
+    .retry-row {
+      margin-top: 1.25rem;
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .retry-status { font-size: 13px; color: #888; }
+    .retry-countdown {
+      display: inline-block; min-width: 2ch; text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+    .retry-btn {
+      appearance: none; border: 1px solid #111;
+      background: #111; color: #fff;
+      padding: 8px 20px; font-size: 14px;
+      font-weight: 600; cursor: pointer;
+    }
+    .retry-btn:active { background: #333; border-color: #333; }
+
+    /* ── Minimal nav bar (auto-hides) ── */
+    #nav-bar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+      height: 48px;
+      background: rgba(255,255,255,.96); backdrop-filter: blur(10px);
+      border-bottom: 1px solid #e5e5e5;
+      display: flex; align-items: center;
+      padding: 0 1rem; gap: .75rem;
+      transition: transform .25s ease, opacity .25s ease;
+    }
+    #nav-bar.hidden { transform: translateY(-100%); opacity: 0; pointer-events: none; }
+    .nav-btn {
+      appearance: none; border: 1px solid #e5e5e5;
+      background: transparent; cursor: pointer;
+      width: 32px; height: 32px; border-radius: 4px;
+      display: grid; place-items: center;
+      font-size: 16px; color: #111; flex-shrink: 0;
+    }
+    .nav-btn:active { background: #f0f0f0; }
+    #nav-url {
+      flex: 1; font-size: 13px; color: #555;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    /* ── Top touch trigger ── */
+    #top-trigger {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: 32px; z-index: 49;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="loading-screen">
+    <div class="spinner"></div>
+    <p>Lade Webseite…</p>
+  </div>
+
+  <!-- Offline fallback screen -->
+  <div id="offline-screen" style="display:none;">
+    <img id="offline-logo" src="" alt="Museum Logo" />
+    <div id="offline-name">Museum Grünes Haus</div>
+    <div id="offline-text"></div>
+    <div class="offline-badge" id="offline-badge">Webseite nicht erreichbar</div>
+    <div class="retry-row">
+      <span class="retry-status" id="retry-status">
+        Erneuter Versuch in <span class="retry-countdown" id="retry-countdown">30</span>s
+      </span>
+      <button class="retry-btn" id="retry-btn">&#8635; Jetzt neu laden</button>
+    </div>
+  </div>
+
+  <!-- Nav bar -->
+  <div id="nav-bar" class="hidden">
+    <button class="nav-btn" id="home-btn" title="Kiosk-Startseite">&#8962;</button>
+    <span id="nav-url"></span>
+    <button class="nav-btn" id="reload-btn" title="Neu laden">&#8635;</button>
+  </div>
+
+  <div id="top-trigger"></div>
+
+  <iframe id="site-frame" title="Webseite" hidden></iframe>
+
+  <script>
+    /// <reference types="vite/client" />
+    const SANITY_PROJECT = import.meta.env.PUBLIC_SANITY_PROJECT_ID || '832k5je1';
+    const SANITY_DATASET = import.meta.env.PUBLIC_SANITY_DATASET || 'production';
+
+    async function sanityFetch(query: string, params: Record<string, any> = {}): Promise<any> {
+      let url = `https://${SANITY_PROJECT}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}`
+        + `?query=${encodeURIComponent(query)}`;
+      for (const [k, v] of Object.entries(params))
+        url += `&$${k}=${encodeURIComponent(JSON.stringify(v))}`;
+      const res  = await fetch(url);
+      const data = await res.json();
+      return data.result ?? null;
+    }
+
+    async function getKioskId(): Promise<string | null> {
+      try {
+        const r = await fetch('/kiosk-config.json');
+        if (r.ok) { const c = await r.json(); if (c?.kioskId) return c.kioskId; }
+      } catch (_) {}
+      return new URLSearchParams(location.search).get('id') || null;
+    }
+
+    async function isReachable(url: string): Promise<boolean> {
+      if (!navigator.onLine) return false;
+      try {
+        const ctrl  = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 5000);
+        await fetch(url, { method: 'HEAD', mode: 'no-cors', signal: ctrl.signal, cache: 'no-store' });
+        clearTimeout(timer);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function imageUrl(ref: any, w = 400): string {
+      const r = ref?.asset?._ref;
+      if (!r) return '';
+      const parts = r.split('-');
+      const fmt   = parts[parts.length - 1];
+      const dims  = parts[parts.length - 2];
+      const id    = parts.slice(1, parts.length - 2).join('-');
+      return `https://cdn.sanity.io/images/${SANITY_PROJECT}/${SANITY_DATASET}/${id}-${dims}.${fmt}?w=${w}&auto=format&fit=max`;
+    }
+
+    // ── DOM refs ──
+    const loadingScreen  = document.getElementById('loading-screen')!;
+    const offlineScreen  = document.getElementById('offline-screen')!;
+    const offlineBadge   = document.getElementById('offline-badge')!;
+    const offlineName    = document.getElementById('offline-name')!;
+    const offlineText    = document.getElementById('offline-text')!;
+    const offlineLogo    = document.getElementById('offline-logo') as HTMLImageElement;
+    const retryStatus    = document.getElementById('retry-status')!;
+    const retryCountdown = document.getElementById('retry-countdown')!;
+    const retryBtn       = document.getElementById('retry-btn')!;
+    const frame          = document.getElementById('site-frame') as HTMLIFrameElement;
+    const navBar         = document.getElementById('nav-bar')!;
+    const navUrlEl       = document.getElementById('nav-url')!;
+    const homeBtn        = document.getElementById('home-btn')!;
+    const reloadBtn      = document.getElementById('reload-btn')!;
+    const topTrigger     = document.getElementById('top-trigger')!;
+
+    let siteUrl  = '';
+    let kioskId: string | null = null;
+    let museumInfo: any = null;
+
+    // ── Idle timer ──
+    let idleTimer: ReturnType<typeof setTimeout>;
+    function resetIdle() {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        window.location.href = kioskId
+          ? `/kiosk/?id=${encodeURIComponent(kioskId)}`
+          : '/kiosk/';
+      }, 5 * 60_000);
+    }
+    ['pointerdown','touchstart','mousedown','keydown'].forEach(ev =>
+      document.addEventListener(ev, resetIdle, { passive: true })
+    );
+
+    // ── Nav bar ──
+    let navTimer: ReturnType<typeof setTimeout>;
+    function showNav() {
+      navBar.classList.remove('hidden');
+      clearTimeout(navTimer);
+      navTimer = setTimeout(() => navBar.classList.add('hidden'), 3000);
+    }
+    topTrigger.addEventListener('pointerdown', showNav);
+    topTrigger.addEventListener('touchstart', showNav, { passive: true });
+    homeBtn.addEventListener('click', () => {
+      window.location.href = kioskId ? `/kiosk/?id=${encodeURIComponent(kioskId)}` : '/kiosk/';
+    });
+    reloadBtn.addEventListener('click', () => { if (siteUrl) tryLoad(siteUrl); });
+
+    // ── Auto-retry countdown ──
+    const RETRY_S = 30;
+    let retryInterval: ReturnType<typeof setInterval>;
+    let retryLeft   = RETRY_S;
+
+    function startRetryCountdown() {
+      clearInterval(retryInterval);
+      retryLeft = RETRY_S;
+      retryCountdown.textContent = String(retryLeft);
+      retryInterval = setInterval(async () => {
+        retryLeft--;
+        retryCountdown.textContent = String(retryLeft);
+        if (retryLeft <= 0) {
+          clearInterval(retryInterval);
+          retryStatus.textContent = 'Prüfe Verbindung…';
+          await tryLoad(siteUrl);
+        }
+      }, 1000);
+    }
+
+    function stopRetryCountdown() { clearInterval(retryInterval); }
+
+    retryBtn.addEventListener('click', async () => {
+      stopRetryCountdown();
+      retryStatus.textContent = 'Prüfe Verbindung…';
+      await tryLoad(siteUrl);
+    });
+
+    // ── Offline screen ──
+    function showOffline(reason = 'Webseite nicht erreichbar') {
+      stopRetryCountdown();
+      loadingScreen.style.display = 'none';
+      frame.hidden = true;
+
+      offlineBadge.textContent = reason;
+
+      if (museumInfo) {
+        // Logo
+        const logoSrc = museumInfo.logo ? imageUrl(museumInfo.logo, 480) : '';
+        offlineLogo.src = logoSrc;
+        offlineLogo.style.display = logoSrc ? '' : 'none';
+
+        // Name
+        offlineName.textContent = museumInfo.name || 'Museum Grünes Haus';
+
+        // Text block — subtitle + opening hours if available
+        const parts: string[] = [];
+        if (museumInfo.untertitel)         parts.push(museumInfo.untertitel);
+        if (museumInfo.oeffnungszeiten_text) parts.push(museumInfo.oeffnungszeiten_text);
+        offlineText.textContent = parts.join('\n\n');
+      }
+
+      offlineScreen.style.display = 'flex';
+      startRetryCountdown();
+    }
+
+    // ── Load the website ──
+    // On the Pi, the external URL is reverse-proxied via nginx at /website-proxy/
+    // to strip X-Frame-Options headers. We detect this by checking if the proxy
+    // path is reachable, otherwise fall back to loading the URL directly.
+    async function resolveFrameUrl(url: string): Promise<string> {
+      if (!url) return url;
+      // Only use proxy on same-origin (Pi/localhost), not in dev/Netlify
+      if (location.hostname === 'localhost' || location.hostname.match(/^192\.168\.|^10\.|^172\./)) {
+        const proxyUrl = '/website-proxy/';
+        try {
+          const r = await fetch(proxyUrl, { method: 'HEAD', cache: 'no-store' });
+          // If proxy returns anything other than a gateway error, use it
+          if (r.status < 502) return proxyUrl;
+        } catch (_) {}
+      }
+      return url;
+    }
+
+    async function tryLoad(url: string) {
+      if (!url) return;
+
+      const reachable = await isReachable(url);
+      if (!reachable) {
+        showOffline(navigator.onLine ? 'Webseite nicht erreichbar' : 'Kein Internet');
+        return;
+      }
+
+      stopRetryCountdown();
+      offlineScreen.style.display = 'none';
+      frame.hidden = true;
+      loadingScreen.style.display = 'flex';
+
+      const frameUrl = await resolveFrameUrl(url);
+      frame.src = frameUrl;
+      navUrlEl.textContent = url; // show real URL in nav bar, not proxy path
+
+      const onLoad = () => {
+        loadingScreen.style.display = 'none';
+        frame.hidden = false;
+      };
+      frame.addEventListener('load', onLoad, { once: true });
+      setTimeout(() => {
+        frame.removeEventListener('load', onLoad);
+        loadingScreen.style.display = 'none';
+        frame.hidden = false;
+      }, 5000);
+    }
+
+    window.addEventListener('online',  () => { if (siteUrl) tryLoad(siteUrl); });
+    window.addEventListener('offline', () => showOffline('Kein Internet'));
+
+    // ── Bootstrap ──
+    (async () => {
+      siteUrl = new URLSearchParams(location.search).get('url') || '';
+
+      // kiosk-content.json
+      if (!siteUrl) {
+        try {
+          const r = await fetch('/kiosk-content.json', { cache: 'no-store' });
+          if (r.ok) {
+            const cached = await r.json();
+            if (cached?.kioskId) {
+              kioskId    = cached.kioskId;
+              siteUrl    = cached.website_url || cached.websiteUrl || '';
+              museumInfo = cached.museumInfo  || cached.museum_info || null;
+            }
+          }
+        } catch (_) {}
+      }
+
+      // Sanity fallback
+      if (!siteUrl || !museumInfo) {
+        kioskId = kioskId || await getKioskId();
+        if (kioskId) {
+          const result = await sanityFetch(
+            `*[_type=="kioskDevice" && (kioskId==$id || hostname==$id || _id==$id)][0]{
+              "kioskId": kioskId,
+              "website_url": ausstellung->kioskTemplate.websiteSettings.url,
+              "museumInfo": *[_type=="museumInfo"][0]{
+                name, untertitel, telefon, email, website,
+                oeffnungszeiten_text,
+                logo
+              }
+            }`,
+            { id: kioskId }
+          ).catch(() => null);
+
+          kioskId    = result?.kioskId    || kioskId;
+          siteUrl    = siteUrl || result?.website_url || '';
+          museumInfo = museumInfo || result?.museumInfo || null;
+        }
+      }
+
+      resetIdle();
+
+      if (!siteUrl) {
+        showOffline('Keine URL konfiguriert');
+        return;
+      }
+
+      await tryLoad(siteUrl);
+    })();
+  </script>
+</body>
+</html>

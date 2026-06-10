@@ -6,193 +6,405 @@
   <meta charset="UTF-8" />
   <meta name="description" content="Museum Digital Kiosk – Explorer" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#000000" />
+  <meta name="color-scheme" content="light" />
+  <meta name="theme-color" content="#fafaf8" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <title>Explorer</title>
-  <script src="/register-sw.js" defer></script>
+  <script src="/register-sw.js" is:inline defer></script>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
   <link rel="manifest" href="/manifest.json" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <style>
-    /* ── CSS Variables & Reset (from Layout.astro) ── */
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" is:inline defer></script>
+  <style is:global>
     :root {
-      --primary: #000000;
-      --primary-acc: #3b82f6;
-      --text: #111111;
-      --text-dim: #555555;
-      --bg: #ffffff;
-      --bg-alt: #f4f4f4;
-      --border: #e5e5e5;
-      --muted: #555555;
-      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      --font-display: 64px;
-      --font-h1: 48px;
-      --font-h2: 32px;
-      --font-body: 22px;
-      --font-caption: 18px;
-      --leading: 1.5;
-      --heading-tight: 1.1;
-      --space-1: 0.5rem;
-      --space-2: 1rem;
-      --space-3: 1.5rem;
-      --space-4: 2rem;
-      --space-5: 2.5rem;
-      --space-6: 3rem;
-      --space-7: 3.5rem;
-      --space-8: 4rem;
-      --radius: 0px;
-      --container: 1920px;
+      color-scheme: light;
+      --accent: #3d6b4a;
+      --accent-light: #5a8a68;
+      --text: #1a1a18;
+      --text-secondary: #888;
+      --bg: #fff;
+      --bg-warm: #f7f6f3;
+      --rule: #e0dfdc;
+      --rule-light: #eeedea;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-sans); }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     html {
-      font-family: var(--font-sans);
+      font-family: var(--font);
+      font-size: 16px;
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
       scroll-behavior: smooth;
     }
     body {
-      min-height: 100vh;
-      background: var(--bg);
-      color: var(--text);
-      overflow-x: hidden;
-      line-height: var(--leading);
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
-      user-select: none;
+      min-height: 100vh; background: var(--bg);
+      color: var(--text); overflow-x: hidden;
+      -webkit-user-select: none; user-select: none;
     }
-    input, select, textarea { font: inherit; }
-    html, body, p, div, span, a, small, li,
-    h1, h2, h3, h4, h5, h6 { font-size: 16px !important; }
-    :focus-visible { outline: 3px solid var(--primary-acc); outline-offset: 3px; }
+    input, select, textarea {
+      font: inherit;
+      -webkit-user-select: text; user-select: text;
+    }
     [hidden] { display: none !important; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loading {
-      display: inline-block;
-      width: 48px;
-      height: 48px;
-      border: 4px solid var(--border);
-      border-radius: 50%;
-      border-top-color: var(--primary);
-      animation: spin 1s linear infinite;
-    }
-    .touchable { transition: transform 0.1s ease-in-out; }
-    .touchable:active { transform: scale(0.97); }
 
-    /* ── Loading / Error States ── */
+    /* ── Loading ── */
     #loading-screen, #error-screen {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      position: fixed; inset: 0; z-index: 999;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: var(--bg); gap: 1rem;
+    }
+    #loading-screen .spinner {
+      width: 20px; height: 20px;
+      border: 1.5px solid var(--rule); border-top-color: var(--text);
+      border-radius: 50%; animation: spin 0.9s linear infinite;
+    }
+    #loading-screen p, #error-screen p {
+      font-size: 11px; font-weight: 500;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+    #error-screen h2 { font-size: 18px; font-weight: 500; }
+
+    /* ── Layout ── */
+    .explorer-app { min-height: 100vh; }
+    .explorer-main { min-height: 100vh; }
+
+    /* ── Header ── */
+    .header-wrap {
+      position: sticky; top: 0; z-index: 20;
       background: var(--bg);
-      color: var(--text);
-      gap: 1.5rem;
-      z-index: 999;
+      border-bottom: 1px solid var(--rule);
+      padding: 0 56px;
     }
-    #loading-screen p, #error-screen p { opacity: 0.7; font-size: 14px !important; }
-    #error-screen h2 { font-size: 20px !important; }
-
-    /* ── Explorer ── */
-    .explorer-app { min-height: 100vh; background: #fff; }
-    .explorer-main { min-height: 100vh; padding: 12px clamp(12px, 2vw, 24px) 24px; display: grid; grid-template-rows: auto 1fr; }
-    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
-    .filters.chips-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; display: flex; gap: .75rem; flex-wrap: nowrap; }
-    .chip {
-      border: 0;
-      background: transparent;
-      color: var(--muted);
-      padding: 6px 0;
-      font-weight: 600;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      white-space: nowrap;
+    .header-top {
+      display: flex; align-items: baseline;
+      justify-content: space-between;
+      padding: 28px 0 20px;
     }
-    .chip.active, .chip:hover { color: var(--text); border-bottom-color: currentColor; }
+    .header-title {
+      font-size: 13px; font-weight: 600;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--accent);
+    }
+    .header-count {
+      font-size: 13px; font-weight: 400;
+      color: var(--text-secondary);
+      letter-spacing: 0.04em;
+    }
+    .search-row {
+      padding: 0 0 20px;
+    }
     .search-input {
-      width: 100%;
-      border: 0;
-      border-bottom: 1px solid var(--border);
-      padding: 10px 2px;
-      background: transparent;
+      width: 100%; border: 0;
+      border-bottom: 1px solid var(--rule);
+      background: transparent; color: var(--text);
+      padding: 0 0 10px; outline: none;
+      font-size: 22px; font-weight: 300;
+      letter-spacing: -0.01em;
+      transition: border-color 0.3s;
     }
-    .desktop-only { display: block; }
-    @media (max-width: 600px) { .desktop-only { display: none; } }
-    .exponate-grid {
+    .search-input:focus { border-bottom-color: var(--text); }
+    .search-input::placeholder { color: #ccc; font-weight: 300; }
+
+    /* Filter nav — editorial style */
+    .filters-links {
+      display: flex; gap: 0; align-items: stretch;
+      border-top: 1px solid var(--rule);
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .filters-links::-webkit-scrollbar { display: none; }
+    .filter-link {
+      appearance: none; border: none;
+      background: transparent; cursor: pointer;
+      padding: 14px 24px; white-space: nowrap;
+      position: relative;
+      transition: all 0.2s;
+    }
+    .filter-link .label {
+      font-size: 13px; font-weight: 500;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-secondary);
+      transition: color 0.2s;
+    }
+    .filter-link::after {
+      content: ''; position: absolute;
+      top: -1px; left: 0; right: 0; height: 2px;
+      background: var(--text);
+      transform: scaleX(0);
+      transition: transform 0.3s var(--ease);
+      transform-origin: left;
+    }
+    .filter-link.selected::after { transform: scaleX(1); }
+    .filter-link.selected .label { color: var(--text); font-weight: 600; }
+    .filter-link:active .label { color: var(--text); }
+    /* dividers between filter links */
+    .filter-link + .filter-link { border-left: 1px solid var(--rule-light); }
+
+    /* ── Gallery ── */
+    .gallery-grid {
+      padding: 20px 40px;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-      gap: clamp(1.5rem, 2.5vw, 2.5rem);
-      align-content: start;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    @media (min-width: 600px) {
+      .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (min-width: 900px) {
+      .gallery-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (min-width: 1200px) {
+      .gallery-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    @media (min-width: 1600px) {
+      .gallery-grid { grid-template-columns: repeat(5, 1fr); gap: 24px; padding: 24px 48px; }
+    }
+    @media (min-width: 2400px) {
+      .gallery-grid { grid-template-columns: repeat(6, 1fr); }
+    }
+    @media (min-width: 3200px) {
+      .gallery-grid { grid-template-columns: repeat(8, 1fr); }
     }
 
-    /* ── ExponatCard styles (mirrored from ExponatCard.astro) ── */
-    .card-link {
-      display: block;
-      text-decoration: none;
-      color: inherit;
-      height: 100%;
-    }
-    .exponat-card {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      background-color: var(--bg, #000);
+    /* ── Gallery item ── */
+    .gitem {
+      cursor: pointer;
+      position: relative;
       overflow: hidden;
+      background: var(--bg-warm);
+      opacity: 0; transform: translateY(12px);
+      transition: opacity 0.4s var(--ease), transform 0.4s var(--ease);
+    }
+    .gitem.visible { opacity: 1; transform: none; }
+
+    .card-link {
+      display: block; text-decoration: none; color: inherit;
+      position: relative; aspect-ratio: 3 / 4;
     }
     .card-image {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 3 / 4;
-      background-color: var(--bg-alt, #111);
+      position: absolute; inset: 0;
+      overflow: hidden;
     }
     .card-image img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center;
       display: block;
+      transition: transform 0.6s var(--ease);
     }
-    .highlight-badge {
-      position: absolute;
-      top: var(--space-2, 16px);
-      left: var(--space-2, 16px);
-      padding: var(--space-1, 8px) var(--space-2, 16px);
-      background-color: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(5px);
-      color: var(--primary, #fff);
-      font-size: 14px !important;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
+    .gitem:active .card-image img { transform: scale(1.03); }
+
+    /* Overlay gradient — bottom only */
     .card-content {
-      padding: var(--space-3, 24px) var(--space-2, 16px);
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 56px 20px 16px;
+      background: linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.45) 55%, transparent 100%);
+      z-index: 1;
+    }
+    .card-category {
+      font-size: 10px; font-weight: 500;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(255,255,255,0.7); margin-bottom: 5px;
     }
     .card-title {
-      font-size: var(--font-h2, 32px);
-      font-weight: 500;
-      line-height: var(--heading-tight, 1.1);
-      color: var(--primary, #000);
-      margin: 0 0 var(--space-1, 8px) 0;
+      font-weight: 600; font-size: 16px; line-height: 1.3;
+      letter-spacing: -0.005em; color: #fff;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.3);
     }
     .card-subtitle {
-      font-size: var(--font-caption, 18px);
-      font-weight: 400;
-      color: var(--text-dim, #555);
-      margin: 0;
+      font-weight: 400; font-size: 13px;
+      color: rgba(255,255,255,0.65); margin-top: 3px;
+      line-height: 1.4;
+    }
+
+    /* Badge */
+    .gitem-badge {
+      position: absolute; top: 12px; left: 12px; z-index: 2;
+      font-size: 9px; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: #fff;
+      background: var(--accent);
+      padding: 3px 8px;
+      pointer-events: none;
+    }
+    .gitem:not(.highlight) .gitem-badge { display: none; }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0;
+    }
+    .modal-backdrop {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    .modal-content-wrapper {
+      position: relative; z-index: 1;
+      width: 100%; height: 100%;
+    }
+    .modal-content {
+      display: grid;
+      grid-template-columns: 1fr 440px;
+      grid-template-rows: 1fr auto;
+      height: 100vh; color: white;
+    }
+    .modal-image-container {
+      grid-column: 1; grid-row: 1 / 3;
+      display: flex; align-items: center; justify-content: center;
+      padding: 3rem;
+      background: rgba(0,0,0,0.3);
+    }
+    .modal-image-container img {
+      max-width: 100%; max-height: 85vh;
+      object-fit: contain; display: block;
+    }
+    .modal-buttons {
+      position: absolute; bottom: 2rem; left: 50%;
+      transform: translateX(-70%);
+      display: flex; gap: 6px;
+      z-index: 2;
+    }
+    .modal-info-container {
+      grid-column: 2; grid-row: 1 / 3;
+      padding: 48px 40px;
+      overflow-y: auto; color: white;
+      background: rgba(20,20,18,0.95);
+      border-left: 1px solid rgba(255,255,255,0.06);
+      display: flex; flex-direction: column;
+    }
+    #modal-title {
+      font-size: 32px; font-weight: 600; line-height: 1.12;
+      letter-spacing: -0.02em;
+    }
+    #modal-subtitle {
+      font-size: 13px; font-weight: 500;
+      color: var(--accent-light);
+      letter-spacing: 0.14em; text-transform: uppercase;
+      margin-top: 12px; margin-bottom: 2rem;
+    }
+    #modal-description {
+      font-size: 15px; font-weight: 400; line-height: 1.7;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 2rem;
+    }
+    #modal-metadata {
+      display: grid; gap: 0;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      margin-top: auto;
+    }
+    .meta-item {
+      display: flex; flex-direction: column; gap: 2px;
+      font-size: 15px; line-height: 1.5;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .meta-item strong {
+      font-weight: 500; font-size: 10px;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+    }
+    .meta-item span { color: rgba(255,255,255,0.8); }
+
+    /* ── Close ── */
+    .modal-close-btn {
+      position: fixed; top: 24px; right: 24px; z-index: 110;
+      background: transparent; color: white; border: none;
+      width: 48px; height: 48px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-close-btn:active { opacity: 0.5; }
+    .modal-close-btn svg { stroke: white; width: 24px; height: 24px; stroke-width: 1.5; }
+
+    /* ── Tool buttons ── */
+    .tool-btn {
+      background: rgba(255,255,255,0.06); border: none; color: white;
+      cursor: pointer; z-index: 2; padding: 0;
+      width: 40px; height: 40px; border-radius: 50%;
+      display: grid; place-items: center;
+      transition: background 0.15s;
+    }
+    .tool-btn:active { background: rgba(255,255,255,0.15); }
+    .tool-btn svg { stroke: rgba(255,255,255,0.7); width: 20px; height: 20px; }
+    .tool-btn .material-icons { color: rgba(255,255,255,0.7); font-size: 20px; transition: all 0.3s; }
+    .tool-btn.active { background: rgba(255,255,255,0.12); }
+    .tool-btn.active .material-icons {
+      color: #ffd700; filter: drop-shadow(0 0 4px #ffd700);
+    }
+
+    /* ── Fullscreen ── */
+    .modal-overlay.modal-fullscreen .modal-content { grid-template-columns: 1fr; }
+    .modal-overlay.modal-fullscreen .modal-info-container { display: none; }
+    .modal-overlay.modal-fullscreen .modal-buttons { display: none; }
+    .modal-overlay.modal-fullscreen .modal-image-container {
+      grid-column: 1 / -1; grid-row: 1 / -1;
+      position: fixed; inset: 0; z-index: 101;
+      background: #000; padding: 0;
+    }
+    .modal-overlay.modal-fullscreen #modal-image {
+      max-width: 100vw; max-height: 100vh;
+      width: auto; height: auto; object-fit: contain;
+    }
+    .modal-overlay.modal-fullscreen .modal-close-btn { z-index: 112; }
+
+    /* ── Magnifier ── */
+    .magnifying-glass {
+      position: fixed; border: 2px solid rgba(255,255,255,0.5); border-radius: 50%;
+      cursor: grab; width: 260px; height: 260px;
+      transform: translate(-50%, -50%); pointer-events: auto;
+      overflow: hidden;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+      background-repeat: no-repeat; background-size: cover;
+      z-index: 103; display: none; transition: opacity 0.3s; user-select: none;
+    }
+    .magnifying-glass:active { cursor: grabbing; }
+
+    /* ── Inactivity ── */
+    .inactivity-overlay {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      z-index: 200; display: grid; place-items: center;
+    }
+    .inactivity-content { text-align: center; padding: 2rem; }
+    .inactivity-content h2 {
+      font-size: 2rem; font-weight: 300;
+      letter-spacing: 0.06em; color: var(--text);
+    }
+    .magic-text { animation: fade 4s ease-in-out infinite; }
+    .magic-text-subtitle {
+      font-size: 1rem; font-weight: 300;
+      color: var(--text-secondary); margin-top: 0.75rem;
+      letter-spacing: 0.08em;
+    }
+    .touch-icon { animation: fade 4s ease-in-out infinite; margin-bottom: 2rem; }
+    .touch-icon .material-icons { font-size: 56px; color: #ccc; }
+    @keyframes fade {
+      0%, 100% { opacity: 0.2; }
+      50%      { opacity: 0.5; }
+    }
+
+    @media (max-width: 768px) {
+      .modal-content { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+      .modal-image-container { grid-column: 1; grid-row: 1; }
+      .modal-info-container { grid-column: 1; grid-row: 2; max-height: 40vh; }
+      .modal-buttons { position: static; transform: none; padding: 0.5rem; justify-content: center; }
     }
   </style>
 </head>
 <body>
   <div id="loading-screen">
-    <div class="loading"></div>
-    <p>Lade Kiosk-Konfiguration…</p>
+    <div class="spinner"></div>
+    <p>Wird geladen</p>
   </div>
 
   <div id="error-screen" style="display:none;">
@@ -203,109 +415,525 @@
   <div id="app" style="display:none;">
     <div class="explorer-app">
       <main class="explorer-main">
-        <div class="toolbar">
-          <div class="filters chips-scroll" id="filters">
-            <button class="chip active" data-filter="all">Alle</button>
-            <button class="chip" data-filter="highlights">Highlights</button>
-            <!-- Category chips injected by JS -->
+
+        <div class="header-wrap">
+          <div class="header-top">
+            <span class="header-title">Sammlung erkunden</span>
+            <span class="header-count" id="item-count"></span>
           </div>
-          <div class="search desktop-only">
-            <input id="search-input" class="search-input" type="search" placeholder="Suche Exponate…" autocomplete="off" />
+          <div class="search-row">
+            <input id="search-input" class="search-input" type="search" placeholder="Suchen …" autocomplete="off" />
+          </div>
+          <div class="filters-links" id="filters">
+            <button class="filter-link selected" id="f-all"><span class="label">Alle</span></button>
+            <button class="filter-link" id="f-highlights"><span class="label">Highlights</span></button>
+            <button class="filter-link" id="f-led"><span class="label">LED-Licht</span></button>
           </div>
         </div>
-        <div class="exponate-grid" id="exponate-grid">
+
+        <div class="gallery-grid" id="gallery-grid">
           <!-- Cards injected by JS -->
         </div>
       </main>
     </div>
+
+    <!-- Inactivity overlay -->
+    <div id="inactivity-overlay" class="inactivity-overlay" hidden>
+      <div class="inactivity-content">
+        <div class="touch-icon"><span class="material-icons">touch_app</span></div>
+        <h2 class="magic-text">Bitte Bildschirm berühren</h2>
+        <p class="magic-text-subtitle">Please touch the screen</p>
+      </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="modal-overlay" hidden>
+      <div class="modal-backdrop" id="modal-backdrop"></div>
+      <button id="modal-close-btn" class="modal-close-btn" aria-label="Schließen">
+        <i data-lucide="x"></i>
+      </button>
+      <div class="modal-content-wrapper">
+        <div class="modal-content">
+          <div class="modal-image-container">
+            <img id="modal-image" src="" alt="" />
+            <div id="magnifying-glass" class="magnifying-glass" hidden></div>
+          </div>
+          <div class="modal-buttons">
+            <button id="fullscreen-btn" class="tool-btn" aria-label="Vollbild">
+              <i data-lucide="maximize"></i>
+            </button>
+            <button id="magnifier-btn" class="tool-btn" aria-label="Lupe">
+              <i data-lucide="search"></i>
+            </button>
+            <button id="lightbulb-btn" class="tool-btn" aria-label="LED-Licht" style="display:none">
+              <span class="material-icons">lightbulb</span>
+            </button>
+            <button id="highlight-btn" class="tool-btn" aria-label="Highlight" hidden>
+              <span class="material-icons">star</span>
+            </button>
+          </div>
+          <div class="modal-info-container">
+            <h2 id="modal-title"></h2>
+            <p id="modal-subtitle"></p>
+            <p id="modal-description"></p>
+            <div id="modal-metadata"></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
+    import { animate } from 'motion';
+    import Hammer from 'hammerjs';
+    import mqttClient from '../../lib/mqtt.js';
+
+    declare const lucide: any;
+
     // ── Sanity helpers ──
     const SANITY_PROJECT = import.meta.env.PUBLIC_SANITY_PROJECT_ID || '832k5je1';
     const SANITY_DATASET = import.meta.env.PUBLIC_SANITY_DATASET || 'production';
-    async function sanityFetch(query, params = {}) {
-      const paramStr = Object.entries(params).map(([k,v]) => `$${k}=${encodeURIComponent(JSON.stringify(v))}`).join('&');
-      const url = `https://${SANITY_PROJECT}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}?query=${encodeURIComponent(query)}${paramStr ? '&'+paramStr : ''}`;
+
+    async function sanityFetch(query: string, params: Record<string, any> = {}) {
+      const paramStr = Object.entries(params)
+        .map(([k, v]) => `$${k}=${encodeURIComponent(JSON.stringify(v))}`)
+        .join('&');
+      const url = `https://${SANITY_PROJECT}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}?query=${encodeURIComponent(query)}${paramStr ? '&' + paramStr : ''}`;
       const res = await fetch(url);
       const data = await res.json();
       return data.result;
     }
-    function imageUrl(ref, width = 800) {
+
+    function imageUrl(ref: any, width = 800): string {
       if (!ref) return '';
       const r = ref.asset?._ref;
       if (!r) return '';
       const parts = r.split('-');
-      const fmt = parts[parts.length - 1];
+      const fmt  = parts[parts.length - 1];
       const dims = parts[parts.length - 2];
-      const id = parts.slice(1, parts.length - 2).join('-');
-      return `https://cdn.sanity.io/images/${SANITY_PROJECT}/${SANITY_DATASET}/${id}-${dims}.${fmt}?w=${width}&auto=format&fit=crop`;
+      const id   = parts.slice(1, parts.length - 2).join('-');
+      return `https://cdn.sanity.io/images/${SANITY_PROJECT}/${SANITY_DATASET}/${id}-${dims}.${fmt}?w=${width}&auto=format`;
     }
 
-    // ── HTML escape helper ──
-    function escHtml(str) {
-      if (!str) return '';
-      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    function esc(str: any): string {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
     }
 
-    // ── Kiosk ID resolution ──
-    async function getKioskId() {
+    async function getKioskId(): Promise<string | null> {
       try {
         const res = await fetch('/kiosk-config.json');
         if (res.ok) {
           const cfg = await res.json();
-          if (cfg && cfg.kioskId) return cfg.kioskId;
+          if (cfg?.kioskId) return cfg.kioskId;
         }
-      } catch (_) { /* fallback */ }
-      const params = new URLSearchParams(location.search);
-      return params.get('id') || null;
+      } catch (_) {}
+      return new URLSearchParams(location.search).get('id') || null;
     }
 
-    // ── Build a card HTML string matching ExponatCard.astro structure ──
-    function buildCardHtml(exponat) {
-      const imgSrc = imageUrl(exponat.hauptbild, 800);
-      const lqip = exponat.hauptbild?.asset?.metadata?.lqip;
-      const imgStyle = lqip ? ` style="background-image: url(${escHtml(lqip)}); background-size: cover;"` : '';
-      const isHighlight = exponat.ist_highlight ? 'true' : 'false';
-      const categoryId = exponat.kategorie?._id || '';
-      const searchTerms = [exponat.titel, exponat.untertitel, exponat.inventarnummer, exponat.kategorie?.titel]
-        .filter(Boolean).join(' ').toLowerCase();
-      return `<a
-          href="/exponat/${escHtml(exponat._id)}"
-          class="card-link touchable exponat-card-wrap"
-          data-category="${escHtml(categoryId)}"
-          data-highlight="${isHighlight}"
-          data-search="${escHtml(searchTerms)}"
+    // Try to get MQTT broker URL from kiosk-config.json (set by setup.sh)
+    async function getMqttBroker(): Promise<string | null> {
+      try {
+        const res = await fetch('/kiosk-config.json');
+        if (res.ok) {
+          const cfg = await res.json();
+          return cfg?.mqttBroker || null;
+        }
+      } catch (_) {}
+      return null;
+    }
+
+    function portableTextToPlain(blocks: any): string {
+      if (!blocks) return '';
+      if (typeof blocks === 'string') return blocks;
+      if (!Array.isArray(blocks)) return '';
+      return blocks
+        .filter((b: any) => b != null)
+        .map((b: any) => (b.children || []).map((c: any) => c?.text || '').join(''))
+        .join(' ');
+    }
+
+    function buildCardHtml(e: any): string {
+      if (!e) return '';
+      try {
+        const imgSrc = imageUrl(e.hauptbild, 800);
+        const imgHd  = imageUrl(e.hauptbild, 3000);
+        const badge = e.ist_highlight ? '<span class="gitem-badge">Highlight</span>' : '';
+        const categoryLabel = e.kategorie?.titel || '';
+        return `<div
+          class="gitem${e.ist_highlight ? ' highlight' : ''}"
+          data-id="${esc(e._id)}"
+          data-category="${esc(e.kategorie?._id || '')}"
+          data-title="${esc(e.titel || '')}"
+          data-subtitle="${esc(e.untertitel || '')}"
+          data-image="${esc(imgSrc)}"
+          data-image-hd="${esc(imgHd)}"
+          data-inventarnummer="${esc(e.inventarnummer || '')}"
+          data-kurzbeschreibung="${esc(e.kurzbeschreibung || '')}"
+          data-beschreibung="${esc(portableTextToPlain(e.beschreibung))}"
+          data-datierung="${esc(JSON.stringify(e.datierung || {}))}"
+          data-herstellung="${esc(JSON.stringify(e.herstellung || {}))}"
+          data-physisch="${esc(JSON.stringify(e.physisch || {}))}"
+          data-organisation="${esc(e.organisation || '')}"
+          data-tags="${esc(JSON.stringify(Array.isArray(e.tags) ? e.tags : []))}"
+          data-hat-led-licht="${e.hat_led_licht ? 'true' : 'false'}"
+          data-led-position="${esc(JSON.stringify(e.led_position || null))}"
+          data-ist-highlight="${e.ist_highlight ? 'true' : 'false'}"
         >
-          <article class="exponat-card">
-            <div class="card-image"${imgStyle}>
-              ${imgSrc ? `<img src="${escHtml(imgSrc)}" alt="${escHtml(exponat.titel || '')}" loading="lazy" decoding="async"${imgStyle} />` : ''}
-              ${exponat.ist_highlight ? '<div class="highlight-badge">Highlight</div>' : ''}
+          ${badge}
+          <div class="card-link">
+            <div class="card-image">
+              ${imgSrc ? `<img src="${esc(imgSrc)}" alt="${esc(e.titel || '')}" loading="lazy" decoding="async" />` : ''}
             </div>
             <div class="card-content">
-              <h3 class="card-title">${escHtml(exponat.titel || '')}</h3>
-              ${exponat.untertitel ? `<p class="card-subtitle">${escHtml(exponat.untertitel)}</p>` : ''}
+              ${categoryLabel ? `<p class="card-category">${esc(categoryLabel)}</p>` : ''}
+              <h3 class="card-title">${esc(e.titel || '')}</h3>
+              ${e.untertitel ? `<p class="card-subtitle">${esc(e.untertitel)}</p>` : ''}
             </div>
-          </article>
-        </a>`;
+          </div>
+        </div>`;
+      } catch (err) {
+        console.warn('[explorer] Failed to render card for:', e?._id, err);
+        return '';
+      }
     }
+
+    // ── DOM refs ──
+    const loadingScreen    = document.getElementById('loading-screen')!;
+    const errorScreen      = document.getElementById('error-screen')!;
+    const errorMsg         = document.getElementById('error-msg')!;
+    const appEl            = document.getElementById('app')!;
+    const modal            = document.getElementById('modal')!;
+    const modalImage       = document.getElementById('modal-image') as HTMLImageElement;
+    const modalTitleEl     = document.getElementById('modal-title')!;
+    const modalSubtitleEl  = document.getElementById('modal-subtitle')!;
+    const modalMetadata    = document.getElementById('modal-metadata')!;
+    const magnifyingGlass  = document.getElementById('magnifying-glass')!;
+    const magnifierBtn     = document.getElementById('magnifier-btn')!;
+    const fullscreenBtn    = document.getElementById('fullscreen-btn')!;
+    const modalCloseBtn    = document.getElementById('modal-close-btn')!;
+    const modalBackdrop    = document.getElementById('modal-backdrop')!;
+    const lightbulbBtn     = document.getElementById('lightbulb-btn')!;
+    const highlightBtn     = document.getElementById('highlight-btn')!;
+    const modalDescription = document.getElementById('modal-description')!;
+    const inactivityOverlay = document.getElementById('inactivity-overlay')!;
+
+    function showErr(msg: string) {
+      loadingScreen.style.display = 'none';
+      errorMsg.textContent = msg;
+      errorScreen.style.display = 'flex';
+    }
+
+    // ── Modal state ──
+    let activeItem: HTMLElement | null = null;
+    let hammerMc: any = null;
+    let magnifierActive = false;
+    let isDragging = false;
+    let dragOffset = { x: 0, y: 0 };
+    const MAGNIFICATION_FACTOR = 2.5;
+
+    function openModal(item: HTMLElement) {
+      activeItem = item;
+      const imgEl    = item.querySelector('img') as HTMLImageElement;
+      const title    = item.dataset.title || '';
+      const subtitle = item.dataset.subtitle || '';
+      const hdImage  = item.dataset.imageHd || item.dataset.image || '';
+      const inventarnummer   = item.dataset.inventarnummer || '';
+      const kurzbeschreibung = item.dataset.kurzbeschreibung || '';
+      const beschreibung     = item.dataset.beschreibung || '';
+      let datierung: any = {}, herstellung: any = {}, physisch: any = {};
+      try { datierung   = JSON.parse(item.dataset.datierung   || '{}'); } catch (_) {}
+      try { herstellung = JSON.parse(item.dataset.herstellung || '{}'); } catch (_) {}
+      try { physisch    = JSON.parse(item.dataset.physisch    || '{}'); } catch (_) {}
+      const organisation = item.dataset.organisation || '';
+      let tags: string[] = [];
+      try { tags = JSON.parse(item.dataset.tags || '[]'); } catch (_) {}
+      const hasLed       = item.dataset.hatLedLicht === 'true';
+      const isHighlight  = item.dataset.istHighlight === 'true';
+      let ledPosition: any = null;
+      try {
+        if (item.dataset.ledPosition && item.dataset.ledPosition !== 'null')
+          ledPosition = JSON.parse(item.dataset.ledPosition);
+      } catch (_) {}
+
+      modalImage.src = imgEl?.src || item.dataset.image || '';
+      modalTitleEl.textContent    = title;
+      modalSubtitleEl.textContent = subtitle;
+      modalImage.setAttribute('data-exhibit-id',    item.dataset.id || '');
+      modalImage.setAttribute('data-inventarnummer', inventarnummer);
+      modalImage.setAttribute('data-category',       item.dataset.category || '');
+      modalImage.setAttribute('data-has-led-licht',  String(hasLed));
+      if (ledPosition) modalImage.setAttribute('data-led-position', JSON.stringify(ledPosition));
+
+      lightbulbBtn.style.display = hasLed ? 'grid' : 'none';
+      highlightBtn.hidden = !isHighlight;
+      if (isHighlight) highlightBtn.classList.add('active');
+      else highlightBtn.classList.remove('active');
+
+      // Description as flowing text above metadata
+      const descText = beschreibung || kurzbeschreibung || '';
+      modalDescription.textContent = descText;
+      modalDescription.style.display = descText ? '' : 'none';
+
+      let html = '';
+      if (inventarnummer)         html += `<div class="meta-item"><strong>Inventarnr.</strong><span>${esc(inventarnummer)}</span></div>`;
+      if (datierung?.jahr_text)   html += `<div class="meta-item"><strong>Datierung</strong><span>${esc(datierung.jahr_text)}</span></div>`;
+      if (herstellung?.material)  html += `<div class="meta-item"><strong>Material</strong><span>${esc(herstellung.material)}</span></div>`;
+      if (physisch?.masse)        html += `<div class="meta-item"><strong>Maße</strong><span>${esc(physisch.masse)}</span></div>`;
+      if (organisation)           html += `<div class="meta-item"><strong>Sammlung</strong><span>${esc(organisation)}</span></div>`;
+      if (tags.length > 0)        html += `<div class="meta-item"><strong>Tags</strong><span>${esc(tags.join(', '))}</span></div>`;
+      modalMetadata.innerHTML = html;
+
+      modal.hidden = false;
+      document.documentElement.style.overflow = 'hidden';
+
+      // Load HD image
+      const hdLoader = new Image();
+      hdLoader.src = hdImage;
+      hdLoader.onload = () => { modalImage.src = hdImage; };
+
+      animate(modal, { opacity: [0, 1] }, { duration: 0.25 });
+
+      if (hammerMc) { hammerMc.destroy(); hammerMc = null; }
+      const mc = new Hammer.Manager(modal);
+      mc.add(new Hammer.Pinch());
+      mc.add(new Hammer.Swipe({ direction: Hammer.DIRECTION_DOWN }));
+      let scale = 1;
+      mc.on('pinch', (ev: any) => {
+        scale = Math.max(0.5, Math.min(scale * ev.scale, 3));
+        modalImage.style.transform = `scale(${scale})`;
+      });
+      mc.on('swipedown', closeModal);
+      hammerMc = mc;
+    }
+
+    function closeModal() {
+      if (modal.classList.contains('modal-fullscreen')) {
+        modal.classList.remove('modal-fullscreen');
+        modalImage.style.width = '';
+        modalImage.style.height = '';
+        if (magnifierActive) { hideMagnifyingGlass(); magnifierActive = false; magnifierBtn.classList.remove('active'); }
+        return;
+      }
+      if (!activeItem) return;
+      if (hammerMc) { hammerMc.destroy(); hammerMc = null; }
+      animate(modal, { opacity: [1, 0] }, { duration: 0.2 }).finished.then(() => {
+        modal.hidden = true;
+        document.documentElement.style.overflow = '';
+        lightbulbBtn.classList.remove('active');
+        highlightBtn.classList.remove('active');
+        highlightBtn.hidden = true;
+        modalImage.style.transform = 'scale(1)';
+        modalImage.style.width = '';
+        modalImage.style.height = '';
+        if (magnifierActive) {
+          hideMagnifyingGlass();
+          magnifierActive = false;
+          magnifierBtn.classList.remove('active');
+        }
+        activeItem = null;
+      });
+    }
+
+    function toggleFullscreen() {
+      const isFs = modal.classList.contains('modal-fullscreen');
+      if (isFs) {
+        modal.classList.remove('modal-fullscreen');
+        modalImage.style.width = '';
+        modalImage.style.height = '';
+      } else {
+        modal.classList.add('modal-fullscreen');
+      }
+      if (magnifierActive) { hideMagnifyingGlass(); magnifierActive = false; magnifierBtn.classList.remove('active'); }
+    }
+
+    function updateMagnifyingGlass() {
+      if (!modalImage.src || magnifyingGlass.hidden) return;
+      const imgRect   = modalImage.getBoundingClientRect();
+      const glassRect = magnifyingGlass.getBoundingClientRect();
+      const cx = glassRect.left + glassRect.width  / 2;
+      const cy = glassRect.top  + glassRect.height / 2;
+      const ox = cx - imgRect.left;
+      const oy = cy - imgRect.top;
+      magnifyingGlass.style.backgroundImage = `url('${modalImage.src}')`;
+      magnifyingGlass.style.backgroundSize  = `${imgRect.width * MAGNIFICATION_FACTOR}px ${imgRect.height * MAGNIFICATION_FACTOR}px`;
+      const bgX = ox * MAGNIFICATION_FACTOR - glassRect.width  / 2;
+      const bgY = oy * MAGNIFICATION_FACTOR - glassRect.height / 2;
+      magnifyingGlass.style.backgroundPosition = `${-bgX}px ${-bgY}px`;
+    }
+
+    function showMagnifyingGlass() {
+      magnifyingGlass.hidden = false;
+      magnifyingGlass.style.display = 'block';
+      const rect = modalImage.getBoundingClientRect();
+      magnifyingGlass.style.position = 'fixed';
+      magnifyingGlass.style.left = (rect.left + rect.width  / 2) + 'px';
+      magnifyingGlass.style.top  = (rect.top  + rect.height / 2) + 'px';
+      updateMagnifyingGlass();
+    }
+
+    function hideMagnifyingGlass() {
+      magnifyingGlass.hidden = true;
+      magnifyingGlass.style.display = 'none';
+    }
+
+    function toggleMagnifier() {
+      magnifierActive = !magnifierActive;
+      if (magnifierActive) {
+        showMagnifyingGlass();
+        magnifierBtn.classList.add('active');
+        magnifyingGlass.style.opacity = '0';
+        magnifyingGlass.style.display = 'block';
+        setTimeout(() => { magnifyingGlass.style.opacity = '1'; }, 10);
+      } else {
+        magnifyingGlass.style.opacity = '0';
+        setTimeout(() => hideMagnifyingGlass(), 200);
+        magnifierBtn.classList.remove('active');
+      }
+    }
+
+    // Magnifying glass drag – mouse
+    magnifyingGlass.addEventListener('mousedown', (e: MouseEvent) => {
+      if (!magnifierActive) return;
+      e.preventDefault();
+      isDragging = true;
+      const r = magnifyingGlass.getBoundingClientRect();
+      dragOffset.x = e.clientX - (r.left + r.width  / 2);
+      dragOffset.y = e.clientY - (r.top  + r.height / 2);
+      magnifyingGlass.style.cursor = 'grabbing';
+    });
+    document.addEventListener('mousemove', (e: MouseEvent) => {
+      if (!isDragging || !magnifierActive) return;
+      magnifyingGlass.style.left = (e.clientX - dragOffset.x) + 'px';
+      magnifyingGlass.style.top  = (e.clientY - dragOffset.y) + 'px';
+      updateMagnifyingGlass();
+    });
+    document.addEventListener('mouseup', () => {
+      if (isDragging) { isDragging = false; magnifyingGlass.style.cursor = 'grab'; }
+    });
+
+    // Magnifying glass drag – touch
+    magnifyingGlass.addEventListener('touchstart', (e: TouchEvent) => {
+      if (!magnifierActive) return;
+      e.preventDefault();
+      isDragging = true;
+      const r = magnifyingGlass.getBoundingClientRect();
+      dragOffset.x = e.touches[0].clientX - (r.left + r.width  / 2);
+      dragOffset.y = e.touches[0].clientY - (r.top  + r.height / 2);
+    }, { passive: false });
+    document.addEventListener('touchmove', (e: TouchEvent) => {
+      if (!isDragging || !magnifierActive) return;
+      e.preventDefault();
+      magnifyingGlass.style.left = (e.touches[0].clientX - dragOffset.x) + 'px';
+      magnifyingGlass.style.top  = (e.touches[0].clientY - dragOffset.y) + 'px';
+      updateMagnifyingGlass();
+    }, { passive: false });
+    document.addEventListener('touchend', () => { if (isDragging) isDragging = false; });
+
+    // Button listeners
+    magnifierBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleMagnifier(); });
+    fullscreenBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleFullscreen(); });
+    modalCloseBtn.addEventListener('click', (e) => { e.stopPropagation(); closeModal(); });
+    modalBackdrop.addEventListener('click', () => {
+      if (magnifierActive || isDragging) return;
+      closeModal();
+    });
+    lightbulbBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      lightbulbBtn.classList.toggle('active');
+      if (mqttClient.isMQTTEnabled()) {
+        const ledPositionData = modalImage.getAttribute('data-led-position');
+        mqttClient.publishLightbulbEvent({
+          id:              modalImage.getAttribute('data-exhibit-id') || '',
+          title:           modalTitleEl.textContent || '',
+          inventarnummer:  modalImage.getAttribute('data-inventarnummer') || '',
+          categoryId:      modalImage.getAttribute('data-category') || '',
+          led_position:    ledPositionData ? JSON.parse(ledPositionData) : null,
+        }, lightbulbBtn.classList.contains('active') ? 'clicked' : 'deactivated');
+      }
+    });
+    highlightBtn.addEventListener('click', (e) => { e.stopPropagation(); highlightBtn.classList.toggle('active'); });
+    document.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Escape' && !modal.hidden) closeModal(); });
+
+    // ── Filter / search state ──
+    let allItems: HTMLElement[] = [];
+    let activeCategory = 'all';
+    let ledFilterActive = false;
+    let onlyHighlights  = false;
+    let searchTerm = '';
+
+    function applyFilters() {
+      const t = searchTerm.trim().toLowerCase();
+      for (const el of allItems) {
+        const matchTerm = !t || (el.dataset.search || '').includes(t);
+        const matchCat  = activeCategory === 'all' || el.dataset.category === activeCategory;
+        const matchLed  = !ledFilterActive || el.dataset.hatLedLicht === 'true';
+        const matchHL   = !onlyHighlights  || el.dataset.istHighlight === 'true';
+        el.style.display = (matchTerm && matchCat && matchLed && matchHL) ? '' : 'none';
+      }
+    }
+
+    // ── Sort helpers ──
+    function sortExponate(exponate: any[], sortierung: string): any[] {
+      const sorted = [...exponate];
+      switch (sortierung) {
+        case 'titel':
+          sorted.sort((a, b) => (a.titel || '').localeCompare(b.titel || '', 'de'));
+          break;
+        case 'datum':
+          sorted.sort((a, b) => {
+            const da = a.datierung?.jahr || 0;
+            const db = b.datierung?.jahr || 0;
+            return db - da; // newest first
+          });
+          break;
+        case 'random':
+          for (let i = sorted.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [sorted[i], sorted[j]] = [sorted[j], sorted[i]];
+          }
+          break;
+        case 'inventarnummer':
+        default:
+          sorted.sort((a, b) => (a.inventarnummer || '').localeCompare(b.inventarnummer || '', 'de', { numeric: true }));
+          break;
+      }
+      return sorted;
+    }
+
+    // ── Inactivity timer ──
+    let kioskId: string | null = null;
+    let idleTimer: ReturnType<typeof setTimeout>;
+    let overlayTimer: ReturnType<typeof setTimeout>;
+    const IDLE_SHOW_MS   = 180_000;  // 3min → show overlay
+    const IDLE_REDIRECT_MS = 90_000; // 90s after overlay → redirect
+
+    function resetIdle() {
+      clearTimeout(idleTimer);
+      clearTimeout(overlayTimer);
+      inactivityOverlay.hidden = true;
+      idleTimer = setTimeout(() => {
+        inactivityOverlay.hidden = false;
+        overlayTimer = setTimeout(() => {
+          if (kioskId) window.location.href = `/kiosk/?id=${encodeURIComponent(kioskId)}`;
+          else         window.location.reload();
+        }, IDLE_REDIRECT_MS);
+      }, IDLE_SHOW_MS);
+    }
+    ['pointerdown','touchstart','mousedown','keydown','scroll'].forEach(ev => {
+      document.addEventListener(ev, resetIdle, { passive: true });
+    });
 
     // ── Bootstrap ──
     (async () => {
-      const loadingScreen = document.getElementById('loading-screen');
-      const errorScreen = document.getElementById('error-screen');
-      const errorMsg = document.getElementById('error-msg');
-      const appEl = document.getElementById('app');
+      try {
+      let result: any = null;
 
-      function showErr(msg) {
-        loadingScreen.style.display = 'none';
-        errorMsg.textContent = msg;
-        errorScreen.style.display = 'flex';
-      }
-
-      let result = null;
-
-      // 1. Try local content cache (Pi: populated by sync-content.sh every 5 min)
+      // 1. Try local content cache (Pi, updated by sync-content.sh)
       try {
         const r = await fetch('/kiosk-content.json', { cache: 'no-store' });
         if (r.ok) {
@@ -314,16 +942,20 @@
         }
       } catch (_) {}
 
-      // 2. Fall back to Sanity API (dev / first boot)
+      // 2. Fall back to Sanity API
       if (!result) {
-        const kioskId = await getKioskId();
+        kioskId = await getKioskId();
         if (!kioskId) { showErr('Kein Kiosk-ID gefunden. Bitte ?id= Parameter angeben.'); return; }
 
         const QUERY = `*[_type=="kioskDevice" && (kioskId==$id || hostname==$id || _id==$id)][0]{
+          "kioskId": kioskId,
           "exponate": ausstellung->exponate[]->{
             _id, titel, untertitel, inventarnummer, ist_highlight,
-            hauptbild{..., asset->{_id, _ref, metadata{lqip, dimensions}}},
-            "kategorie": kategorie->{_id, titel}
+            kurzbeschreibung, beschreibung,
+            datierung, herstellung, physisch, organisation, tags,
+            hat_led_licht, led_position,
+            hauptbild,
+            "kategorie": verwaltung.kategorie->{_id, titel}
           },
           "kategorien": ausstellung->kategorien[]->{_id, titel},
           "explorerSettings": ausstellung->kioskTemplate.explorerSettings
@@ -331,71 +963,154 @@
 
         try {
           result = await sanityFetch(QUERY, { id: kioskId });
-        } catch (e) { showErr(`Fehler beim Laden: ${e.message}`); return; }
-
-        if (!result) { showErr(`Kiosk nicht gefunden.`); return; }
+        } catch (e: any) { showErr(`Fehler beim Laden: ${e.message}`); return; }
+        if (!result) { showErr('Kiosk nicht gefunden.'); return; }
       }
 
-      const exponate = result.exponate || [];
-      const kategorien = result.kategorien || [];
-      const idleTimeout = result.explorerSettings?.idle_timeout || result.idle_timeout || 300000;
+      kioskId = result.kioskId || kioskId;
+      let exponate     = (result.exponate || []).filter((e: any) => e != null);
+      const kategorien = (result.kategorien || []).filter((k: any) => k != null);
+      const settings   = result.explorerSettings || {};
 
-      // ── Inject category chips ──
-      const filtersEl = document.getElementById('filters');
-      kategorien.forEach(k => {
+      // ── Apply explorerSettings ──
+
+      // nur_highlights: filter to highlights only
+      if (settings.nur_highlights) {
+        exponate = exponate.filter((e: any) => e.ist_highlight);
+      }
+
+      // sortierung: sort exponate
+      if (settings.sortierung) {
+        exponate = sortExponate(exponate, settings.sortierung);
+      }
+
+      // items_pro_seite: limit visible items (0 = show all)
+      const itemLimit = settings.items_pro_seite || 0;
+      if (itemLimit > 0 && exponate.length > itemLimit) {
+        exponate = exponate.slice(0, itemLimit);
+      }
+
+      // ── Init MQTT from kiosk-config.json broker URL ──
+      const mqttBroker = await getMqttBroker();
+      if (mqttBroker) {
+        try {
+          await mqttClient.initialize({
+            aktiviert: true,
+            broker_url: mqttBroker,
+            client_id: `museum-kiosk-${kioskId || 'unknown'}-${Date.now()}`,
+            topics: {
+              lightbulb_topic_base: 'museum/led',
+              status_topic: 'museum/kiosk/status',
+              interaction_topic: 'museum/kiosk/interaction',
+            }
+          });
+        } catch (_) {}
+      }
+
+      // Inject category filter chips
+      const filtersEl = document.getElementById('filters')!;
+      kategorien.forEach((k: any) => {
         const btn = document.createElement('button');
-        btn.className = 'chip';
+        btn.className = 'filter-link cat-filter';
         btn.dataset.category = k._id;
-        btn.textContent = k.titel || k._id;
+        btn.innerHTML = `<span class="label">${esc(k.titel || k._id)}</span>`;
         filtersEl.appendChild(btn);
       });
 
-      // ── Inject cards ──
-      const grid = document.getElementById('exponate-grid');
+      // Inject cards
+      const grid = document.getElementById('gallery-grid')!;
       grid.innerHTML = exponate.map(buildCardHtml).join('');
 
       loadingScreen.style.display = 'none';
       appEl.style.display = '';
 
-      // ── Filter / search logic (preserved from existing explorer.astro) ──
-      const chips = document.querySelectorAll('.chip');
-      const cards = Array.from(document.querySelectorAll('.exponat-card-wrap'));
-      const input = document.getElementById('search-input');
-      let activeCategory = 'all', onlyHighlights = false, term = '';
+      if (typeof lucide !== 'undefined') lucide.createIcons();
 
-      function applyFilters() {
-        const t = term.trim().toLowerCase();
-        for (const el of cards) {
-          const matchesTerm = !t || el.dataset.search?.includes(t);
-          const matchesCat = activeCategory === 'all' || el.dataset.category === activeCategory;
-          const matchesHL = !onlyHighlights || el.dataset.highlight === 'true';
-          el.style.display = (matchesTerm && matchesCat && matchesHL) ? '' : 'none';
-        }
+      // Collect items + add search index
+      allItems = Array.from(document.querySelectorAll('.gitem'));
+      allItems.forEach((el: HTMLElement) => {
+        el.dataset.search = [
+          el.dataset.title,
+          el.dataset.subtitle,
+          el.dataset.inventarnummer,
+          el.dataset.kurzbeschreibung,
+        ].filter(Boolean).join(' ').toLowerCase();
+      });
+
+      // Item count
+      const itemCountEl = document.getElementById('item-count');
+      if (itemCountEl) itemCountEl.textContent = `${allItems.length} Exponate`;
+
+      // Staggered entrance animation
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const el = entry.target as HTMLElement;
+            const idx = allItems.indexOf(el);
+            const delay = Math.min(idx * 60, 600);
+            setTimeout(() => el.classList.add('visible'), delay);
+            observer.unobserve(el);
+          }
+        });
+      }, { threshold: 0.05, rootMargin: '40px' });
+      allItems.forEach(el => observer.observe(el));
+
+      // Search
+      const searchInput = document.getElementById('search-input') as HTMLInputElement;
+      searchInput?.addEventListener('input', (e) => {
+        searchTerm = (e.target as HTMLInputElement).value || '';
+        applyFilters();
+      });
+
+      // Filter buttons
+      const allFilter  = document.getElementById('f-all')!;
+      const hlFilter   = document.getElementById('f-highlights')!;
+      const ledFilter  = document.getElementById('f-led')!;
+      const catFilters = Array.from(document.querySelectorAll('.cat-filter'));
+
+      function clearFilterSelection() {
+        document.querySelectorAll('.filter-link').forEach(b => b.classList.remove('selected'));
       }
 
-      chips.forEach((chip) => chip.addEventListener('click', () => {
-        chips.forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        onlyHighlights = chip.dataset.filter === 'highlights';
-        activeCategory = chip.dataset.category || (chip.dataset.filter ? 'all' : activeCategory);
-        if (chip.dataset.filter === 'all') { activeCategory = 'all'; onlyHighlights = false; }
+      allFilter.addEventListener('click', () => {
+        clearFilterSelection();
+        allFilter.classList.add('selected');
+        activeCategory = 'all'; onlyHighlights = false; ledFilterActive = false;
         applyFilters();
-      }));
-
-      input?.addEventListener('input', (e) => { term = e.target.value || ''; applyFilters(); });
-
-      // ── Idle timeout → redirect to kiosk home ──
-      let idleTimer;
-      const resetIdle = () => {
-        clearTimeout(idleTimer);
-        idleTimer = setTimeout(() => {
-          window.location.href = `/kiosk/?id=${encodeURIComponent(kioskId)}`;
-        }, idleTimeout);
-      };
-      ['pointerdown','touchstart','mousedown','keydown','scroll'].forEach(ev => {
-        document.addEventListener(ev, resetIdle, { passive: true });
       });
+      hlFilter.addEventListener('click', () => {
+        clearFilterSelection();
+        hlFilter.classList.add('selected');
+        activeCategory = 'all'; onlyHighlights = true; ledFilterActive = false;
+        applyFilters();
+      });
+      ledFilter.addEventListener('click', () => {
+        clearFilterSelection();
+        ledFilter.classList.add('selected');
+        activeCategory = 'all'; onlyHighlights = false; ledFilterActive = true;
+        applyFilters();
+      });
+      catFilters.forEach((btn: any) => {
+        btn.addEventListener('click', () => {
+          clearFilterSelection();
+          btn.classList.add('selected');
+          activeCategory = btn.dataset.category; onlyHighlights = false; ledFilterActive = false;
+          applyFilters();
+        });
+      });
+
+      // Card click via event delegation
+      grid.addEventListener('click', (e: MouseEvent) => {
+        const item = (e.target as Element).closest('.gitem') as HTMLElement;
+        if (!item) return;
+        e.preventDefault();
+        if (activeItem === item && !modal.hidden) closeModal();
+        else openModal(item);
+      });
+
+      // Start idle timer
       resetIdle();
+      } catch (err) { console.error('[explorer] FATAL:', err); showErr(String(err)); }
     })();
   </script>
 </body>

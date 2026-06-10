@@ -1,0 +1,578 @@
+---
+---
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="color-scheme" content="light" />
+  <meta name="theme-color" content="#fafaf8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <title>Museum im Grünen Haus</title>
+  <script src="/register-sw.js" defer is:inline></script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <style is:global>
+    :root { color-scheme: light; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #fafaf8;
+      color: #111110;
+      width: 100%; height: 100%;
+      overflow: hidden;
+      user-select: none; -webkit-user-select: none;
+      cursor: none; pointer-events: none;
+      -webkit-font-smoothing: antialiased;
+      forced-color-adjust: none;
+    }
+
+    /* Loading */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loading-screen {
+      position: fixed; inset: 0; background: #fafaf8;
+      display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; z-index: 99;
+    }
+    .spinner { width: 28px; height: 28px; border: 1.5px solid #ddd; border-top-color: #999; border-radius: 50%; animation: spin 1s linear infinite; }
+    #loading-screen p { font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: #bbb; }
+
+    /* ─── LAYOUT ───────────────────────────────────────
+       Header (fixed height)
+       Main  (flex: 1, splits left/right)
+       Footer (fixed height)
+    ──────────────────────────────────────────────── */
+    #app {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      flex-shrink: 0;
+      height: 96px;
+      background: #fff;
+      border-bottom: 1px solid #ebebea;
+      display: flex;
+      align-items: center;
+      padding: 0 60px;
+      gap: 0;
+    }
+    .header-logo-wrap {
+      display: flex; align-items: center; gap: 20px;
+      flex-shrink: 0;
+    }
+    #museum-logo {
+      max-height: 44px; max-width: 100px;
+      object-fit: contain;
+    }
+    #museum-logo[src=""] { display: none; }
+    #museum-name {
+      font-size: 22px; font-weight: 600;
+      letter-spacing: -0.01em; color: #111110;
+      white-space: nowrap;
+    }
+    #museum-subtitle {
+      font-size: 18px; font-weight: 400;
+      color: #aaa; margin-left: 10px;
+      white-space: nowrap;
+    }
+    .header-spacer { flex: 1; }
+    .header-datetime {
+      display: flex; align-items: baseline; gap: 20px;
+      flex-shrink: 0;
+    }
+    #live-date {
+      font-size: 18px; font-weight: 400; color: #aaa;
+    }
+    #live-clock {
+      font-size: 40px; font-weight: 700;
+      letter-spacing: -0.03em; color: #111110;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── MAIN ── */
+    .main {
+      flex: 1; min-height: 0;
+      display: grid;
+      grid-template-columns: 1fr 520px;
+    }
+
+    /* ── LEFT: Exhibition ── */
+    .exhibition {
+      position: relative; overflow: hidden;
+      background: #e8e4de;
+    }
+    .exhibition-img {
+      position: absolute; inset: 0;
+      background-size: cover; background-position: center 20%;
+      transition: opacity 0.8s ease;
+    }
+
+    /* Exhibition dot indicators */
+    .exh-dots {
+      position: absolute; bottom: 64px; right: 60px; z-index: 2;
+      display: flex; gap: 10px; align-items: center;
+    }
+    .exh-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      transition: background 0.3s, transform 0.3s;
+    }
+    .exh-dot.active {
+      background: rgba(255,255,255,0.9);
+      transform: scale(1.3);
+    }
+    .exhibition-scrim {
+      position: absolute; inset: 0;
+      background: linear-gradient(
+        to top,
+        rgba(10,9,8,0.92) 0%,
+        rgba(10,9,8,0.60) 30%,
+        rgba(10,9,8,0.15) 60%,
+        transparent 80%
+      );
+    }
+    .exhibition-body {
+      position: relative; z-index: 1;
+      height: 100%;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      padding: 0 72px 72px 72px;
+    }
+    /* No-image fallback */
+    .exhibition:not(.has-image) .exhibition-scrim { display: none; }
+    .exhibition:not(.has-image) .exhibition-body { background: #f0ece4; justify-content: center; }
+    .exhibition:not(.has-image) .exh-label { color: #b8a882; }
+    .exhibition:not(.has-image) #sonder-titel { color: #111110; }
+    .exhibition:not(.has-image) #sonder-sub { color: #888; }
+
+    .exh-label {
+      font-size: 13px; font-weight: 600;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      color: #c8a86a; margin-bottom: 20px;
+    }
+    #sonder-titel {
+      font-family: 'Inter', -apple-system, sans-serif;
+      font-size: 88px; font-weight: 800;
+      line-height: 0.95; letter-spacing: -0.03em;
+      color: #f5f0e8; max-width: 900px;
+    }
+    #sonder-sub {
+      font-size: 20px; font-weight: 400;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(245,240,232,0.45); margin-top: 28px;
+    }
+
+    /* ── RIGHT: Events ── */
+    .events-panel {
+      background: #fff;
+      border-left: 1px solid #ebebea;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .events-panel-header {
+      flex-shrink: 0;
+      padding: 36px 44px 28px 44px;
+      border-bottom: 1px solid #f0eeeb;
+    }
+    .events-panel-label {
+      font-size: 13px; font-weight: 600;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      color: #c8a86a;
+    }
+
+
+    #events-list {
+      flex: 1; min-height: 0;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Event row */
+    .event-row {
+      flex: 1;
+      display: flex; align-items: stretch;
+      border-bottom: 1px solid #f2f0ed;
+      min-height: 0;
+    }
+    .event-row:last-child { border-bottom: none; }
+
+    /* Date block */
+    .event-date-block {
+      flex-shrink: 0;
+      width: 120px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      border-right: 1px solid #f2f0ed;
+      gap: 0;
+    }
+    .event-day-num {
+      font-size: 56px; font-weight: 800;
+      line-height: 1; letter-spacing: -0.04em;
+      color: #111110;
+    }
+    .event-month-abbr {
+      font-size: 18px; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: #6b6560; margin-top: 6px;
+    }
+
+    /* Event content */
+    .event-content {
+      flex: 1; min-width: 0;
+      display: flex; flex-direction: column;
+      justify-content: center;
+      padding: 20px 32px 20px 28px;
+      gap: 10px;
+    }
+    .event-title-text {
+      font-size: 22px; font-weight: 600;
+      line-height: 1.25; color: #111110;
+      letter-spacing: -0.01em;
+      display: -webkit-box;
+      -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .event-meta {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .event-time-text {
+      font-size: 22px; font-weight: 500; color: #b0a89e;
+    }
+    .event-tag {
+      display: inline-flex; align-items: center;
+      padding: 4px 12px; border-radius: 6px;
+      font-size: 14px; font-weight: 500;
+    }
+
+    /* Empty row */
+    .event-row-empty { background: #faf9f7; }
+
+    /* No events */
+    .no-events {
+      flex: 1; display: flex;
+      align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 500;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: #ccc;
+    }
+
+
+    /* ── FOOTER ── */
+    .footer {
+      flex-shrink: 0;
+      height: 64px;
+      background: #f5f3ef;
+      border-top: 1px solid #e8e5e0;
+      display: flex; align-items: center;
+      padding: 0 60px;
+      gap: 32px;
+    }
+    .footer-label {
+      font-size: 13px; font-weight: 600;
+      letter-spacing: 0.20em; text-transform: uppercase;
+      color: #c8a86a; flex-shrink: 0;
+    }
+    #opening-hours-text {
+      font-size: 18px; font-weight: 400;
+      color: #888; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading-screen">
+    <div class="spinner"></div>
+    <p>Wird geladen</p>
+  </div>
+
+  <div id="app" style="display:none;">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-logo-wrap">
+        <img id="museum-logo" src="" alt="" />
+        <span id="museum-name"></span>
+        <span id="museum-subtitle"></span>
+      </div>
+      <div class="header-spacer"></div>
+      <div class="header-datetime">
+        <span id="live-date"></span>
+        <span id="live-clock"></span>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <div class="main">
+
+      <!-- Left: Exhibition -->
+      <div class="exhibition" id="exhibition">
+        <div class="exhibition-img" id="exhibition-img"></div>
+        <div class="exhibition-scrim"></div>
+        <div class="exh-dots" id="exh-dots"></div>
+        <div class="exhibition-body">
+          <div class="exh-label" id="exh-label">Aktuelle Sonderausstellung</div>
+          <div id="sonder-titel"></div>
+          <div id="sonder-sub"></div>
+        </div>
+      </div>
+
+      <!-- Right: Events -->
+      <div class="events-panel">
+        <div class="events-panel-header">
+          <div class="events-panel-label">Nächste Veranstaltungen</div>
+        </div>
+        <div id="events-list"></div>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer" id="footer">
+      <span class="footer-label">Öffnungszeiten</span>
+      <span id="opening-hours-text"></span>
+    </footer>
+
+  </div>
+
+  <script>
+    /// <reference types="vite/client" />
+
+    const PROJECT = import.meta.env.PUBLIC_SANITY_PROJECT_ID || '832k5je1';
+    const DATASET = import.meta.env.PUBLIC_SANITY_DATASET   || 'production';
+
+    const MONTHS_S = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+    const MONTHS_L = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+    const WDAYS    = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+
+    const TYP: Record<string, { label: string; bg: string; fg: string }> = {
+      eroeffnung: { label: 'Eröffnung', bg: '#fef3c7', fg: '#92400e' },
+      fuehrung:   { label: 'Führung',   bg: '#dbeafe', fg: '#1e40af' },
+      vortrag:    { label: 'Vortrag',   bg: '#ede9fe', fg: '#5b21b6' },
+      workshop:   { label: 'Workshop',  bg: '#d1fae5', fg: '#065f46' },
+      finissage:  { label: 'Finissage', bg: '#fee2e2', fg: '#991b1b' },
+      sonstiges:  { label: 'Sonstiges', bg: '#f3f4f6', fg: '#4b5563' },
+    };
+
+    function imgUrl(ref: any, w = 1600): string {
+      if (ref?.asset?.url) return ref.asset.url + `?w=${w}&auto=format&fit=crop&q=85`;
+      const r = ref?.asset?._ref; if (!r) return '';
+      const p = r.split('-');
+      return `https://cdn.sanity.io/images/${PROJECT}/${DATASET}/${p.slice(1,-2).join('-')}-${p[p.length-2]}.${p[p.length-1]}?w=${w}&auto=format&fit=crop&q=85`;
+    }
+    function esc(s: string) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    async function sanity(q: string): Promise<any> {
+      const r = await fetch(`https://${PROJECT}.api.sanity.io/v2024-01-01/data/query/${DATASET}?query=${encodeURIComponent(q)}`);
+      return (await r.json()).result;
+    }
+
+    const Q = `{
+      "museumInfo": *[_type=="museumInfo"][0]{ name, untertitel, oeffnungszeiten_text, logo },
+      "signage": *[_type=="signageKonfiguration"][0]{
+        "sonderausstellung": {
+          "titel":         sonderausstellung.titel,
+          "zeitraum_text": sonderausstellung.zeitraum_text,
+          "titelbild":     sonderausstellung.titelbild{ asset->{ _id, url } }
+        },
+        "veranstaltungen":      veranstaltungen[]{ titel, datum, typ },
+        "weitere_ausstellungen": weitere_ausstellungen[]{ titel, zeitraum_text, "titelbild": titelbild{ asset->{ _id, url } } },
+        "wechsel_aktiv":    wechsel_aktiv,
+        "wechsel_intervall": wechsel_intervall
+      }
+    }`;
+
+    const MOCK: any = {
+      museumInfo: { name:'Museum im Grünen Haus', untertitel:'Reutte · Tirol', oeffnungszeiten_text:'Di – Sa  13:00 – 17:00 Uhr  ·  Montag geschlossen  ·  So & Feiertage nach Vereinbarung', logo:null },
+      signage: {
+        sonderausstellung: {
+          titel: '50 Jahre Museumsverein',
+          zeitraum_text: '15. April – 31. Oktober 2026',
+          titelbild: { asset: { url:'https://images.unsplash.com/photo-1564399580075-5dfe19c205f3?w=1600&auto=format&fit=crop&q=85' } }
+        },
+        veranstaltungen: [
+          {titel:'Die 100. Samstagskultur — Lähn & Obergarten', datum:(()=>{const d=new Date();d.setDate(d.getDate()+1);d.setHours(14,0,0,0);return d.toISOString();})(), typ:'fuehrung'},
+          {titel:'Eröffnung: 50 Jahre Museumsverein', datum:(()=>{const d=new Date();d.setDate(d.getDate()+12);d.setHours(19,0,0,0);return d.toISOString();})(), typ:'eroeffnung'},
+          {titel:'Kuratorenführung: Hinter den Kulissen', datum:(()=>{const d=new Date();d.setDate(d.getDate()+30);d.setHours(15,0,0,0);return d.toISOString();})(), typ:'fuehrung'},
+          {titel:'Vortrag: Regionalgeschichte im Wandel', datum:(()=>{const d=new Date();d.setDate(d.getDate()+48);d.setHours(18,30,0,0);return d.toISOString();})(), typ:'vortrag'},
+        ]
+      }
+    };
+
+    async function load(): Promise<any> {
+      try { const r=await fetch('/signage-content.json',{cache:'no-store'}); if(r.ok){const c=await r.json();if(c?.museumInfo)return c;} } catch(_){}
+      try { const result=await sanity(Q); if(result?.museumInfo)return result; } catch(_){}
+      if (import.meta.env.DEV) return MOCK;
+      throw new Error('Keine Daten.');
+    }
+
+    const FALLBACK_IMG = 'https://images.unsplash.com/photo-1564399580075-5dfe19c205f3?w=1600&auto=format&fit=crop&q=85';
+
+    function showExhibitionSlide(item: any, isFirst: boolean): void {
+      const el    = document.getElementById('exhibition')!;
+      const img   = document.getElementById('exhibition-img') as HTMLElement;
+      const titel = document.getElementById('sonder-titel')!;
+      const sub   = document.getElementById('sonder-sub')!;
+      const label = document.getElementById('exh-label')!;
+
+      if (!item?.titel) { el.style.display = 'none'; return; }
+
+      const src = imgUrl(item.titelbild, 1600) || FALLBACK_IMG;
+
+      if (isFirst) {
+        img.style.backgroundImage = `url('${esc(src)}')`;
+        el.classList.add('has-image');
+      } else {
+        // Crossfade: fade out, swap, fade in
+        img.style.opacity = '0';
+        setTimeout(() => {
+          img.style.backgroundImage = `url('${esc(src)}')`;
+          img.style.opacity = '1';
+        }, 800);
+      }
+
+      titel.textContent = item.titel;
+      label.textContent = item._isWeitere ? 'Weitere Ausstellung' : 'Aktuelle Sonderausstellung';
+      if (item.zeitraum_text) { sub.textContent = item.zeitraum_text; sub.style.display = ''; }
+      else sub.style.display = 'none';
+    }
+
+    function renderExhibition(data: any): void {
+      const a = data.signage?.sonderausstellung;
+      if (!a?.titel) { document.getElementById('exhibition')!.style.display = 'none'; return; }
+      showExhibitionSlide(a, true);
+    }
+
+    function renderEvents(data: any): void {
+      const now = new Date();
+      const list = document.getElementById('events-list')!;
+      list.innerHTML = '';
+
+      const all: any[] = (data.signage?.veranstaltungen || [])
+        .filter((ev: any) => ev.datum && new Date(ev.datum) > now);
+      all.sort((a,b) => new Date(a.datum).getTime() - new Date(b.datum).getTime());
+      const items = all.slice(0, 4);
+
+      if (!items.length) {
+        list.innerHTML = '<div class="no-events">Keine bevorstehenden Veranstaltungen</div>';
+        return;
+      }
+
+      while (items.length < 4) items.push(null);
+
+      items.forEach((ev) => {
+        const row = document.createElement('div');
+        if (!ev) { row.className = 'event-row event-row-empty'; list.appendChild(row); return; }
+
+        row.className = 'event-row';
+        const d = new Date(ev.datum);
+        const hh = String(d.getHours()).padStart(2,'0');
+        const mm = String(d.getMinutes()).padStart(2,'0');
+        const typ = (ev.typ || 'sonstiges').toLowerCase();
+        const t = TYP[typ] || TYP['sonstiges'];
+
+        row.innerHTML = `
+          <div class="event-date-block">
+            <span class="event-day-num">${d.getDate()}</span>
+            <span class="event-month-abbr">${MONTHS_S[d.getMonth()]}</span>
+          </div>
+          <div class="event-content">
+            <div class="event-title-text">${esc(ev.titel || '')}</div>
+            <div class="event-meta">
+              <span class="event-time-text">${hh}:${mm} Uhr</span>
+              <span class="event-tag" style="background:${t.bg};color:${t.fg}">${esc(t.label)}</span>
+            </div>
+          </div>`;
+        list.appendChild(row);
+      });
+    }
+
+    function renderInfo(data: any): void {
+      const info = data.museumInfo || {};
+      document.getElementById('museum-name')!.textContent = info.name || '';
+      const sub = document.getElementById('museum-subtitle')!;
+      if (info.untertitel) sub.textContent = '· ' + info.untertitel; else sub.style.display = 'none';
+
+      const logo = document.getElementById('museum-logo') as HTMLImageElement;
+      const src = imgUrl(info.logo, 200);
+      if (src) logo.src = src; else logo.style.display = 'none';
+
+      const open = document.getElementById('opening-hours-text')!;
+      if (info.oeffnungszeiten_text) {
+        // Show on one line: replace newlines with  ·
+        open.textContent = info.oeffnungszeiten_text.replace(/\n/g, '  ·  ');
+      } else {
+        document.getElementById('footer')!.style.display = 'none';
+      }
+    }
+
+
+    function startWechselModus(data: any): void {
+      const s = data.signage;
+      if (!s?.wechsel_aktiv || !(s.weitere_ausstellungen?.length > 0)) return;
+
+      const intervall = ((s.wechsel_intervall as number) || 30) * 1000;
+
+      // Build slide list: sonderausstellung first, then weitere
+      const slides: any[] = [];
+      if (s.sonderausstellung?.titel) slides.push(s.sonderausstellung);
+      (s.weitere_ausstellungen as any[]).forEach(w => slides.push({ ...w, _isWeitere: true }));
+
+      if (slides.length < 2) return;
+
+      // Build dots
+      const dotsEl = document.getElementById('exh-dots')!;
+      dotsEl.innerHTML = '';
+      slides.forEach((_, i) => {
+        const d = document.createElement('div');
+        d.className = 'exh-dot' + (i === 0 ? ' active' : '');
+        dotsEl.appendChild(d);
+      });
+
+      let idx = 0;
+
+      function advance() {
+        idx = (idx + 1) % slides.length;
+        showExhibitionSlide(slides[idx], false);
+        dotsEl.querySelectorAll('.exh-dot').forEach((d, i) =>
+          d.classList.toggle('active', i === idx));
+      }
+
+      setInterval(advance, intervall);
+    }
+
+    function startClock(): void {
+      const c = document.getElementById('live-clock')!;
+      const d = document.getElementById('live-date')!;
+      function tick() {
+        const n = new Date();
+        c.textContent = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+        d.textContent = `${WDAYS[n.getDay()]}, ${n.getDate()}. ${MONTHS_L[n.getMonth()]} ${n.getFullYear()}`;
+      }
+      tick(); setInterval(tick, 1000);
+    }
+
+    (async () => {
+      const loading = document.getElementById('loading-screen')!;
+      const app     = document.getElementById('app')!;
+      try {
+        const data = await load();
+        renderInfo(data);
+        renderExhibition(data);
+        renderEvents(data);
+        startWechselModus(data);
+        startClock();
+        loading.style.display = 'none';
+        app.style.display = 'flex';
+        setInterval(async () => {
+          try { const f = await load(); renderExhibition(f); renderEvents(f); } catch(_) {}
+        }, 5 * 60 * 1000);
+      } catch(e: any) {
+        loading.innerHTML = `<p style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#bbb">${e.message}</p>`;
+      }
+    })();
+  </script>
+</body>
+</html>

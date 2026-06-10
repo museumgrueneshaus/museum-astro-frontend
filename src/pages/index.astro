@@ -1,1645 +1,550 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import '../styles/grid.css';
-import GalleryCard from '../components/GalleryCard.astro';
-import OnscreenKeyboard from '../components/OnscreenKeyboard.astro';
-import { getKategorien, getExponate, urlFor, getKioskConfigByIdentifier } from '../lib/sanity';
-import mqttClient from '../lib/mqtt.js';
-
-// Load all items
-let items = [];
-
-try {
-  // Load all items
-  const exps = await getExponate({ limit: 50 });
-  
-  // Function to get appropriate placeholder image based on title
-  function getPlaceholderImage(title) {
-    const titleLower = title.toLowerCase();
-    
-    if (titleLower.includes('römisch') || titleLower.includes('amphore')) {
-      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Roman pottery
-    } else if (titleLower.includes('jugendstil') || titleLower.includes('brosche')) {
-      return 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1600&h=1600&fit=crop&crop=center'; // Art Nouveau jewelry
-    } else if (titleLower.includes('mittelalter') || titleLower.includes('schwert')) {
-      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Medieval sword
-    } else if (titleLower.includes('barock') || titleLower.includes('uhr')) {
-      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Baroque clock
-    } else if (titleLower.includes('keltisch') || titleLower.includes('torques')) {
-      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Celtic jewelry
-    } else if (titleLower.includes('ägyptisch') || titleLower.includes('mumie')) {
-      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Egyptian artifacts
-    } else if (titleLower.includes('meteorit')) {
-      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Meteorite
-    } else if (titleLower.includes('bauhaus') || titleLower.includes('lampe')) {
-      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Bauhaus lamp
-    } else if (titleLower.includes('industriell') || titleLower.includes('dampfmaschine')) {
-      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Industrial machinery
-    } else if (titleLower.includes('expressionistisch') || titleLower.includes('gemälde')) {
-      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Expressionist painting
-    } else if (titleLower.includes('moderne') || titleLower.includes('skulptur')) {
-      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Modern sculpture
-    } else if (titleLower.includes('chinesisch') || titleLower.includes('porzellan')) {
-      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Chinese porcelain
-    } else if (titleLower.includes('wikinger') || titleLower.includes('schmuck')) {
-      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Viking jewelry
-    } else if (titleLower.includes('art deco') || titleLower.includes('vase')) {
-      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Art Deco vase
-    } else if (titleLower.includes('fossil') || titleLower.includes('ammonit')) {
-      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Fossil
-    } else if (titleLower.includes('prähistorisch') || titleLower.includes('faustkeil')) {
-      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Prehistoric tool
-    } else if (titleLower.includes('gotisch') || titleLower.includes('skulptur')) {
-      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Gothic sculpture
-    } else if (titleLower.includes('biedermeier') || titleLower.includes('sekretär')) {
-      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Biedermeier furniture
-    } else if (titleLower.includes('renaissance')) {
-      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Renaissance art
-    } else if (titleLower.includes('tongefäße')) {
-      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Pottery
-    } else {
-      return 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1600&h=1600&fit=crop&crop=center'; // Default museum artifact
-    }
-  }
-
-  items = exps.map((ex) => {
-    const placeholderImage = getPlaceholderImage(ex.titel);
-    return {
-      id: ex._id,
-      title: ex.titel,
-      subtitle: ex.untertitel || '',
-      image: ex.hauptbild ? urlFor(ex.hauptbild).width(1600).height(undefined).auto('format').url() : placeholderImage,
-      imageHd: ex.hauptbild ? urlFor(ex.hauptbild).width(3000).height(undefined).auto('format').url() : placeholderImage,
-      ratio: '1 / 1',
-      colors: ex.kategorie?.farbe ? [ex.kategorie.farbe] : [],
-      categoryId: ex.kategorie?._id,
-      inventarnummer: ex.inventarnummer,
-      kurzbeschreibung: ex.kurzbeschreibung,
-      beschreibung: ex.beschreibung,
-      datierung: ex.datierung,
-      herstellung: ex.herstellung,
-      physisch: ex.physisch,
-      organisation: ex.organisation,
-      tags: ex.tags || [],
-      ist_highlight: ex.ist_highlight || false,
-    };
-  });
-  
-  console.log(`Loaded ${items.length} items`);
-} catch (error) {
-  console.error('Error loading initial items:', error);
-}
-
-const kategorien = await getKategorien().catch(() => []);
-
-function chipStyle(hex) {
-  if (!hex) hex = '#374151';
-  let c = hex.toString();
-  if (!c.startsWith('#')) c = `#${c}`;
-  let r = 55, g = 65, b = 81;
-  try {
-    const v = c.slice(1);
-    r = parseInt(v.substring(0,2), 16);
-    g = parseInt(v.substring(2,4), 16);
-    b = parseInt(v.substring(4,6), 16);
-  } catch {}
-  const srgb = [r,g,b].map(v => {
-    v /= 255;
-    return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4);
-  });
-  const L = 0.2126*srgb[0] + 0.7152*srgb[1] + 0.0722*srgb[2];
-  const text = L > 0.5 ? '#111' : '#fff';
-  return `background:${c};color:${text}`;
-}
 ---
 
-<Layout title="" theme="light">
-  <main class="blank">
-    <section class="container">
-      <h1 class="sr-only">Start</h1>
+<Layout title="Museum Grünes Haus" theme="light">
 
-      <div class="header-wrap">
-        <div class="container">
-          <div class="search-row">
-            <label for="search" class="sr-only">Suche</label>
-            <input id="search" class="search-input" type="search" placeholder="Suche Exponate…" autocomplete="off" />
-            <button id="theme-btn" class="theme-btn" aria-label="Toggle Theme"></button>
-            <div class="lang-switch" role="group" aria-label="Sprache">
-              <button type="button" class="lang-btn" data-lang="de">DE</button>
-              <span aria-hidden="true">/</span>
-              <button type="button" class="lang-btn" data-lang="en">EN</button>
-            </div>
-            <button id="help-btn" class="help-btn" aria-haspopup="dialog" aria-controls="help-overlay" aria-label="Hilfe">
-              <i data-lucide="help-circle"></i>
-            </button>
-
-            <div class="filters-links" aria-label="Filter">
-              <button class="filter-link" id="f-all" data-filter="all">
-                <span class="label">Alles</span>
-              </button>
-              
-              <button class="filter-link" id="f-led" class="led-filter" data-filter="led">
-                <span class="label">Mit LED-Licht</span>
-              </button>
-
-              {kategorien?.map(k => (
-                <button class="filter-link cat-filter" data-category={k._id} data-color={k.farbe}>
-                  <span class="label">{k.titel}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+  <!-- Welcome / Scanner screen -->
+  <div id="welcome-screen" class="screen">
+    <div class="welcome-content">
+      <div class="museum-icon">
+        <svg width="56" height="56" viewBox="0 0 64 64" fill="none">
+          <rect width="64" height="64" fill="#111"/>
+          <rect x="8" y="28" width="48" height="28" fill="#fff"/>
+          <polygon points="32,6 8,28 56,28" fill="#fff"/>
+        </svg>
       </div>
+      <h1 class="welcome-title">Museum<br/>Grünes Haus</h1>
+      <p class="welcome-sub">Scannen Sie den QR-Code am Exponat oder an der Ausstellung, um mehr zu erfahren.</p>
+      <p class="welcome-sub-en">Scan the QR code at any exhibit or exhibition entrance to learn more.</p>
+      <button id="scan-btn" class="scan-btn">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="14" y="14" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/></svg>
+        QR-Code scannen
+      </button>
+    </div>
 
-      <div id="help-overlay" class="help-overlay" role="dialog" aria-modal="true" aria-label="Hilfe" hidden>
-        <div class="help-panel container">
-          <div class="help-header">
-            <strong>Hilfe</strong>
-            <button id="help-close" class="help-close" aria-label="Schließen">
-              <i data-lucide="x"></i>
-            </button>
-          </div>
-          <div class="help-content">
-            <p>Suche links: Tippen Sie, um Exponate zu finden. Kategorien rechts: Wischen/Tippen, um zu filtern.</p>
-            <p>Diese Hilfe ist ein Platzhalter; Inhalte folgen.</p>
-          </div>
-        </div>
+    <!-- Camera overlay -->
+    <div id="scanner-wrap" class="scanner-wrap" hidden>
+      <div class="scanner-viewport">
+        <video id="scanner-video" playsinline></video>
+        <div class="scanner-overlay"><div class="scanner-frame"></div></div>
+        <p class="scanner-hint">QR-Code in den Rahmen halten</p>
       </div>
-
-      <div class="gallery-grid" id="gallery-grid">
-        {items.map((it) => (
-          <div class="gitem" data-id={it.id} data-category={it.categoryId || ''} data-title={it.title} data-subtitle={it.subtitle || ''} data-image={it.image} data-image-hd={it.imageHd} data-inventarnummer={it.inventarnummer} data-kurzbeschreibung={it.kurzbeschreibung} data-beschreibung={it.beschreibung} data-datierung={JSON.stringify(it.datierung)} data-herstellung={JSON.stringify(it.herstellung)} data-physisch={JSON.stringify(it.physisch)} data-organisation={it.organisation} data-tags={JSON.stringify(it.tags)} data-hat-led-licht={it.hatLedLicht || false} data-led-position={JSON.stringify(it.ledPosition)} data-ist-highlight={it.ist_highlight || false}>
-            <GalleryCard title={it.title} subtitle={it.subtitle} image={it.image} ratio={it.ratio} />
-          </div>
-        ))}
-      </div>
-    </section>
-  </main>
-  <OnscreenKeyboard targetSelector="#search" />
-
-  <!-- Inactivity overlay -->
-  <div id="inactivity-overlay" class="inactivity-overlay" hidden>
-    <div class="inactivity-content">
-      <div class="touch-icon">
-        <span class="material-icons">touch_app</span>
-      </div>
-      <h2 class="magic-text">Bitte Bildschirm berühren</h2>
-      <p class="magic-text-subtitle">Please touch the screen</p>
+      <button id="scan-cancel" class="scan-cancel">Abbrechen</button>
     </div>
   </div>
 
-  <div id="modal" class="modal-overlay" hidden>
-    <div class="modal-backdrop"></div>
-    <div class="modal-content-wrapper">
-      <div class="modal-content">
-        <div class="modal-image-container">
-          <img id="modal-image" src="" alt="" />
-          <div id="magnifying-glass" class="magnifying-glass" hidden></div>
-        </div>
-        <div class="modal-buttons">
-          <button id="fullscreen-btn" class="fullscreen-btn" aria-label="Vollbild">
-            <i data-lucide="maximize"></i>
-          </button>
-          <button id="magnifier-btn" class="magnifier-btn" aria-label="Lupe">
-            <i data-lucide="search"></i>
-          </button>
-          <button id="lightbulb-btn" class="lightbulb-btn" aria-label="Information">
-            <span class="material-icons">lightbulb</span>
-          </button>
-          <button id="highlight-btn" class="highlight-btn" aria-label="Highlight" hidden>
-            <span class="material-icons">star</span>
-          </button>
-        </div>
-        <div class="modal-info-container">
-          <h2 id="modal-title"></h2>
-          <p id="modal-subtitle"></p>
-          <div id="modal-metadata"></div>
-        </div>
-      </div>
+  <!-- Single exhibit detail screen -->
+  <div id="detail-screen" class="screen" hidden>
+    <button id="back-btn" class="back-btn" aria-label="Zurück">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+    </button>
+    <div id="detail-inner"></div>
+  </div>
+
+  <!-- Collection / exhibition screen -->
+  <div id="collection-screen" class="screen" hidden>
+    <div class="collection-header" id="collection-header">
+      <button id="coll-back-btn" class="back-btn-inline" aria-label="Zurück">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Zurück
+      </button>
+      <h1 id="coll-title" class="coll-title"></h1>
+      <p id="coll-desc" class="coll-desc"></p>
     </div>
-    <button class="modal-close" aria-label="Schließen">
-      <i data-lucide="x"></i>
-    </button>
-    <button id="fullscreen-close-btn" class="fullscreen-close-btn" aria-label="Vollbild schließen" hidden>
-      <i data-lucide="x"></i>
-    </button>
+    <div id="coll-grid" class="coll-grid"></div>
+    <!-- Inline exhibit overlay within collection -->
+    <div id="coll-detail-overlay" class="coll-detail-overlay" hidden>
+      <button id="coll-detail-back" class="back-btn" aria-label="Zurück zur Sammlung">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      </button>
+      <div id="coll-detail-inner"></div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div id="loader" class="loader-screen" hidden>
+    <div class="spinner"></div>
   </div>
 
   <style>
-    .blank { height: 100vh; width: 100vw; background: var(--bg); padding: var(--space-4) 0 var(--space-8); overflow-x: hidden; }
-    .gallery-grid { margin-top: var(--space-4); display:grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 40px; }
-    @media (min-width: 900px){ .gallery-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
-    @media (min-width: 1280px){ .gallery-grid { grid-template-columns: repeat(5, minmax(0,1fr)); } }
-    
-    /* Gallery item highlight badge */
-    .gitem {
-      position: relative;
-      transition: all 0.3s ease;
-    }
-    
-    .gitem::after {
-      content: 'HIGHLIGHT';
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: #e0e0e0;
-      color: #333333;
-      font-size: 12px;
-      font-weight: 500;
-      padding: 6px 12px;
-      border-radius: 0;
-      letter-spacing: 0.3px;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      pointer-events: none;
-      z-index: 2;
-      text-transform: uppercase;
-    }
-    
-    .gitem.highlight::after {
-      opacity: 1;
-    }
-    
-    /* Badge always looks the same - flat and minimalistic */
-    
-    /* Loading spinner styles */
-    .loading-spinner {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
-      margin: 2rem 0;
-    }
-    
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #333;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-bottom: 1rem;
-    }
-    
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    
-    .loading-spinner p {
-      color: var(--text);
-      font-size: 1rem;
-      margin: 0;
-    }
-    
-    .end-of-content {
+    .screen { min-height: 100vh; }
+    [hidden] { display: none !important; }
+
+    /* ── Welcome ── */
+    .welcome-content {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
       text-align: center;
-      padding: 2rem;
-      margin: 2rem 0;
+      padding: 2.5rem 1.75rem;
+      gap: 1.1rem;
+      background: var(--bg);
     }
-    
-    .end-of-content p {
-      color: var(--text);
-      font-size: 1rem;
-      margin: 0;
-      opacity: 0.6;
-    }
-    .header-wrap { position: sticky; top: calc(env(safe-area-inset-top, 0px)); z-index: 20; background: var(--bg-alt); padding: var(--space-3) 0; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); }
-    :root[data-theme="dark"] .header-wrap { background: #000000; }
-    .search-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; row-gap: var(--space-3); }
-    .filters-links { display: flex; gap: 12px 20px; justify-content: flex-start; flex-wrap: wrap; row-gap: 8px; align-items: center; flex: 1 1 auto; order: 2; }
-    .filter-link { 
-      appearance: none; 
-      border: none; 
-      background: transparent; 
-      cursor: pointer; 
-      user-select: none; 
-      padding: 8px 12px; 
-      border-radius: 4px; 
-      transition: all 0.2s ease;
-    }
-    .filter-link .label { 
-      color: var(--text); 
-      font-weight: 500 !important; 
-      font-size: 16px !important; 
-      text-decoration: none;
-      transition: all 0.2s ease;
-      opacity: 0.6;
-    }
-    
-    /* Selected state - underline and bold */
-    .filter-link.selected .label {
-      text-decoration: underline;
-      text-underline-offset: 4px;
-      text-decoration-thickness: 2px;
-      opacity: 1;
-      font-weight: 700 !important;
-    }
-    
-    /* Category-specific colored underlines */
-    .filter-link.cat-filter.selected .label {
-      text-decoration-color: var(--category-color, #000000);
-    }
-    
-    /* Make "Alles" label more prominent */
-    #f-all .label {
-      font-weight: 700 !important;
-    }
-    
-    /* Hover effect */
-    .filter-link:hover .label {
-      opacity: 0.8;
-    }
-    
-    /* Light mode filter links */
-    :root:not([data-theme="dark"]) .filter-link .label {
-      color: #000000;
-    }
-    
-    /* Light mode selected filter links - keep colored underlines */
-    :root:not([data-theme="dark"]) .filter-link.selected .label {
-      /* Don't override text-decoration-color - let category colors show through */
-    }
-    
-    /* Only override for "Alles" button in light mode */
-    :root:not([data-theme="dark"]) #f-all.filter-link.selected .label {
-      text-decoration-color: #000000;
-    }
-    .help-btn { appearance:none; border:0; background:transparent; color: var(--text); cursor:pointer; font-weight: 900 !important; font-size: 26px; display:inline-flex; align-items:center; justify-content:center; width: 56px; height: 56px; border-radius: 50%; line-height: 1; flex: 0 0 auto; order: 4; }
-    .theme-btn { appearance:none; border:0; background:transparent; color: var(--text); cursor:pointer; font-weight: 900 !important; font-size: 26px; display:inline-flex; align-items:center; justify-content:center; width: 56px; height: 56px; border-radius: 50%; line-height: 1; flex: 0 0 auto; order: 3; }
-    .search-input { width: 100%; flex: 1 0 100%; order: 1; border: 0; border-bottom: 2px solid var(--border); background: transparent; color: var(--text); padding: 12px 14px; font: inherit; outline: none; border-radius: 0; font-size: 22px !important; min-width: 220px; }
-    .lang-switch { display: inline-flex; align-items: center; gap: 8px; order: 3; margin-left: auto; }
-    .lang-btn { appearance: none; border: 0; background: transparent; color: var(--text); cursor: pointer; font-size: 18px !important; font-weight: 500 !important; padding: 4px 6px; }
-    .lang-btn.active { font-weight: 900 !important; text-decoration: underline; text-underline-offset: 3px; }
-    .help-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); backdrop-filter: blur(2px); z-index: 40; display: grid; place-items: start center; padding-top: calc(60px + env(safe-area-inset-top, 0px)); }
-    .help-panel { background: var(--bg); border:1px solid var(--border); color: var(--text); max-width: 720px; width: calc(100vw - 32px); padding: var(--space-3); }
-    .help-header { display:flex; justify-content: space-between; align-items:center; margin-bottom: var(--space-2); }
-    .help-close { appearance:none; border:1px solid var(--border); background:transparent; color:var(--text-dim); padding: 6px 10px; cursor:pointer; }
-    
-    /* New Modal Styles */
-    .modal-overlay { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 1rem; }
-    .modal-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); }
-    
-    /* Light mode overlay - lighter backdrop */
-    :root:not([data-theme="dark"]) .modal-backdrop {
-      background: rgba(255, 255, 255, 0.8);
-    }
-    .modal-content-wrapper { position: relative; z-index: 1; width: 100%; max-width: 1200px; max-height: 90vh; overflow: visible; }
-    .modal-content { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr auto; gap: 3rem; color: white; border-radius: 0; overflow: visible; background: transparent; border: none; }
-    
-    /* Light mode modal styles */
-    :root:not([data-theme="dark"]) .modal-content {
-      background: #fff;
-      color: #000;
-    }
-    
-    .modal-image-container { grid-column: 1; grid-row: 1; }
-    .modal-buttons { grid-column: 1; grid-row: 2; }
-    .modal-info-container { grid-column: 2; grid-row: 1 / 3; }
-    .modal-image-container { 
-      position: relative; 
-      width: 100%; 
-      height: 100%; 
-      display: flex; 
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .modal-image-container img {
-      max-width: 75vh;
-      max-height: 75vh;
-      object-fit: contain;
-      display: block;
-    }
-    
-    .modal-buttons {
-      display: flex;
-      justify-content: center;
-      gap: 1rem;
-      padding: 1rem;
-      background: transparent;
-      border: none;
-      margin: 0;
-      overflow: visible;
-    }
-    
-    .fullscreen-btn { 
-      background: transparent; 
-      border: none; 
-      color: white; 
-      cursor: pointer; 
-      z-index: 2; 
-      padding: 0; 
-      width: 40px; 
-      height: 40px; 
-      display: grid; 
-      place-items: center; 
-      visibility: visible !important;
-    }
-    .fullscreen-btn svg { 
-      stroke: white; 
-      width: 24px; 
-      height: 24px; 
-    }
-    .magnifier-btn { 
-      background: transparent; 
-      border: none; 
-      color: white; 
-      cursor: pointer; 
-      z-index: 2; 
-      padding: 0; 
-      width: 40px; 
-      height: 40px; 
-      display: grid; 
-      place-items: center; 
-      visibility: visible !important;
-    }
-    .magnifier-btn svg { 
-      stroke: white; 
-      width: 24px; 
-      height: 24px; 
-    }
-    .lightbulb-btn { 
-      background: transparent !important; 
-      border: none !important; 
-      color: white; 
-      cursor: pointer; 
-      z-index: 2; 
-      padding: 0 !important; 
-      width: 40px; 
-      height: 40px; 
-      border-radius: 50% !important;
-      display: grid; 
-      place-items: center; 
-      visibility: visible !important;
-      transition: background 0.3s ease;
-      box-shadow: none !important;
-      outline: none !important;
-      overflow: visible !important;
-      margin: 2px;
-    }
-    .lightbulb-btn .material-icons { 
-      color: white; 
-      font-size: 24px !important; 
-      transition: all 0.3s ease;
-    }
-    
-    .lightbulb-btn.active .material-icons {
-      color: #ffd700 !important; /* Gold color when active */
-      filter: drop-shadow(0 0 8px #ffd700) drop-shadow(0 0 16px #ffd700);
-      transform: scale(1.1);
-    }
-    
-    .lightbulb-btn.active {
-      background: rgba(255, 215, 0, 0.1) !important;
-    }
-    
-    .highlight-btn { 
-      background: transparent !important; 
-      border: none !important; 
-      color: white; 
-      cursor: pointer; 
-      z-index: 2; 
-      padding: 0 !important; 
-      width: 40px; 
-      height: 40px; 
-      border-radius: 50% !important;
-      display: grid; 
-      place-items: center; 
-      visibility: visible !important;
-      transition: all 0.3s ease;
-      box-shadow: none !important;
-      outline: none !important;
-      overflow: visible !important;
-      margin: 2px;
-    }
-    
-    .highlight-btn .material-icons { 
-      color: #ffd700; 
-      font-size: 24px !important; 
-      transition: all 0.3s ease;
-    }
-    
-    .highlight-btn.active .material-icons {
-      color: #ffd700 !important;
-      filter: drop-shadow(0 0 8px #ffd700) drop-shadow(0 0 16px #ffd700);
-      transform: scale(1.1);
-    }
-    
-    .highlight-btn.active {
-      background: rgba(255, 215, 0, 0.1) !important;
-    }
-    
-    /* Light mode highlight button */
-    :root:not([data-theme="dark"]) .highlight-btn .material-icons {
-      color: #ffd700 !important;
-    }
-    
-    :root:not([data-theme="dark"]) .highlight-btn.active .material-icons {
-      color: #ffd700 !important;
-      filter: drop-shadow(0 0 8px #ffd700) drop-shadow(0 0 16px #ffd700);
-    }
-    
-    /* Light mode button styles */
-    :root:not([data-theme="dark"]) .fullscreen-btn svg,
-    :root:not([data-theme="dark"]) .magnifier-btn svg {
-      stroke: #000;
-    }
-    
-    :root:not([data-theme="dark"]) .lightbulb-btn .material-icons {
-      color: #000 !important;
-    }
-    
-    /* Light mode active lightbulb */
-    :root:not([data-theme="dark"]) .lightbulb-btn.active .material-icons {
-      color: #ffd700 !important;
-      filter: drop-shadow(0 0 8px #ffd700) drop-shadow(0 0 16px #ffd700);
-    }
-    
-    /* Light mode close buttons */
-    :root:not([data-theme="dark"]) .modal-close {
-      background: transparent !important;
-      color: #000 !important;
-    }
-    
-    :root:not([data-theme="dark"]) .fullscreen-close-btn {
-      background: transparent !important;
-      color: #000 !important;
-    }
-    .magnifier-btn.active { background: rgba(255,255,255,0.2); }
-    #modal-image { 
-      object-fit: contain; 
-      position: relative;
-    }
-    
-    .modal-info-container { padding: 2rem; overflow-y: auto; }
-    .modal-overlay.modal-fullscreen .modal-info-container { display: none; }
-    .modal-overlay.modal-fullscreen .modal-close { display: none; }
-        .modal-overlay.modal-fullscreen .modal-image-container {
-      position: fixed !important;
-      inset: 0 !important;
-      z-index: 101 !important;
-      width: 100vw !important;
-      height: 100vh !important;
-      display: flex !important;
-      justify-content: center !important;
-      align-items: center !important;
-    }
-    .modal-overlay.modal-fullscreen #modal-image {
-      width: 100% !important;
-      height: 100% !important;
-      object-fit: contain !important;
-    }
-    .modal-overlay.modal-fullscreen .fullscreen-btn { display: none; }
-    .modal-overlay.modal-fullscreen .modal-close { display: none; }
-    .modal-overlay .modal-close { display: none; }
-    .fullscreen-close-btn { 
-      position: fixed !important; 
-      top: 2rem !important; 
-      right: 2rem !important; 
-      background: rgba(0,0,0,0.8) !important; 
-      color: white !important; 
-      border: none !important; 
-      border-radius: 50% !important; 
-      width: 4rem !important; 
-      height: 4rem !important; 
-      font-size: 2rem !important; 
+    .museum-icon { margin-bottom: .25rem; }
+    .welcome-title {
+      font-size: clamp(2rem, 9vw, 3rem) !important;
       font-weight: 900 !important;
-      cursor: pointer !important; 
-      z-index: 102 !important; 
-      display: flex !important; 
-      align-items: center !important; 
-      justify-content: center !important; 
-      transition: all 0.3s ease !important;
+      line-height: 1.08; letter-spacing: -.5px;
+      color: var(--text);
     }
-    
-    .fullscreen-close-btn:hover {
-      background: rgba(0,0,0,0.9) !important;
-      transform: scale(1.1) !important;
+    .welcome-sub {
+      font-size: .95rem !important;
+      color: var(--text-dim); line-height: 1.65;
+      max-width: 340px; margin: 0;
     }
-    
-    /* Show button in normal modal mode too */
-    .modal-overlay:not(.modal-fullscreen) .fullscreen-close-btn {
-      display: flex !important;
+    .welcome-sub-en {
+      font-size: .82rem !important;
+      color: var(--muted); line-height: 1.6;
+      max-width: 320px; margin: 0; font-style: italic;
     }
-    
-    /* Fullscreen close button styling is handled above */
-    
-    .magnifying-glass {
-      position: fixed;
-      border: 4px solid #fff;
-      border-radius: 50%;
-      cursor: grab;
-      width: 280px;
-      height: 280px;
-      transform: translate(-50%, -50%);
-      pointer-events: auto;
-      overflow: hidden;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
-      background-repeat: no-repeat;
-      background-size: cover;
-      z-index: 103;
-      display: none; /* Hidden by default */
-      transition: opacity 0.2s ease;
-      user-select: none;
-      background-color: rgba(255, 255, 255, 0.1); /* Fallback background */
+    .scan-btn {
+      margin-top: .75rem;
+      display: inline-flex; align-items: center; gap: .65rem;
+      background: #111; color: #fff;
+      border: none; padding: 1rem 1.75rem;
+      font-size: 1rem !important; font-weight: 700 !important;
+      cursor: pointer; letter-spacing: .01em;
+      transition: background .2s;
     }
-    
-    .magnifying-glass:active {
-      cursor: grabbing;
+    .scan-btn:active { background: #333; }
+
+    /* ── Scanner ── */
+    .scanner-wrap {
+      position: fixed; inset: 0; z-index: 50;
+      background: #000;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 1.5rem; padding: 1.5rem;
     }
-    
-    #modal-title { font-size: 32px !important; font-weight: 900; text-shadow: none; }
-    #modal-subtitle { font-size: 1.2rem; opacity: 0.8; margin-bottom: 1.5rem; text-shadow: none; }
-    #modal-metadata { display: grid; gap: 1rem; }
-    .meta-item { display: grid; grid-template-columns: 100px 1fr; gap: 1rem; }
-    .meta-item strong { font-weight: 600; }
-    .modal-close { position: absolute; top: 1rem; right: 1rem; z-index: 2; background: rgba(0, 0, 0, 0.5); color: white; border: none; border-radius: 50%; width: 2.5rem; height: 2.5rem; font-size: 1.5rem; cursor: pointer; }
-    
-    /* Inactivity overlay */
-    .inactivity-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.9);
-      z-index: 200;
-      display: grid;
-      place-items: center;
-      backdrop-filter: blur(10px);
+    .scanner-viewport {
+      position: relative;
+      width: min(400px, 88vw);
+      aspect-ratio: 3 / 4;
+      background: #000; overflow: hidden;
     }
-    
-    .inactivity-content {
-      text-align: center;
-      color: white;
-      padding: 2rem;
+    #scanner-video { width: 100%; height: 100%; object-fit: cover; }
+    .scanner-overlay { position: absolute; inset: 0; pointer-events: none; }
+    .scanner-frame {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 70%; aspect-ratio: 1;
+      border: 3px solid #fff; border-radius: 12px;
     }
-    
-    .inactivity-content h2 {
-      font-size: 4rem !important;
-      font-weight: 700 !important;
-      margin-bottom: 2rem;
+    .scanner-hint {
+      position: absolute; bottom: 1rem; left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,.8);
+      font-size: .875rem !important; white-space: nowrap;
     }
-    
-    /* Override global font-size for inactivity overlay */
-    #inactivity-overlay .inactivity-content h2 {
-      font-size: 4rem !important;
-      font-weight: 700 !important;
-    }
-    
-    .magic-text-subtitle {
-      font-size: 2rem !important;
-      font-weight: 400 !important;
-      opacity: 0.8;
-      margin-top: 0.5rem;
-    }
-    
-    .inactivity-content p {
-      font-size: 1.5rem;
-      opacity: 0.8;
-    }
-    
-    /* Subtle glow effect - more noticeable but professional */
-    .magic-text {
-      color: white;
-      animation: subtleGlow 2s ease-in-out infinite;
-    }
-    
-    .magic-text-subtitle {
-      color: white;
-      animation: subtleGlow 2s ease-in-out infinite;
-    }
-    
-    .touch-icon {
-      animation: subtleGlow 2s ease-in-out infinite;
-    }
-    
-    .touch-icon .material-icons {
-      font-size: 180px !important;
-      color: white;
-    }
-    
-    @keyframes subtleGlow {
-      0% {
-        opacity: 0.5;
-      }
-      50% {
-        opacity: 0.75;
-      }
-      100% {
-        opacity: 0.5;
-      }
+    .scan-cancel {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,.35);
+      color: #fff; padding: .75rem 2.5rem;
+      font-size: 1rem !important; cursor: pointer;
     }
 
-    @media (max-width: 768px) {
-      .modal-content { 
-        grid-template-columns: 1fr; 
-        grid-template-rows: auto auto auto;
-      }
-      .modal-image-container { grid-column: 1; grid-row: 1; }
-      .modal-buttons { grid-column: 1; grid-row: 2; }
-      .modal-info-container { 
-        grid-column: 1; 
-        grid-row: 3; 
-        padding: 1.5rem; 
-      }
+    /* ── Loader ── */
+    .loader-screen {
+      position: fixed; inset: 0; z-index: 100;
+      background: var(--bg); display: grid; place-items: center;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border); border-top-color: #111;
+      border-radius: 50%; animation: spin .9s linear infinite;
+    }
+
+    /* ── Back button (floating) ── */
+    .back-btn {
+      position: fixed; top: 1rem; left: 1rem; z-index: 20;
+      background: rgba(255,255,255,.92); backdrop-filter: blur(8px);
+      border: 1px solid var(--border); border-radius: 50%;
+      width: 44px; height: 44px;
+      display: grid; place-items: center;
+      cursor: pointer; color: #111;
+      box-shadow: 0 2px 8px rgba(0,0,0,.1);
+    }
+    .back-btn:active { background: #f0f0f0; }
+
+    /* ── Exhibit detail ── */
+    .exhibit-image-wrap {
+      width: 100%; aspect-ratio: 4 / 3;
+      background: #f0f0f0; overflow: hidden;
+    }
+    .exhibit-image-wrap img {
+      width: 100%; height: 100%;
+      object-fit: contain; display: block;
+    }
+    .exhibit-body { padding: 1.5rem 1.25rem 5rem; }
+    .exhibit-category {
+      font-size: .72rem !important; font-weight: 700 !important;
+      letter-spacing: .08em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: .4rem;
+    }
+    .exhibit-title {
+      font-size: clamp(1.55rem, 6vw, 2.2rem) !important;
+      font-weight: 900 !important; line-height: 1.1;
+      margin-bottom: .4rem;
+    }
+    .exhibit-subtitle {
+      font-size: .95rem !important; font-style: italic;
+      color: var(--text-dim); margin-bottom: 1.25rem;
+    }
+    .exhibit-desc {
+      font-size: .975rem !important; line-height: 1.7;
+      color: var(--text); margin-bottom: 1.25rem;
+    }
+    .exhibit-meta {
+      border-top: 1px solid var(--border);
+      padding-top: 1.1rem; display: grid; gap: .65rem;
+    }
+    .meta-row {
+      display: grid; grid-template-columns: 100px 1fr;
+      gap: .4rem; font-size: .875rem !important;
+      align-items: start;
+    }
+    .meta-row strong { font-weight: 600; color: var(--text-dim); }
+    .highlight-badge {
+      display: inline-block;
+      background: #111; color: #fff;
+      font-size: .68rem !important; font-weight: 700 !important;
+      letter-spacing: .08em; text-transform: uppercase;
+      padding: 3px 9px; margin-bottom: .85rem;
+    }
+
+    /* ── Collection view ── */
+    .collection-header {
+      padding: 4rem 1.25rem 1.25rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+    }
+    .back-btn-inline {
+      display: inline-flex; align-items: center; gap: .4rem;
+      background: transparent; border: none;
+      color: var(--muted); font-size: .875rem !important;
+      cursor: pointer; padding: 0 0 .75rem;
+    }
+    .coll-title {
+      font-size: clamp(1.4rem, 5.5vw, 2rem) !important;
+      font-weight: 900 !important; line-height: 1.1;
+      margin-bottom: .4rem;
+    }
+    .coll-desc {
+      font-size: .9rem !important; color: var(--text-dim);
+      line-height: 1.6; margin: 0;
+    }
+    .coll-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1px;
+      background: var(--border);
+    }
+    .coll-card {
+      background: var(--bg); cursor: pointer;
+      display: flex; flex-direction: column;
+    }
+    .coll-card-img {
+      width: 100%; aspect-ratio: 1;
+      background: #f0f0f0; overflow: hidden;
+    }
+    .coll-card-img img {
+      width: 100%; height: 100%;
+      object-fit: contain; display: block;
+    }
+    .coll-card-body { padding: .75rem .875rem 1rem; }
+    .coll-card-title {
+      font-size: .9rem !important; font-weight: 700 !important;
+      line-height: 1.2; margin-bottom: .2rem;
+    }
+    .coll-card-sub {
+      font-size: .78rem !important; color: var(--text-dim);
+      font-style: italic;
+    }
+
+    /* Collection detail overlay (slides in over grid) */
+    .coll-detail-overlay {
+      position: fixed; inset: 0; z-index: 30;
+      background: var(--bg); overflow-y: auto;
     }
   </style>
+
   <script>
-    import { animate } from "motion";
-    import Hammer from 'hammerjs';
-    
-    // Initialize Lucide icons and MQTT
-    document.addEventListener('DOMContentLoaded', async () => {
-      if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
+    const SANITY_PROJECT = import.meta.env.PUBLIC_SANITY_PROJECT_ID || '832k5je1';
+    const SANITY_DATASET = import.meta.env.PUBLIC_SANITY_DATASET || 'production';
+
+    const welcomeScreen    = document.getElementById('welcome-screen');
+    const detailScreen     = document.getElementById('detail-screen');
+    const collectionScreen = document.getElementById('collection-screen');
+    const detailInner      = document.getElementById('detail-inner');
+    const loader           = document.getElementById('loader');
+    const backBtn          = document.getElementById('back-btn');
+    const collBackBtn      = document.getElementById('coll-back-btn');
+    const scanBtn          = document.getElementById('scan-btn');
+    const scannerWrap      = document.getElementById('scanner-wrap');
+    const scanCancel       = document.getElementById('scan-cancel');
+    const scannerVideo     = document.getElementById('scanner-video') as HTMLVideoElement;
+    const collDetailOverlay = document.getElementById('coll-detail-overlay');
+    const collDetailInner  = document.getElementById('coll-detail-inner');
+    const collDetailBack   = document.getElementById('coll-detail-back');
+
+    function esc(s: any): string {
+      if (!s) return '';
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function imageUrl(ref: any, width = 800): string {
+      if (!ref) return '';
+      const r = ref.asset?._ref;
+      if (!r) return '';
+      const parts = r.split('-');
+      const fmt  = parts[parts.length - 1];
+      const dims = parts[parts.length - 2];
+      const id   = parts.slice(1, parts.length - 2).join('-');
+      return `https://cdn.sanity.io/images/${SANITY_PROJECT}/${SANITY_DATASET}/${id}-${dims}.${fmt}?w=${width}&auto=format`;
+    }
+
+    async function sanityFetch(query: string, params: Record<string,any> = {}): Promise<any> {
+      let url = `https://${SANITY_PROJECT}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}`
+        + `?query=${encodeURIComponent(query)}`;
+      for (const [k, v] of Object.entries(params)) {
+        url += `&$${k}=${encodeURIComponent(JSON.stringify(v))}`;
       }
-      
-      // Initialize MQTT client
+      const res  = await fetch(url);
+      const data = await res.json();
+      return data.result ?? null;
+    }
+
+    // ── Exhibit HTML builder (shared) ──
+    function buildExhibitHtml(e: any): string {
+      const imgSrc  = imageUrl(e.hauptbild, 1200);
+      const imgLqip = e.hauptbild?.asset?.metadata?.lqip || '';
+      const datierung   = e.datierung   || {};
+      const herstellung = e.herstellung || {};
+      const physisch    = e.physisch    || {};
+      const tags        = e.tags        || [];
+      let metaRows = '';
+      if (datierung?.jahr_text)   metaRows += `<div class="meta-row"><strong>Datierung</strong><span>${esc(datierung.jahr_text)}</span></div>`;
+      if (herstellung?.material)  metaRows += `<div class="meta-row"><strong>Material</strong><span>${esc(herstellung.material)}</span></div>`;
+      if (physisch?.masse)        metaRows += `<div class="meta-row"><strong>Maße</strong><span>${esc(physisch.masse)}</span></div>`;
+      if (e.organisation)         metaRows += `<div class="meta-row"><strong>Sammlung</strong><span>${esc(e.organisation)}</span></div>`;
+      if (e.inventarnummer)       metaRows += `<div class="meta-row"><strong>Inv.-Nr.</strong><span>${esc(e.inventarnummer)}</span></div>`;
+      if (tags.length)            metaRows += `<div class="meta-row"><strong>Stichworte</strong><span>${esc(tags.join(', '))}</span></div>`;
+
+      return `
+        ${imgSrc ? `
+        <div class="exhibit-image-wrap"${imgLqip ? ` style="background:url(${esc(imgLqip)}) center/cover"` : ''}>
+          <img src="${esc(imgSrc)}" alt="${esc(e.titel || '')}" loading="eager" decoding="async" />
+        </div>` : ''}
+        <div class="exhibit-body">
+          ${e.ist_highlight ? '<div class="highlight-badge">Highlight</div>' : ''}
+          ${e.kategorie?.titel ? `<div class="exhibit-category">${esc(e.kategorie.titel)}</div>` : ''}
+          <h1 class="exhibit-title">${esc(e.titel || '')}</h1>
+          ${e.untertitel ? `<p class="exhibit-subtitle">${esc(e.untertitel)}</p>` : ''}
+          ${e.kurzbeschreibung ? `<p class="exhibit-desc">${esc(e.kurzbeschreibung)}</p>` : ''}
+          ${e.beschreibung ? `<p class="exhibit-desc">${esc(e.beschreibung)}</p>` : ''}
+          ${metaRows ? `<div class="exhibit-meta">${metaRows}</div>` : ''}
+        </div>`;
+    }
+
+    // ── Show single exhibit ──
+    async function showExhibit(id: string, pushState = true) {
+      loader.hidden = false;
       try {
-        // Import the function dynamically to avoid build issues
-        const { getKioskConfigByIdentifier } = await import('../lib/sanity.js');
-        const kioskConfig = await getKioskConfigByIdentifier('default');
-        if (kioskConfig?.mqtt) {
-          await mqttClient.initialize(kioskConfig.mqtt);
-          console.log('MQTT client initialized:', mqttClient.isMQTTEnabled());
-        } else {
-          console.log('No MQTT configuration found');
-        }
-      } catch (error) {
-        console.error('Failed to initialize MQTT:', error);
+        const e = await sanityFetch(
+          `*[_type=="exponat" && (_id==$id || inventarnummer==$id)][0]{
+            _id, titel, untertitel, inventarnummer, ist_highlight,
+            kurzbeschreibung, beschreibung,
+            datierung, herstellung, physisch, organisation, tags,
+            hauptbild{..., asset->{_id, _ref, metadata{lqip}}},
+            "kategorie": kategorie->{_id, titel}
+          }`,
+          { id }
+        );
+        if (!e) { loader.hidden = true; alert('Exponat nicht gefunden.'); return; }
+        detailInner.innerHTML = buildExhibitHtml(e);
+        welcomeScreen.hidden    = true;
+        collectionScreen.hidden = true;
+        detailScreen.hidden     = false;
+        loader.hidden           = true;
+        window.scrollTo(0, 0);
+        if (pushState) history.pushState({ type: 'exhibit', id }, '', `?id=${encodeURIComponent(id)}`);
+      } catch (err) {
+        loader.hidden = true;
+        console.error(err);
+        alert('Fehler beim Laden des Exponats.');
       }
-    });
+    }
 
-    
-      const modal = document.getElementById('modal');
-      const modalImage = document.getElementById('modal-image');
-      const modalTitle = document.getElementById('modal-title');
-      const modalSubtitle = document.getElementById('modal-subtitle');
-      const modalMetadata = document.getElementById('modal-metadata');
-      const modalClose = document.querySelector('.modal-close');
-      const fullscreenBtn = document.getElementById('fullscreen-btn');
-      const galleryItems = document.querySelectorAll('.gitem');
-
-      let activeItem = null;
-      let hammer;
-      let modalClickHandler = null;
-
-      function openModal(item) {
-        try {
-          activeItem = item;
-          const image = item.querySelector('img');
-          const title = item.dataset.title;
-          const subtitle = item.dataset.subtitle;
-          const hdImage = item.dataset.imageHd;
-          const inventarnummer = item.dataset.inventarnummer;
-          const kurzbeschreibung = item.dataset.kurzbeschreibung;
-          const beschreibung = item.dataset.beschreibung;
-          const datierung = JSON.parse(item.dataset.datierung || '{}');
-          const herstellung = JSON.parse(item.dataset.herstellung || '{}');
-          const physisch = JSON.parse(item.dataset.physisch || '{}');
-          const organisation = item.dataset.organisation;
-          const tags = JSON.parse(item.dataset.tags || '[]');
-
-          modalImage.src = image.src;
-          modalTitle.textContent = title;
-          modalSubtitle.textContent = subtitle;
-          
-          // Set data attributes for MQTT/LED functionality
-          modalImage.setAttribute('data-exhibit-id', item.dataset.id);
-          modalImage.setAttribute('data-inventarnummer', inventarnummer);
-          modalImage.setAttribute('data-category', item.dataset.category);
-          
-          // Store LED position data for MQTT
-          const ledPosition = item.dataset.ledPosition ? JSON.parse(item.dataset.ledPosition) : null;
-          const hasLedLicht = item.dataset.hatLedLicht === 'true';
-          if (ledPosition) {
-            modalImage.setAttribute('data-led-position', JSON.stringify(ledPosition));
-          }
-          modalImage.setAttribute('data-has-led-licht', hasLedLicht);
-          
-          // Show/hide lightbulb button based on LED availability
-          const lightbulbBtn = document.getElementById('lightbulb-btn');
-          if (lightbulbBtn) {
-            lightbulbBtn.style.display = hasLedLicht ? 'grid' : 'none';
-          }
-          
-          // Show/hide highlight button based on highlight status
-          const highlightBtn = document.getElementById('highlight-btn');
-          const isHighlight = item.dataset.istHighlight === 'true';
-          console.log('Highlight check:', item.dataset.istHighlight, 'isHighlight:', isHighlight);
-          if (highlightBtn) {
-            highlightBtn.hidden = !isHighlight;
-            if (isHighlight) {
-              highlightBtn.classList.add('active');
-              console.log('Highlight button shown and activated');
-            } else {
-              highlightBtn.classList.remove('active');
-            }
-          }
-
-          let metadataHtml = '';
-          if (inventarnummer) metadataHtml += `<div class="meta-item"><strong>Inventarnr.:</strong> <span>${inventarnummer}</span></div>`;
-          if (datierung?.jahr_text) metadataHtml += `<div class="meta-item"><strong>Datierung:</strong> <span>${datierung.jahr_text}</span></div>`;
-          if (herstellung?.material) metadataHtml += `<div class="meta-item"><strong>Material:</strong> <span>${herstellung.material}</span></div>`;
-          if (physisch?.masse) metadataHtml += `<div class="meta-item"><strong>Maße:</strong> <span>${physisch.masse}</span></div>`;
-          if (organisation) metadataHtml += `<div class="meta-item"><strong>Sammlung:</strong> <span>${organisation}</span></div>`;
-          if (kurzbeschreibung) metadataHtml += `<div class="meta-item"><strong>Info:</strong> <span>${kurzbeschreibung}</span></div>`;
-          if (beschreibung) metadataHtml += `<div class="meta-item"><strong>Beschreibung:</strong> <span>${beschreibung}</span></div>`;
-          if (tags.length > 0) metadataHtml += `<div class="meta-item"><strong>Tags:</strong> <span>${tags.join(', ')}</span></div>`;
-          
-          modalMetadata.innerHTML = metadataHtml;
-
-          // Clear any existing transition names first
-          modalImage.style.viewTransitionName = '';
-          image.style.viewTransitionName = '';
-          
-          // Use a unique transition name to avoid conflicts
-          const transitionName = `gallery-item-${item.dataset.id}-${Date.now()}`;
-          console.log('Setting view-transition-name on open:', transitionName);
-          modalImage.style.viewTransitionName = transitionName;
-          image.style.viewTransitionName = transitionName;
-
-          modal.hidden = false;
-          document.documentElement.style.overflow = 'hidden';
-          
-          // Show the close button in normal modal mode
-          document.getElementById('fullscreen-close-btn').hidden = false;
-          
-          // Add click to close functionality - close on any click except buttons
-          modalClickHandler = (e) => {
-            // Don't close if magnifier is active
-            if (magnifierActive) {
-              return;
-            }
-            
-            // Don't close if we're dragging the magnifying glass
-            if (isDragging) {
-              return;
-            }
-            
-            // Close if clicking anywhere except on buttons (except close button)
-            const isButton = e.target.closest('button');
-            const isCloseButton = e.target.closest('.modal-close');
-            
-            // Don't close if clicking on any button (including close button)
-            if (!isButton) {
-              closeModal();
-            }
-          };
-          modal.addEventListener('click', modalClickHandler);
-          
-          // Magnifying glass will be controlled by button, not mouse following
-
-          // Use simple animation instead of View Transition API to avoid conflicts
-          animate(modal, { opacity: [0, 1] }, { duration: 0.3 });
-
-          const hdLoader = new Image();
-          hdLoader.src = hdImage;
-          hdLoader.onload = () => { 
-            modalImage.src = hdImage; 
-            const img = new Image();
-            img.src = hdImage;
-            img.onload = () => {
-              const ratio = img.width / img.height;
-              if (ratio > 1) {
-                modalImage.style.width = '75vh';
-                modalImage.style.height = 'auto';
-              } else {
-                modalImage.style.height = '75vh';
-                modalImage.style.width = 'auto';
+    // ── Show collection / exhibition ──
+    async function showCollection(id: string, pushState = true) {
+      loader.hidden = false;
+      try {
+        // id can be an Ausstellung _id or a Kategorie _id — try both
+        const ausstellung = await sanityFetch(
+          `*[_type in ["ausstellung","kategorie"] && _id==$id][0]{
+            _id, _type, titel, untertitel, beschreibung,
+            "exponate": select(
+              _type == "ausstellung" => exponate[]->{
+                _id, titel, untertitel, inventarnummer, ist_highlight,
+                hauptbild{..., asset->{_id, _ref, metadata{lqip}}}
+              },
+              _type == "kategorie" => *[_type=="exponat" && kategorie._ref == ^._id]{
+                _id, titel, untertitel, inventarnummer, ist_highlight,
+                hauptbild{..., asset->{_id, _ref, metadata{lqip}}}
               }
-            }
-          };
+            )
+          }`,
+          { id }
+        );
+        if (!ausstellung) { loader.hidden = true; alert('Sammlung nicht gefunden.'); return; }
 
-          // Remove existing event listener to prevent duplicates
-          fullscreenBtn.removeEventListener('click', toggleFakeFullscreen);
-          fullscreenBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggleFakeFullscreen();
+        const collTitle = document.getElementById('coll-title');
+        const collDesc  = document.getElementById('coll-desc');
+        const collGrid  = document.getElementById('coll-grid');
+
+        collTitle.textContent = ausstellung.titel || '';
+        collDesc.textContent  = ausstellung.beschreibung || ausstellung.untertitel || '';
+
+        const exponate = ausstellung.exponate || [];
+        collGrid.innerHTML = exponate.map((e: any) => {
+          const img = imageUrl(e.hauptbild, 400);
+          const lqip = e.hauptbild?.asset?.metadata?.lqip || '';
+          return `<div class="coll-card touchable" data-id="${esc(e._id)}">
+            <div class="coll-card-img"${lqip ? ` style="background:url(${esc(lqip)}) center/cover"` : ''}>
+              ${img ? `<img src="${esc(img)}" alt="${esc(e.titel || '')}" loading="lazy" />` : ''}
+            </div>
+            <div class="coll-card-body">
+              <div class="coll-card-title">${esc(e.titel || '')}</div>
+              ${e.untertitel ? `<div class="coll-card-sub">${esc(e.untertitel)}</div>` : ''}
+            </div>
+          </div>`;
+        }).join('');
+
+        // Card click → show exhibit overlay within collection
+        collGrid.querySelectorAll('.coll-card').forEach((card: any) => {
+          card.addEventListener('click', async () => {
+            const eid = card.dataset.id;
+            if (!eid) return;
+            loader.hidden = false;
+            try {
+              const e = await sanityFetch(
+                `*[_type=="exponat" && _id==$id][0]{
+                  _id, titel, untertitel, inventarnummer, ist_highlight,
+                  kurzbeschreibung, beschreibung,
+                  datierung, herstellung, physisch, organisation, tags,
+                  hauptbild{..., asset->{_id, _ref, metadata{lqip}}},
+                  "kategorie": kategorie->{_id, titel}
+                }`,
+                { id: eid }
+              );
+              if (!e) { loader.hidden = true; return; }
+              collDetailInner.innerHTML = buildExhibitHtml(e);
+              collDetailOverlay.hidden = false;
+              loader.hidden = true;
+              collDetailOverlay.scrollTo(0, 0);
+            } catch { loader.hidden = true; }
           });
-
-          // Touch gestures
-          const mc = new Hammer.Manager(modal);
-          mc.add(new Hammer.Pinch());
-          mc.add(new Hammer.Swipe({ direction: Hammer.DIRECTION_DOWN }));
-
-          let scale = 1;
-          mc.on('pinch', (ev) => {
-            scale = Math.max(0.5, Math.min(scale * ev.scale, 3));
-            modalImage.style.transform = `scale(${scale})`;
-          });
-
-          mc.on('swipedown', closeModal);
-          hammer = mc;
-        } catch (e) {
-          console.error('Error in openModal:', e);
-        }
-      }
-
-      function closeModal() {
-        try {
-          if (modal.classList.contains('modal-fullscreen')) {
-            toggleFakeFullscreen();
-            return;
-          }
-          if (!activeItem) return;
-          if (hammer) { hammer.destroy(); hammer = null; }
-
-          const image = activeItem.querySelector('img');
-          
-          const cleanup = () => {
-              console.log('Cleaning up view-transition-name');
-              modal.hidden = true;
-              document.documentElement.style.overflow = '';
-              
-              // Remove click event listener
-              if (modalClickHandler) {
-                modal.removeEventListener('click', modalClickHandler);
-                modalClickHandler = null;
-              }
-              
-              // Reset lightbulb button state
-              const lightbulbBtn = document.getElementById('lightbulb-btn');
-              if (lightbulbBtn) {
-                lightbulbBtn.classList.remove('active');
-              }
-              
-              // Reset highlight button state
-              const highlightBtn = document.getElementById('highlight-btn');
-              if (highlightBtn) {
-                highlightBtn.classList.remove('active');
-                highlightBtn.hidden = true;
-              }
-              
-              // Clear all view transition names
-              if (modalImage) {
-                modalImage.style.viewTransitionName = '';
-                modalImage.style.transform = 'scale(1)';
-              }
-              if (image) image.style.viewTransitionName = '';
-              
-              // Close magnifying glass when modal closes
-              if (magnifierActive) {
-                hideMagnifyingGlass();
-                magnifierActive = false;
-                magnifierBtn.classList.remove('active');
-              }
-              activeItem = null;
-          }
-
-          // Use simple animation instead of View Transition API to avoid conflicts
-          animate(modal, { opacity: [1, 0] }, { duration: 0.3 }).finished.then(cleanup);
-        } catch (e) {
-          console.error('Error in closeModal:', e);
-        }
-      }
-
-      const magnifyingGlass = document.getElementById('magnifying-glass');
-      const magnifierBtn = document.getElementById('magnifier-btn');
-      const MAGNIFICATION_FACTOR = 2.5; // 2.5x magnification for better detail without being too strong
-      let isDragging = false;
-      let dragOffset = { x: 0, y: 0 };
-      let magnifierActive = false;
-
-      function showMagnifyingGlass() {
-        console.log('Showing magnifying glass');
-        magnifyingGlass.hidden = false;
-        magnifyingGlass.style.display = 'block';
-        magnifyingGlass.style.opacity = '1';
-        
-        // Position magnifying glass in center initially
-        const imageRect = modalImage.getBoundingClientRect();
-        const centerX = imageRect.left + imageRect.width / 2;
-        const centerY = imageRect.top + imageRect.height / 2;
-        
-        magnifyingGlass.style.left = centerX + 'px';
-        magnifyingGlass.style.top = centerY + 'px';
-        magnifyingGlass.style.position = 'fixed';
-        
-        console.log('Positioned at:', centerX, centerY);
-        updateMagnifyingGlassContent();
-      }
-
-      function hideMagnifyingGlass() {
-        magnifyingGlass.hidden = true;
-      }
-
-      function toggleMagnifier() {
-        console.log('Toggle magnifier clicked, current state:', magnifierActive);
-        magnifierActive = !magnifierActive;
-        if (magnifierActive) {
-          console.log('Activating magnifier');
-          showMagnifyingGlass();
-          magnifierBtn.classList.add('active');
-          // Add smooth animation
-          magnifyingGlass.style.opacity = '0';
-          magnifyingGlass.style.display = 'block';
-          setTimeout(() => {
-            magnifyingGlass.style.opacity = '1';
-          }, 10);
-        } else {
-          console.log('Deactivating magnifier');
-          magnifyingGlass.style.opacity = '0';
-          setTimeout(() => {
-            hideMagnifyingGlass();
-          }, 200);
-          magnifierBtn.classList.remove('active');
-        }
-      }
-
-      function updateMagnifyingGlassContent() {
-        if (!modalImage.src || magnifyingGlass.hidden) return;
-        
-        const imageRect = modalImage.getBoundingClientRect();
-        const glassRect = magnifyingGlass.getBoundingClientRect();
-        
-        // Calculate the center point of the magnifying glass relative to the image
-        const glassCenterX = glassRect.left + glassRect.width / 2;
-        const glassCenterY = glassRect.top + glassRect.height / 2;
-        
-        // Calculate position relative to image (where the glass is pointing)
-        const offsetX = glassCenterX - imageRect.left;
-        const offsetY = glassCenterY - imageRect.top;
-        
-        // Set background image
-        magnifyingGlass.style.backgroundImage = `url('${modalImage.src}')`;
-        
-        // Calculate the background position to show the magnified area
-        // We need to offset the background so the magnified area appears in the center of the glass
-        const bgX = offsetX * MAGNIFICATION_FACTOR - (glassRect.width / 2);
-        const bgY = offsetY * MAGNIFICATION_FACTOR - (glassRect.height / 2);
-        
-        magnifyingGlass.style.backgroundSize = `${imageRect.width * MAGNIFICATION_FACTOR}px ${imageRect.height * MAGNIFICATION_FACTOR}px`;
-        magnifyingGlass.style.backgroundPosition = `${-bgX}px ${-bgY}px`;
-        
-        console.log('Magnifying at:', offsetX, offsetY, 'Background pos:', -bgX, -bgY);
-      }
-
-      // removed duplicate updateMagnifyingGlass here (kept the later definition)
-
-      function toggleFakeFullscreen() {
-        const isCurrentlyFullscreen = modal.classList.contains('modal-fullscreen');
-        
-        if (isCurrentlyFullscreen) {
-          // Exit fullscreen
-          console.log('Exiting fullscreen mode');
-          modal.classList.remove('modal-fullscreen');
-          const closeBtn = document.getElementById('fullscreen-close-btn');
-          closeBtn.hidden = true;
-          
-          // Hide magnifying glass if active
-          if (magnifierActive) {
-            hideMagnifyingGlass();
-            magnifierActive = false;
-            magnifierBtn.classList.remove('active');
-          }
-          
-          // Reset image size
-          modalImage.style.width = '';
-          modalImage.style.height = '';
-          
-        } else {
-          // Enter fullscreen
-          console.log('Entering fullscreen mode');
-          modal.classList.add('modal-fullscreen');
-          const closeBtn = document.getElementById('fullscreen-close-btn');
-          closeBtn.hidden = false;
-          closeBtn.innerHTML = '<i data-lucide="arrow-left"></i>'; // Return arrow for fullscreen
-          lucide.createIcons();
-          
-          // Button styling is handled by CSS
-          
-          // Hide magnifying glass when entering fullscreen
-          if (magnifierActive) {
-            hideMagnifyingGlass();
-            magnifierActive = false;
-            magnifierBtn.classList.remove('active');
-          }
-        }
-      }
-
-      const fullscreenCloseBtn = document.getElementById('fullscreen-close-btn');
-      fullscreenCloseBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        // Only exit fullscreen, don't close modal
-        if (modal.classList.contains('modal-fullscreen')) {
-          toggleFakeFullscreen();
-        } else {
-          closeModal();
-        }
-      });
-      
-
-      // Magnifier button event listener
-      magnifierBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleMagnifier();
-      });
-      
-      // Fullscreen button event listener (outside of openModal to ensure it always works)
-      fullscreenBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        console.log('Fullscreen button clicked - calling toggleFakeFullscreen');
-        toggleFakeFullscreen();
-      });
-
-      // Lightbulb button event listener
-      const lightbulbBtn = document.getElementById('lightbulb-btn');
-      lightbulbBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        
-        // Get current exhibit data from modal
-        const modalTitle = document.getElementById('modal-title')?.textContent || '';
-        const modalSubtitle = document.getElementById('modal-subtitle')?.textContent || '';
-        const modalImage = document.getElementById('modal-image');
-        const exhibitId = modalImage?.getAttribute('data-exhibit-id') || '';
-        
-        // Get LED position data
-        const ledPositionData = modalImage?.getAttribute('data-led-position');
-        const ledPosition = ledPositionData ? JSON.parse(ledPositionData) : null;
-        
-        const exhibitData = {
-          id: exhibitId,
-          title: modalTitle,
-          subtitle: modalSubtitle,
-          inventarnummer: modalImage?.getAttribute('data-inventarnummer') || '',
-          categoryId: modalImage?.getAttribute('data-category') || '',
-          led_position: ledPosition
-        };
-        
-        // Toggle lightbulb visual state
-        lightbulbBtn.classList.toggle('active');
-        
-        // Send MQTT command to ESP32 LED strip
-        if (mqttClient.isMQTTEnabled()) {
-          const isActive = lightbulbBtn.classList.contains('active');
-          mqttClient.publishLightbulbEvent(exhibitData, isActive ? 'clicked' : 'deactivated');
-          console.log(`LED strip ${isActive ? 'activated' : 'deactivated'} for exhibit:`, exhibitData.title);
-        } else {
-          console.log('MQTT not enabled - LED strip command not sent');
-        }
-      });
-      
-      // Highlight button event listener
-      const highlightBtn = document.getElementById('highlight-btn');
-      highlightBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        
-        // Get current exhibit data from modal
-        const modalTitle = document.getElementById('modal-title')?.textContent || '';
-        const modalImage = document.getElementById('modal-image');
-        const exhibitId = modalImage?.getAttribute('data-exhibit-id') || '';
-        
-        console.log(`Highlight button clicked for exhibit: ${modalTitle} (ID: ${exhibitId})`);
-        
-        // Toggle highlight visual state
-        highlightBtn.classList.toggle('active');
-        
-        // Here you could add functionality to:
-        // - Add to favorites
-        // - Mark as special interest
-        // - Send analytics data
-        // - etc.
-        
-        const isActive = highlightBtn.classList.contains('active');
-        console.log(`Highlight ${isActive ? 'activated' : 'deactivated'} for exhibit:`, modalTitle);
-      });
-
-      // Make magnifying glass draggable
-      magnifyingGlass.addEventListener('mousedown', (e) => {
-        if (!magnifierActive) return;
-        e.preventDefault();
-        isDragging = true;
-        const rect = magnifyingGlass.getBoundingClientRect();
-        // Fix cursor jumping by calculating offset from center
-        dragOffset.x = e.clientX - (rect.left + rect.width / 2);
-        dragOffset.y = e.clientY - (rect.top + rect.height / 2);
-        magnifyingGlass.style.cursor = 'grabbing';
-      });
-
-      document.addEventListener('mousemove', (e) => {
-        if (!isDragging || !magnifierActive) return;
-        e.preventDefault();
-        const x = e.clientX - dragOffset.x;
-        const y = e.clientY - dragOffset.y;
-        magnifyingGlass.style.left = x + 'px';
-        magnifyingGlass.style.top = y + 'px';
-        updateMagnifyingGlassContent();
-      });
-
-      document.addEventListener('mouseup', () => {
-        if (isDragging) {
-          isDragging = false;
-          magnifyingGlass.style.cursor = 'grab';
-        }
-      });
-
-      // Touch support for mobile
-      magnifyingGlass.addEventListener('touchstart', (e) => {
-        if (!magnifierActive) return;
-        e.preventDefault();
-        isDragging = true;
-        const rect = magnifyingGlass.getBoundingClientRect();
-        // Fix cursor jumping by calculating offset from center
-        dragOffset.x = e.touches[0].clientX - (rect.left + rect.width / 2);
-        dragOffset.y = e.touches[0].clientY - (rect.top + rect.height / 2);
-      });
-
-      document.addEventListener('touchmove', (e) => {
-        if (!isDragging || !magnifierActive) return;
-        e.preventDefault();
-        const x = e.touches[0].clientX - dragOffset.x;
-        const y = e.touches[0].clientY - dragOffset.y;
-        magnifyingGlass.style.left = x + 'px';
-        magnifyingGlass.style.top = y + 'px';
-        updateMagnifyingGlassContent();
-      });
-
-      document.addEventListener('touchend', () => {
-        if (isDragging) {
-          isDragging = false;
-        }
-      });
-
-      galleryItems.forEach(item => {
-        item.addEventListener('click', (e) => {
-          e.preventDefault();
-          // Toggle behavior: if same item is already open, close it; otherwise open it
-          if (activeItem === item && !modal.hidden) {
-            closeModal();
-          } else {
-            openModal(item);
-          }
         });
-      });
 
-      modalClose.addEventListener('click', closeModal);
-
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !modal.hidden) {
-          closeModal();
-        }
-      });
-
-      // Help overlay logic
-      const helpBtn = document.getElementById('help-btn');
-      const helpOverlay = document.getElementById('help-overlay');
-      const helpClose = document.getElementById('help-close');
-      const openHelp = () => { helpOverlay?.removeAttribute('hidden'); };
-      const closeHelp = () => { helpOverlay?.setAttribute('hidden',''); };
-      helpBtn?.addEventListener('click', openHelp);
-      helpClose?.addEventListener('click', closeHelp);
-      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeHelp(); });
-
-      // Language switcher logic
-      const langBtns = Array.from(document.querySelectorAll('.lang-btn')) as HTMLButtonElement[];
-      const setLang = (lng) => {
-        try { localStorage.setItem('lang', lng); } catch {}
-        document.documentElement.setAttribute('lang', lng);
-        langBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-lang') === lng));
-      };
-      const savedLang = (typeof localStorage !== 'undefined' && localStorage.getItem('lang')) || 'de';
-      setLang(savedLang);
-      langBtns.forEach(b => b.addEventListener('click', () => setLang(b.getAttribute('data-lang') || 'de')));
-
-      // Filter logic
-    const catFilters = document.querySelectorAll('.cat-filter');
-    const ledFilter = document.getElementById('f-led');
-    const allFilter = document.getElementById('f-all');
-    const cards = Array.from(document.querySelectorAll('.gallery-grid [data-category]'));
-
-    function applyFilters() {
-      const selectedCats = Array.from(catFilters).filter((i) => i.classList.contains('selected')).map((i) => i.getAttribute('data-category'));
-      const allSelected = allFilter?.classList.contains('selected') || false;
-      const ledSelected = ledFilter?.classList.contains('selected') || false;
-      
-      for (const el of cards) {
-        const cat = el.getAttribute('data-category');
-        const hasLed = el.getAttribute('data-hat-led-licht') === 'true';
-        
-        let matchCat;
-        if (allSelected) {
-          // When "All" is selected, show everything (including items without category)
-          matchCat = true;
-        } else if (selectedCats.length === 0) {
-          // When no categories are selected, show nothing
-          matchCat = false;
-        } else {
-          // When specific categories are selected, match those categories
-          matchCat = selectedCats.includes(cat || '');
-        }
-        
-        // LED filter
-        let matchLed = true;
-        if (ledSelected) {
-          matchLed = hasLed;
-        }
-        
-        el.style.display = (matchCat && matchLed) ? '' : 'none';
-      }
-    }
-    
-    function syncAllFilter() {
-      const allCatsSelected = Array.from(catFilters).every((i) => i.classList.contains('selected'));
-      const anyCatsSelected = Array.from(catFilters).some((i) => i.classList.contains('selected'));
-      
-      if (allFilter) {
-        // "All" should be selected if all categories are selected, or if no categories are selected (showing everything)
-        if (allCatsSelected || (!anyCatsSelected && !ledFilter?.classList.contains('selected'))) {
-          allFilter.classList.add('selected');
-        } else {
-          allFilter.classList.remove('selected');
-        }
+        welcomeScreen.hidden    = true;
+        detailScreen.hidden     = true;
+        collectionScreen.hidden = false;
+        collDetailOverlay.hidden = true;
+        loader.hidden            = true;
+        window.scrollTo(0, 0);
+        if (pushState) history.pushState({ type: 'collection', id }, '', `?ausstellung=${encodeURIComponent(id)}`);
+      } catch (err) {
+        loader.hidden = true;
+        console.error(err);
+        alert('Fehler beim Laden der Sammlung.');
       }
     }
 
-    // Filter click handlers
-    allFilter?.addEventListener('click', () => {
-      const isSelected = allFilter.classList.contains('selected');
-      if (isSelected) {
-        // Deselect all
-        allFilter.classList.remove('selected');
-        catFilters.forEach((c) => c.classList.remove('selected'));
-        ledFilter?.classList.remove('selected');
-      } else {
-        // Select all
-        allFilter.classList.add('selected');
-        catFilters.forEach((c) => c.classList.add('selected'));
-        ledFilter?.classList.remove('selected');
-      }
-      applyFiltersWithSearch();
+    // ── Navigation ──
+    backBtn.addEventListener('click', () => {
+      detailScreen.hidden  = true;
+      welcomeScreen.hidden = false;
+      history.pushState({}, '', '/');
+    });
+    collBackBtn.addEventListener('click', () => {
+      collectionScreen.hidden = true;
+      welcomeScreen.hidden    = false;
+      history.pushState({}, '', '/');
+    });
+    collDetailBack.addEventListener('click', () => {
+      collDetailOverlay.hidden = true;
     });
 
-    catFilters.forEach((c) => c.addEventListener('click', () => {
-      c.classList.toggle('selected');
-      syncAllFilter();
-      applyFiltersWithSearch();
-    }));
-
-    ledFilter?.addEventListener('click', () => {
-      ledFilter.classList.toggle('selected');
-      if (ledFilter.classList.contains('selected')) {
-        allFilter?.classList.remove('selected');
-      }
-      syncAllFilter();
-      applyFiltersWithSearch();
-    });
-
-    // Initialize with "All" selected
-    allFilter?.classList.add('selected');
-    
-    // Set category colors for underlines
-    catFilters.forEach(filter => {
-      const color = filter.getAttribute('data-color');
-      if (color) {
-        filter.style.setProperty('--category-color', color);
-      }
-    });
-    
-    // Initialize highlight badges
-    cards.forEach(el => {
-      const isHighlight = el.getAttribute('data-ist-highlight') === 'true';
-      console.log('Checking highlight for:', el.getAttribute('data-title'), 'isHighlight:', isHighlight);
-      if (isHighlight) {
-        el.classList.add('highlight');
-        console.log('Added highlight class to:', el.getAttribute('data-title'));
+    window.addEventListener('popstate', () => {
+      const p = new URLSearchParams(location.search);
+      const id    = p.get('id');
+      const coll  = p.get('ausstellung');
+      if (id)   showExhibit(id, false);
+      else if (coll) showCollection(coll, false);
+      else {
+        detailScreen.hidden     = true;
+        collectionScreen.hidden = true;
+        welcomeScreen.hidden    = false;
       }
     });
 
-    // Search functionality
-    const searchInput = document.getElementById('search');
-    
-    function performSearch() {
-      const searchTerm = searchInput?.value.toLowerCase().trim() || '';
-      
-      for (const el of cards) {
-        // Get all data attributes and their values
-        const title = el.getAttribute('data-title')?.toLowerCase() || '';
-        const subtitle = el.getAttribute('data-subtitle')?.toLowerCase() || '';
-        const inventarnummer = el.getAttribute('data-inventarnummer')?.toLowerCase() || '';
-        const kurzbeschreibung = el.getAttribute('data-kurzbeschreibung')?.toLowerCase() || '';
-        const beschreibung = el.getAttribute('data-beschreibung')?.toLowerCase() || '';
-        const datierung = el.getAttribute('data-datierung')?.toLowerCase() || '';
-        const herstellung = el.getAttribute('data-herstellung')?.toLowerCase() || '';
-        const physisch = el.getAttribute('data-physisch')?.toLowerCase() || '';
-        const organisation = el.getAttribute('data-organisation')?.toLowerCase() || '';
-        const tags = el.getAttribute('data-tags')?.toLowerCase() || '';
-        
-        const matchesSearch = !searchTerm || 
-          title.includes(searchTerm) || 
-          subtitle.includes(searchTerm) || 
-          inventarnummer.includes(searchTerm) ||
-          kurzbeschreibung.includes(searchTerm) ||
-          beschreibung.includes(searchTerm) ||
-          datierung.includes(searchTerm) ||
-          herstellung.includes(searchTerm) ||
-          physisch.includes(searchTerm) ||
-          organisation.includes(searchTerm) ||
-          tags.includes(searchTerm);
-        
-        // Get current filter state
-        const selectedCats = Array.from(catFilters).filter((i) => i.classList.contains('selected')).map((i) => i.getAttribute('data-category'));
-        const allSelected = allFilter?.classList.contains('selected') || false;
-        const ledSelected = ledFilter?.classList.contains('selected') || false;
-        const cat = el.getAttribute('data-category');
-        const hasLed = el.getAttribute('data-hat-led-licht') === 'true';
-        
-        let matchCat;
-        if (allSelected) {
-          matchCat = true;
-        } else if (selectedCats.length === 0) {
-          matchCat = false;
-        } else {
-          matchCat = selectedCats.includes(cat || '');
-        }
-        
-        // LED filter
-        let matchLed = true;
-        if (ledSelected) {
-          matchLed = hasLed;
-        }
-        
-        // Show item only if it matches search, category, and LED filters
-        el.style.display = (matchesSearch && matchCat && matchLed) ? '' : 'none';
-        
-        // Add highlight class for items marked as highlights
-        const isHighlight = el.getAttribute('data-ist-highlight') === 'true';
-        if (isHighlight) {
-          el.classList.add('highlight');
-        } else {
-          el.classList.remove('highlight');
-        }
-      }
-    }
-    
-    // Add search event listener
-    searchInput?.addEventListener('input', performSearch);
-    
-    // Update filter logic to also consider search
-    function applyFiltersWithSearch() {
-      const selectedCats = Array.from(catFilters).filter((i) => i.classList.contains('selected')).map((i) => i.getAttribute('data-category'));
-      const allSelected = allFilter?.classList.contains('selected') || false;
-      const ledSelected = ledFilter?.classList.contains('selected') || false;
-      const searchTerm = searchInput?.value.toLowerCase().trim() || '';
-      
-      for (const el of cards) {
-        const cat = el.getAttribute('data-category');
-        const hasLed = el.getAttribute('data-hat-led-licht') === 'true';
-        let matchCat;
-        
-        if (allSelected) {
-          matchCat = true;
-        } else if (selectedCats.length === 0) {
-          matchCat = false;
-        } else {
-          matchCat = selectedCats.includes(cat || '');
-        }
-        
-        // LED filter
-        let matchLed = true;
-        if (ledSelected) {
-          matchLed = hasLed;
-        }
-        
-        // Check search match - search through ALL metadata
-        const title = el.getAttribute('data-title')?.toLowerCase() || '';
-        const subtitle = el.getAttribute('data-subtitle')?.toLowerCase() || '';
-        const inventarnummer = el.getAttribute('data-inventarnummer')?.toLowerCase() || '';
-        const kurzbeschreibung = el.getAttribute('data-kurzbeschreibung')?.toLowerCase() || '';
-        const beschreibung = el.getAttribute('data-beschreibung')?.toLowerCase() || '';
-        const datierung = el.getAttribute('data-datierung')?.toLowerCase() || '';
-        const herstellung = el.getAttribute('data-herstellung')?.toLowerCase() || '';
-        const physisch = el.getAttribute('data-physisch')?.toLowerCase() || '';
-        const organisation = el.getAttribute('data-organisation')?.toLowerCase() || '';
-        const tags = el.getAttribute('data-tags')?.toLowerCase() || '';
-        
-        const matchesSearch = !searchTerm || 
-          title.includes(searchTerm) || 
-          subtitle.includes(searchTerm) || 
-          inventarnummer.includes(searchTerm) ||
-          kurzbeschreibung.includes(searchTerm) ||
-          beschreibung.includes(searchTerm) ||
-          datierung.includes(searchTerm) ||
-          herstellung.includes(searchTerm) ||
-          physisch.includes(searchTerm) ||
-          organisation.includes(searchTerm) ||
-          tags.includes(searchTerm);
-        
-        el.style.display = (matchCat && matchLed && matchesSearch) ? '' : 'none';
-        
-        // Add highlight class for items marked as highlights
-        const isHighlight = el.getAttribute('data-ist-highlight') === 'true';
-        if (isHighlight) {
-          el.classList.add('highlight');
-        } else {
-          el.classList.remove('highlight');
-        }
-      }
-    }
-  
-    // Inactivity timer and auto-return functionality
-    let inactivityTimer;
-    let inactivityOverlayTimer;
-    const INACTIVITY_DELAY = 5000; // 5 seconds to show overlay (for testing)
-    const AUTO_RETURN_DELAY = 60000; // 60 seconds total to auto-return (for testing)
-    
-    const inactivityOverlay = document.getElementById('inactivity-overlay');
-    
-    function resetInactivityTimer() {
-      // Clear existing timers
-      clearTimeout(inactivityTimer);
-      clearTimeout(inactivityOverlayTimer);
-      
-      // Hide overlay if visible
-      if (inactivityOverlay) {
-        inactivityOverlay.hidden = true;
-      }
-      
-      // Set timer to show overlay after 30 seconds of inactivity
-      inactivityTimer = setTimeout(() => {
-        if (inactivityOverlay) {
-          inactivityOverlay.hidden = false;
-        }
-        
-        // Set timer to auto-return after additional 90 seconds (total 2 minutes)
-        inactivityOverlayTimer = setTimeout(() => {
-          autoReturnToDefault();
-        }, AUTO_RETURN_DELAY - INACTIVITY_DELAY);
-        
-      }, INACTIVITY_DELAY);
-    }
-    
-    function autoReturnToDefault() {
-      // Close any open modals
-      if (modal && !modal.hidden) {
-        closeModal();
-      }
-      
-      // Clear search
-      if (searchInput) {
-        searchInput.value = '';
-      }
-      
-      // Reset filters to "All"
-      if (allCheck) {
-        allCheck.checked = true;
-        catChecks.forEach((c) => { c.checked = true; });
-        if (ledCheck) {
-          ledCheck.checked = false;
-        }
-        applyFiltersWithSearch();
-      }
-      
-      // Keep inactivity overlay visible (don't hide it)
-      // The overlay should stay visible until user interacts
-      
-      // Reset timer to show overlay again after the delay
-      resetInactivityTimer();
-    }
-    
-    // Add event listeners for user activity
-    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
-    activityEvents.forEach(event => {
-      document.addEventListener(event, resetInactivityTimer, true);
-    });
-    
-    // Start the inactivity timer
-    resetInactivityTimer();
-  
-      // Theme switcher
-      const themeBtn = document.getElementById('theme-btn');
-      const setDarkTheme = () => {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        localStorage.setItem('theme', 'dark');
-        themeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
-        console.log('Setting theme to dark');
-      };
-      const setLightTheme = () => {
-        document.documentElement.setAttribute('data-theme', 'light');
-        localStorage.setItem('theme', 'light');
-        themeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>';
-        console.log('Setting theme to light');
-      };
-      const savedTheme = localStorage.getItem('theme');
-      if (savedTheme === 'dark') {
-        setDarkTheme();
-      } else {
-        setLightTheme();
-      }
-      themeBtn.addEventListener('click', () => {
-        const currentTheme = localStorage.getItem('theme');
-        if (currentTheme === 'dark') {
-          setLightTheme();
-        } else {
-          setDarkTheme();
-        }
-      });
+    // ── QR Scanner ──
+    let qrScanner: any = null;
 
-      // Magnifying glass logic (reuses magnifyingGlass and MAGNIFICATION_FACTOR declared above)
+    async function handleQrResult(text: string) {
+      if (!text) return;
+      stopScanner();
+      try {
+        const u = new URL(text);
+        const id   = u.searchParams.get('id');
+        const coll = u.searchParams.get('ausstellung');
+        if (id)   { await showExhibit(id); return; }
+        if (coll) { await showCollection(coll); return; }
+        // /exponat/{id} URL pattern
+        const m = u.pathname.match(/\/exponat\/([^/]+)/);
+        if (m)   { await showExhibit(m[1]); return; }
+        // Otherwise navigate to full URL (e.g. external link in QR)
+        window.location.href = u.href;
+      } catch {
+        // Raw ID (not a URL)
+        await showExhibit(text);
+      }
+    }
 
-      // Magnifying glass event listeners are handled in toggleFakeFullscreen()
-      
-      // All items are loaded at once - no lazy loading needed
+    async function startScanner() {
+      scannerWrap.hidden = false;
+      try {
+        const { default: QrScanner } = await import('qr-scanner');
+        if (!qrScanner) {
+          qrScanner = new QrScanner(
+            scannerVideo,
+            (result: any) => handleQrResult(result?.data || String(result || '')),
+            { preferredCamera: 'environment', highlightScanRegion: true }
+          );
+        }
+        await qrScanner.start();
+      } catch (err) {
+        console.warn('QrScanner nicht verfügbar:', err);
+        scannerWrap.hidden = true;
+        alert('Kamera-Zugriff nicht möglich.');
+      }
+    }
+
+    function stopScanner() {
+      try { qrScanner?.stop(); } catch {}
+      scannerWrap.hidden = true;
+    }
+
+    scanBtn.addEventListener('click', startScanner);
+    scanCancel.addEventListener('click', stopScanner);
+
+    // ── Init from URL params ──
+    const initParams = new URLSearchParams(location.search);
+    const initId   = initParams.get('id');
+    const initColl = initParams.get('ausstellung');
+    if (initId)   showExhibit(initId, false);
+    else if (initColl) showCollection(initColl, false);
   </script>
 </Layout>
