@@ -9,18 +9,28 @@
 set -euo pipefail
 
 KIOSK_CONFIG="/etc/museum-kiosk/kiosk-id.json"
+TOKEN_FILE="/etc/museum-kiosk/sanity-token"
 CONTENT_FILE="/var/www/museum/kiosk-content.json"
 CONTENT_TMP="/var/www/museum/kiosk-content.tmp.json"
 SANITY_API="https://832k5je1.api.sanity.io/v2024-01-01/data/query/production"
+SANITY_MUTATE="https://832k5je1.api.sanity.io/v2024-01-01/data/mutate/production"
 LOG_PREFIX="[sync-content]"
 
 log()   { echo "$LOG_PREFIX $*"; }
 error() { echo "$LOG_PREFIX ERROR: $*" >&2; }
 
-# ── Read kiosk ID ────────────────────────────────────────────────────────────
+# ── Read kiosk ID (or derive it from the hardware serial — golden image) ────
 if [ ! -f "$KIOSK_CONFIG" ]; then
-    error "Kiosk config not found at $KIOSK_CONFIG — run setup.sh first."
-    exit 1
+    SERIAL=$(awk '/^Serial/ {print $3}' /proc/cpuinfo 2>/dev/null || true)
+    if [ -n "$SERIAL" ]; then
+        SHORT=$(echo "${SERIAL: -4}" | tr '[:lower:]' '[:upper:]')
+        mkdir -p "$(dirname "$KIOSK_CONFIG")"
+        printf '{"kioskId": "PI-%s"}\n' "$SHORT" > "$KIOSK_CONFIG"
+        log "No kiosk config — derived ID from hardware serial: PI-$SHORT"
+    else
+        error "Kiosk config not found at $KIOSK_CONFIG and no hardware serial available."
+        exit 1
+    fi
 fi
 
 KIOSK_ID=$(python3 -c "
@@ -41,6 +51,7 @@ log "Fetching content for kiosk: $KIOSK_ID"
 GROQ='*[_type=="kioskDevice" && kioskId==$kioskId][0]{
   _id,
   "kioskId": kioskId,
+  "befehl": befehl,
   "modus": ausstellung->kioskTemplate.template,
   "idle_timeout": 300000,
 
@@ -100,8 +111,34 @@ if result is None:
     sys.exit(1)
 print(json.dumps(result))
 " 2>/dev/null) || {
-    error "Sanity returned empty result for kiosk '$KIOSK_ID'"
-    exit 0   # keep old file
+    # ── Self-registration: no kioskDevice for this ID → create it in Sanity ──
+    log "No kioskDevice found for '$KIOSK_ID' — registering device..."
+    if [ -f "$TOKEN_FILE" ]; then
+        TOKEN=$(tr -d '[:space:]' < "$TOKEN_FILE")
+        DOC_ID="kioskDevice-$(echo -n "$KIOSK_ID" | tr -c 'A-Za-z0-9_-' '-')"
+        REG_MUTATION=$(python3 - <<PYEOF
+import json
+doc = {
+    "_id": "$DOC_ID",
+    "_type": "kioskDevice",
+    "kioskId": "$KIOSK_ID",
+    "hostname": "$(hostname)",
+    "neu": True,
+    "notes": "Automatisch registriert am $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+print(json.dumps({"mutations": [{"createIfNotExists": doc}]}))
+PYEOF
+)
+        curl -sf --max-time 15 -X POST "$SANITY_MUTATE" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$REG_MUTATION" > /dev/null \
+            && log "Registered — assign content in Sanity Studio (🆕 $KIOSK_ID)." \
+            || error "Device registration failed."
+    else
+        error "No write token at $TOKEN_FILE — cannot self-register."
+    fi
+    exit 0   # keep old file; content arrives once the device is assigned
 }
 
 # ── Add timestamp and write atomically ──────────────────────────────────────
@@ -112,6 +149,51 @@ echo "$RESULT" | jq --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '. + {lastSync: $t
 
 mv "$CONTENT_TMP" "$CONTENT_FILE"
 chown www-data:www-data "$CONTENT_FILE" 2>/dev/null || true
+
+# ── Remote command from Sanity (befehl field) ───────────────────────────────
+BEFEHL=$(echo "$RESULT" | python3 -c "import json,sys; print(json.loads(sys.stdin.read()).get('befehl') or '')" 2>/dev/null || echo "")
+if [ -n "$BEFEHL" ] && [ -f "$TOKEN_FILE" ]; then
+    TOKEN=$(tr -d '[:space:]' < "$TOKEN_FILE")
+    RESET_MUTATION=$(python3 - <<PYEOF
+import json
+print(json.dumps({"mutations": [{"patch": {
+    "query": "*[_type == 'kioskDevice' && kioskId == \$kioskId]",
+    "params": {"kioskId": "$KIOSK_ID"},
+    "unset": ["befehl"]
+}}]}))
+PYEOF
+)
+    # Reset the field FIRST — otherwise a reboot command would loop forever
+    if curl -sf --max-time 15 -X POST "$SANITY_MUTATE" \
+        -H "Authorization: Bearer $TOKEN" \
+        -H "Content-Type: application/json" \
+        -d "$RESET_MUTATION" > /dev/null; then
+
+        KIOSK_USER="museumgh"
+        KIOSK_UID=$(id -u "$KIOSK_USER" 2>/dev/null || echo "1000")
+        case "$BEFEHL" in
+            neustarten)
+                log "Befehl: Neustart in 5 Sekunden..."
+                (sleep 5 && /sbin/reboot) &
+                ;;
+            chromium-neustarten)
+                log "Befehl: Chromium-Neustart..."
+                XDG_RUNTIME_DIR="/run/user/$KIOSK_UID" sudo -u "$KIOSK_USER" \
+                    systemctl --user restart chromium-kiosk.service || true
+                ;;
+            update-erzwingen)
+                log "Befehl: Software-Update erzwingen..."
+                rm -f /etc/museum-kiosk/current-version
+                /usr/local/bin/sync-build.sh || true
+                ;;
+            *)
+                error "Unbekannter Befehl: $BEFEHL"
+                ;;
+        esac
+    else
+        error "Befehl-Reset fehlgeschlagen — Befehl '$BEFEHL' wird NICHT ausgeführt (Schleifengefahr)."
+    fi
+fi
 
 # ── Update nginx website-proxy if URL changed ────────────────────────────────
 WEBSITE_URL=$(echo "$RESULT" | python3 -c "
