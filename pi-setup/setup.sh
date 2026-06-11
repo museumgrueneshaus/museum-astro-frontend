@@ -257,6 +257,12 @@ cp "$SCRIPT_DIR/wayvnc.service"         "$USER_SYSTEMD_DIR/wayvnc.service"
 chown "$KIOSK_USER:$KIOSK_USER" "/home/$KIOSK_USER/.config"
 chown -R "$KIOSK_USER:$KIOSK_USER" "/home/$KIOSK_USER/.config/systemd"
 
+log "Installing Chromium policy (Translate aus)..."
+# --disable-features=Translate wird von neueren Chromium-Versionen ignoriert,
+# nur die Enterprise-Policy wirkt zuverlässig (gefunden bei PI-3BEB 2026-06-11)
+mkdir -p /etc/chromium/policies/managed
+echo '{"TranslateEnabled": false}' > /etc/chromium/policies/managed/museum-kiosk.json
+
 log "Configuring labwc autostart..."
 mkdir -p "$LABWC_DIR"
 cp "$SCRIPT_DIR/labwc-autostart" "$LABWC_DIR/autostart"

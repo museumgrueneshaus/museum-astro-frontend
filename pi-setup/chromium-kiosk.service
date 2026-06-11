@@ -38,7 +38,7 @@ ExecStart=/bin/bash -c '\
         --no-first-run \
         --disable-translate \
         --disable-pinch \
-        --disable-features=TranslateUI \
+        --disable-features=Translate,TranslateUI \
         --disable-component-update \
         --check-for-update-interval=31536000 \
         --autoplay-policy=no-user-gesture-required \
