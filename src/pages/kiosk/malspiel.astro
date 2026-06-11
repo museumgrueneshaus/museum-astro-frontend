@@ -256,6 +256,10 @@
     /* ─── Print ───────────────────────────────────────────────────── */
     #pimg { display: none; }
 
+    /* Seitenformat wird beim Drucken dynamisch passend zum Bild gesetzt
+       (siehe Print-Handler) — Fallback: A4 quer, schmale Ränder */
+    @page { size: A4 landscape; margin: 8mm; }
+
     @media print {
       #top-bar, #panel, #ov { display: none !important; }
       #main { display: block; width: 100vw; height: 100vh; }
@@ -360,7 +364,7 @@
   function init(spiel) {
     titleEl.textContent = spiel.titel || 'Malspiel';
     buildColors(spiel.farben || []);
-    buildTools(spiel.stifte  || [], spiel.radierer_groesse || 40);
+    buildTools(spiel.stifte  || []);
 
     const url = spiel.ausmalbild?.asset?.url;
 
@@ -455,7 +459,7 @@
   }
 
   /* ── Tools ──────────────────────────────────────────────────────── */
-  function buildTools(stifte, eraserSz) {
+  function buildTools(stifte) {
     const DEF = [
       {bezeichnung:'Fein',  groesse:4,  standard:false},
       {bezeichnung:'S',     groesse:10, standard:false},
@@ -477,8 +481,8 @@
         </div>
         <span class="tbtn-lbl">${s.bezeichnung}</span>`;
       btn.addEventListener('click', () => {
-        size   = s.groesse;
-        eraser = false;
+        // Nur die Dicke ändern — gilt für Farbe UND Radierer gleichermaßen
+        size = s.groesse;
         tList.querySelectorAll('.tbtn').forEach(b => b.classList.remove('on'));
         btn.classList.add('on');
         lastPenBtn = btn;
@@ -579,7 +583,28 @@
       oc.drawImage(tmpl, 0, 0, off.width, off.height);
     }
     document.getElementById('pimg').src = off.toDataURL('image/png');
+
+    // Seitenformat passend zum Bild (quer/hoch)
+    let pageStyle = document.getElementById('page-style');
+    if (!pageStyle) {
+      pageStyle = document.createElement('style');
+      pageStyle.id = 'page-style';
+      document.head.appendChild(pageStyle);
+    }
+    pageStyle.textContent = `@page { size: A4 ${off.width >= off.height ? 'landscape' : 'portrait'}; margin: 8mm; }`;
+
     window.print();
+
+    // Bild zusätzlich archivieren (lokaler Upload-Dienst auf dem Pi → Sanity).
+    // Fire-and-forget: existiert der Endpunkt nicht (z.B. Netlify), passiert nichts.
+    off.toBlob((blob) => {
+      if (!blob) return;
+      fetch('/malspiel-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'image/png' },
+        body: blob,
+      }).catch(() => {});
+    }, 'image/png');
 
     // Lock button for 60 seconds
     printLocked = true;

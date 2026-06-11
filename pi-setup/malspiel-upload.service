@@ -1,0 +1,17 @@
+# System-Unit — lädt gemalte Malspiel-Bilder nach Sanity hoch.
+# Installiert von setup.sh nach /etc/systemd/system/malspiel-upload.service
+# Logs: journalctl -u malspiel-upload -f
+
+[Unit]
+Description=Malspiel-Archiv Upload (Kiosk -> Sanity)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/local/bin/malspiel-upload.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

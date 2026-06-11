@@ -302,8 +302,15 @@ fi
 log "Installing museum-sync service..."
 cp "$SCRIPT_DIR/museum-sync.service" /etc/systemd/system/museum-sync.service
 
+# ── Malspiel-Archiv: gemalte Bilder → Sanity ─────────────────────────────────
+log "Installing malspiel-upload service..."
+cp "$SCRIPT_DIR/malspiel-upload.py"      /usr/local/bin/malspiel-upload.py
+cp "$SCRIPT_DIR/malspiel-upload.service" /etc/systemd/system/malspiel-upload.service
+chmod +x /usr/local/bin/malspiel-upload.py
+
 systemctl daemon-reload
-systemctl enable nginx.service museum-sync.service
+systemctl enable nginx.service museum-sync.service malspiel-upload.service
+systemctl restart malspiel-upload.service
 
 # ── Cron jobs ─────────────────────────────────────────────────────────────────
 
