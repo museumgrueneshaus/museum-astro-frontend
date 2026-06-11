@@ -60,11 +60,13 @@ log "Kiosk ID: $KIOSK_ID"
 add_wifi() {
     local SSID="$1" PASS="$2" PRIO="$3"
     if command -v nmcli &>/dev/null; then
-        nmcli dev wifi connect "$SSID" password "$PASS" 2>/dev/null || \
-            nmcli con add type wifi ifname wlan0 ssid "$SSID" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PASS" 2>/dev/null || \
+        # Profil direkt anlegen (con-name = SSID), KEIN Verbindungsversuch —
+        # das Netz muss nicht in Reichweite sein (z.B. Büro-WLAN im Museum).
+        # NetworkManager verbindet später automatisch nach Priorität.
+        nmcli con add type wifi ifname wlan0 con-name "$SSID" ssid "$SSID" \
+            wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PASS" \
+            connection.autoconnect yes connection.autoconnect-priority "$PRIO" >/dev/null 2>&1 || \
             { error "WLAN '$SSID' konnte nicht hinzugefügt werden."; return 1; }
-        nmcli con modify "$SSID" connection.autoconnect yes
-        nmcli con modify "$SSID" connection.autoconnect-priority "$PRIO"
         log "WLAN '$SSID' gespeichert (Priorität $PRIO)."
     elif [ -f /etc/wpa_supplicant/wpa_supplicant.conf ]; then
         wpa_passphrase "$SSID" "$PASS" >> /etc/wpa_supplicant/wpa_supplicant.conf
@@ -86,7 +88,7 @@ if [ -f "$WLANS_CONF" ]; then
                 && log "WLAN '$SSID' aktualisiert (Priorität $PRIO)." \
                 || error "WLAN '$SSID' konnte nicht aktualisiert werden."
         else
-            add_wifi "$SSID" "$PASS" "$PRIO"
+            add_wifi "$SSID" "$PASS" "$PRIO" || true
         fi
     done < "$WLANS_CONF"
     chmod 600 "$WLANS_CONF"
