@@ -232,6 +232,17 @@
       cursor: crosshair;
     }
 
+    /* Active stroke layer — positioned over paint canvas */
+    #cvs-active {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: crosshair;
+      pointer-events: none;
+    }
+
     /* Template always on top, never interactive */
     #tmpl {
       position: absolute;
@@ -313,6 +324,7 @@
     <div id="canvas-area">
       <div id="canvas-wrap">
         <canvas id="cvs"></canvas>
+        <canvas id="cvs-active"></canvas>
         <img id="tmpl" alt="" crossorigin="anonymous" />
       </div>
       <img id="pimg" alt="" />
@@ -340,16 +352,16 @@
   const tmpl     = document.getElementById('tmpl');
   const ctx      = cvs.getContext('2d');
 
+  const cvsA   = document.getElementById('cvs-active');
+  const ctxA   = cvsA.getContext('2d');
+
   let color    = '#e53935';
   let size     = 14;
   let eraser   = false;
   let drawing  = false;
   let lastPenBtn = null;
-
-  // Snapshot-based drawing: save canvas state on pointerdown,
-  // restore + redraw full path on every move → live preview = final result
-  let snapshot  = null;
   let strokePts = [];
+  let rafId     = 0;
 
 
   /* ── Fetch ──────────────────────────────────────────────────────── */
@@ -403,6 +415,7 @@
     const h  = Math.round(ih * s);
 
     cvs.width = w; cvs.height = h;
+    cvsA.width = w; cvsA.height = h;
     cvs.style.width  = w + 'px';
     cvs.style.height = h + 'px';
     wrap.style.width  = w + 'px';
@@ -410,7 +423,6 @@
 
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, w, h);
-
   }
 
   /* ── Colors ─────────────────────────────────────────────────────── */
@@ -510,66 +522,100 @@
 
   }
 
-  /* ── Draw ───────────────────────────────────────────────────────── */
+  /* ── Draw (Two-Canvas + rAF + CoalescedEvents) ──────────────── */
+
+  // Active canvas sits on top with CSS opacity for uniform alpha.
+  // On pointerup the stroke composites onto the base canvas.
+  // No putImageData anywhere → minimal per-frame cost.
+
   function pt(e) {
     const r  = cvs.getBoundingClientRect();
     const sx = cvs.width  / r.width;
     const sy = cvs.height / r.height;
-    const p  = e.touches ? e.touches[0] : e;
-    return { x: (p.clientX - r.left) * sx, y: (p.clientY - r.top) * sy };
+    return { x: (e.clientX - r.left) * sx, y: (e.clientY - r.top) * sy };
+  }
+
+  function collectPts(e) {
+    // getCoalescedEvents captures intermediate touch samples the
+    // browser would otherwise discard → smoother lines on touch
+    const evts = (e.getCoalescedEvents && e.getCoalescedEvents().length)
+      ? e.getCoalescedEvents() : [e];
+    for (const ce of evts) strokePts.push(pt(ce));
   }
 
   function dn(e) {
     e.preventDefault();
-    if (e.pointerId != null) cvs.setPointerCapture(e.pointerId);
+    if (e.pointerId != null) cvsA.setPointerCapture(e.pointerId);
     drawing   = true;
-    snapshot  = ctx.getImageData(0, 0, cvs.width, cvs.height);
-    strokePts = [];
-    const {x,y} = pt(e);
-    strokePts.push({x,y});
-    renderStroke();
+    strokePts = [pt(e)];
+
+    // Set overlay opacity for live preview (eraser = opaque white)
+    cvsA.style.opacity = eraser ? '1' : '0.65';
+    ctxA.clearRect(0, 0, cvsA.width, cvsA.height);
+
+    // Pre-configure active context (stays set for the whole stroke)
+    ctxA.strokeStyle = eraser ? '#ffffff' : color;
+    ctxA.lineWidth   = size;
+    ctxA.lineCap     = 'round';
+    ctxA.lineJoin    = 'round';
+
+    scheduleRender();
   }
 
   function mv(e) {
     if (!drawing) return;
     e.preventDefault();
-    const {x,y} = pt(e);
-    strokePts.push({x,y});
-    renderStroke();
+    collectPts(e);
+    scheduleRender();
   }
 
   function up() {
     if (!drawing) return;
-    drawing  = false;
-    snapshot = null;
+    drawing = false;
+    cancelAnimationFrame(rafId); rafId = 0;
+
+    // Commit stroke: composite active canvas onto base
+    if (strokePts.length > 0) {
+      renderActive();                             // ensure last points drawn
+      ctx.globalAlpha = eraser ? 1 : 0.65;
+      ctx.drawImage(cvsA, 0, 0);
+      ctx.globalAlpha = 1;
+    }
+    ctxA.clearRect(0, 0, cvsA.width, cvsA.height);
     strokePts = [];
   }
 
-  // Restore snapshot, draw entire current path at target alpha →
-  // live preview is identical to the committed result
-  function renderStroke() {
-    if (!snapshot || strokePts.length === 0) return;
-    ctx.putImageData(snapshot, 0, 0);
-
-    ctx.globalAlpha = eraser ? 1.0 : 0.65;
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.beginPath();
-    ctx.moveTo(strokePts[0].x, strokePts[0].y);
-    for (let i = 1; i < strokePts.length; i++) {
-      ctx.lineTo(strokePts[i].x, strokePts[i].y);
-    }
-    ctx.strokeStyle = eraser ? '#ffffff' : color;
-    ctx.lineWidth   = size;
-    ctx.lineCap     = 'round';
-    ctx.lineJoin    = 'round';
-    ctx.stroke();
-    ctx.globalAlpha = 1;
+  function scheduleRender() {
+    if (!rafId) rafId = requestAnimationFrame(renderFrame);
   }
 
-  cvs.addEventListener('pointerdown',   dn, { passive: false });
-  cvs.addEventListener('pointermove',   mv, { passive: false });
-  cvs.addEventListener('pointerup',     up);
-  cvs.addEventListener('pointercancel', up);
+  function renderFrame() {
+    rafId = 0;
+    renderActive();
+    if (drawing) rafId = requestAnimationFrame(renderFrame);
+  }
+
+  // Redraw entire current stroke on the (lightweight, cleared) active canvas
+  function renderActive() {
+    if (strokePts.length === 0) return;
+    ctxA.clearRect(0, 0, cvsA.width, cvsA.height);
+    ctxA.beginPath();
+    ctxA.moveTo(strokePts[0].x, strokePts[0].y);
+    for (let i = 1; i < strokePts.length; i++) {
+      ctxA.lineTo(strokePts[i].x, strokePts[i].y);
+    }
+    // Single dot
+    if (strokePts.length === 1) {
+      ctxA.lineTo(strokePts[0].x + 0.1, strokePts[0].y);
+    }
+    ctxA.stroke();
+  }
+
+  cvsA.style.pointerEvents = 'auto';
+  cvsA.addEventListener('pointerdown',   dn, { passive: false });
+  cvsA.addEventListener('pointermove',   mv, { passive: false });
+  cvsA.addEventListener('pointerup',     up);
+  cvsA.addEventListener('pointercancel', up);
 
   /* ── Reset ──────────────────────────────────────────────────────── */
   btnReset.addEventListener('click', () => {
