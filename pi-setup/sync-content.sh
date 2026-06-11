@@ -82,11 +82,18 @@ GROQ='*[_type=="kioskDevice" && kioskId==$kioskId][0]{
     }
   },
 
-  "exponate": ausstellung->exponate[]->{
-    _id, titel, untertitel, inventarnummer, ist_highlight,
-    "hauptbild": hauptbild{ "asset": asset->{ _id, url, "metadata": metadata{ lqip, dimensions } } },
-    "kategorie": kategorie->{ _id, titel }
-  },
+  "exponate": coalesce(
+    ausstellung->exponate[]->{
+      _id, titel, untertitel, inventarnummer, ist_highlight,
+      "hauptbild": hauptbild{ "asset": asset->{ _id, url, "metadata": metadata{ lqip, dimensions } } },
+      "kategorie": kategorie->{ _id, titel }
+    },
+    ausstellung->galerie[]{
+      "_id": _key,
+      "titel": alt,
+      "hauptbild": { "asset": asset->{ _id, url, "metadata": metadata{ lqip, dimensions } } }
+    }
+  ),
   "kategorien": ausstellung->kategorien[]->{ _id, titel },
   "slideshowSettings": ausstellung->kioskTemplate.slideshowSettings,
   "explorerSettings":  ausstellung->kioskTemplate.explorerSettings,

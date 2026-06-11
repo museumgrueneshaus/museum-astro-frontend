@@ -145,7 +145,8 @@
     }
     function imageUrl(ref, width = 800) {
       if (!ref) return '';
-      const r = ref.asset?._ref;
+      // _ref (Referenz) oder _id (bereits dereferenziertes Asset aus kiosk-content.json)
+      const r = ref.asset?._ref || ref.asset?._id;
       if (!r) return '';
       const parts = r.split('-');
       const fmt = parts[parts.length - 1];
@@ -197,10 +198,16 @@
         if (!kioskId) { showErr('Kein Kiosk-ID gefunden. Bitte ?id= Parameter angeben.'); return; }
 
         const QUERY = `*[_type=="kioskDevice" && (kioskId==$id || hostname==$id || _id==$id)][0]{
-          "exponate": ausstellung->exponate[]->{
-            _id, titel, untertitel, inventarnummer,
-            hauptbild{..., asset->{_id, _ref, metadata{lqip, dimensions}}}
-          },
+          "exponate": coalesce(
+            ausstellung->exponate[]->{
+              _id, titel, untertitel, inventarnummer,
+              hauptbild{..., asset->{_id, _ref, metadata{lqip, dimensions}}}
+            },
+            ausstellung->galerie[]{
+              "_id": _key, "titel": alt,
+              "hauptbild": { "asset": asset->{_id, metadata{lqip, dimensions}} }
+            }
+          ),
           "slideshowSettings": ausstellung->kioskTemplate.slideshowSettings,
           "idle_timeout": 300000
         }`;

@@ -8,5 +8,9 @@
 #   - Wayland socket polling (no race conditions)
 #   - Clean logs via: journalctl --user -u chromium-kiosk -f
 
+# WAYLAND_DISPLAY ist nicht immer wayland-0 (z.B. zweiter eingeloggter User) —
+# deshalb explizit an systemd --user durchreichen (gefunden bei PI-D8D8 2026-06-11)
+systemctl --user import-environment WAYLAND_DISPLAY XDG_RUNTIME_DIR 2>/dev/null || true
+
 systemctl --user start chromium-kiosk.service
 systemctl --user start wayvnc.service
