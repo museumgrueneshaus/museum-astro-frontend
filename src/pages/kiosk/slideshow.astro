@@ -334,48 +334,41 @@
       else if (e.key === 'ArrowRight') userNext();
     });
 
-    /* ── Swipe (pointer events) ── */
+    /* ── Swipe (pointer events) — works in both slide + fade mode ── */
     let sx = 0, dx = 0, swiping = false;
     const THRESHOLD = 0.12;    // 12% of screen width
 
-    track.addEventListener('pointerdown', e => {
-      if (FADE) return;
+    stage.addEventListener('pointerdown', e => {
       sx = e.clientX; dx = 0; swiping = true;
-      track.classList.add('dragging');
-      track.setPointerCapture(e.pointerId);
+      if (!FADE) {
+        track.classList.add('dragging');
+      }
+      stage.setPointerCapture(e.pointerId);
     });
 
-    track.addEventListener('pointermove', e => {
+    stage.addEventListener('pointermove', e => {
       if (!swiping) return;
       dx = e.clientX - sx;
-      track.style.transform = `translate3d(calc(${-cur * 100}% + ${dx}px), 0, 0)`;
+      if (!FADE) {
+        track.style.transform = `translate3d(calc(${-cur * 100}% + ${dx}px), 0, 0)`;
+      }
     });
 
     function endSwipe() {
       if (!swiping) return;
       swiping = false;
-      track.classList.remove('dragging');
+      if (!FADE) track.classList.remove('dragging');
       const ratio = dx / window.innerWidth;
       if (Math.abs(ratio) > THRESHOLD) {
         if (ratio < 0) userNext(); else userPrev();
       } else {
-        goTo(cur);
+        if (!FADE) goTo(cur);
         showChrome();
       }
     }
 
-    track.addEventListener('pointerup', endSwipe);
-    track.addEventListener('pointercancel', endSwipe);
-
-    /* ── Touch on stage (show chrome in fade mode too) ── */
-    if (FADE) {
-      stage.addEventListener('pointerup', e => {
-        const w = window.innerWidth;
-        if (e.clientX < w * 0.3) userPrev();
-        else if (e.clientX > w * 0.7) userNext();
-        else showChrome();
-      });
-    }
+    stage.addEventListener('pointerup', endSwipe);
+    stage.addEventListener('pointercancel', endSwipe);
 
     /* ── Activity → show chrome ── */
     ['mousemove', 'touchstart'].forEach(ev =>
