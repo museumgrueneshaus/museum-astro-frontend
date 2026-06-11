@@ -257,11 +257,34 @@ cp "$SCRIPT_DIR/wayvnc.service"         "$USER_SYSTEMD_DIR/wayvnc.service"
 chown "$KIOSK_USER:$KIOSK_USER" "/home/$KIOSK_USER/.config"
 chown -R "$KIOSK_USER:$KIOSK_USER" "/home/$KIOSK_USER/.config/systemd"
 
-log "Installing Chromium policy (Translate aus)..."
+log "Installing Chromium policy (Translate aus, Stilldruck auf 'Kassa')..."
 # --disable-features=Translate wird von neueren Chromium-Versionen ignoriert,
-# nur die Enterprise-Policy wirkt zuverlässig (gefunden bei PI-3BEB 2026-06-11)
+# nur die Enterprise-Policy wirkt zuverlässig (gefunden bei PI-3BEB 2026-06-11).
+# Stilldruck: --kiosk-printing druckt ohne Dialog, aber nur auf Chromiums
+# eigenes Default-Ziel — das muss per Policy auf den CUPS-Drucker "Kassa"
+# gezwungen werden (gefunden bei PI-3BEB 2026-06-11).
 mkdir -p /etc/chromium/policies/managed
-echo '{"TranslateEnabled": false}' > /etc/chromium/policies/managed/museum-kiosk.json
+cat > /etc/chromium/policies/managed/museum-kiosk.json <<'POLICY'
+{
+  "TranslateEnabled": false,
+  "PrintingEnabled": true,
+  "PrintPreviewUseSystemDefaultPrinter": true,
+  "DefaultPrinterSelection": "{\"kind\": \"local\", \"idPattern\": \"Kassa\"}"
+}
+POLICY
+
+# ── Drucker: Kyocera an der Kassa (IPP everywhere, treiberlos) ───────────────
+log "Installing CUPS + Drucker 'Kassa' (Kyocera 192.168.2.200)..."
+apt-get install -y -qq cups cups-ipp-utils >/dev/null 2>&1 || apt-get install -y cups cups-ipp-utils
+systemctl enable --now cups >/dev/null 2>&1 || true
+if ! lpstat -p Kassa >/dev/null 2>&1; then
+    if lpadmin -p Kassa -E -v ipp://192.168.2.200/ipp/print -m everywhere 2>/dev/null; then
+        log "Drucker 'Kassa' angelegt."
+    else
+        log "WARN: Drucker 'Kassa' konnte nicht angelegt werden (Kyocera nicht erreichbar?) — später: lpadmin -p Kassa -E -v ipp://192.168.2.200/ipp/print -m everywhere"
+    fi
+fi
+lpadmin -d Kassa 2>/dev/null || true
 
 log "Configuring labwc autostart..."
 mkdir -p "$LABWC_DIR"

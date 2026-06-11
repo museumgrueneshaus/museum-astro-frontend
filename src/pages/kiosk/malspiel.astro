@@ -196,6 +196,19 @@
 
     .tbtn.on .tbtn-lbl { color: rgba(255,255,255,0.9); }
 
+    /* ─── Kleine Bildschirme (z.B. 10–12" Kinderebene) ──────────────
+       Die großen Maße oben sind für den 43"-4K-Monitor (CSS-px = Geräte-px).
+       Auf Full-HD und kleiner schrumpft die Leiste entsprechend. */
+    @media (max-width: 2000px) {
+      #panel { width: 88px; padding: 10px 0; }
+      #color-grid { gap: 8px; padding: 0 9px; }
+      .pdiv { width: 36px; margin: 10px 0; }
+      .tbtn { width: 64px; height: 64px; gap: 5px; border-radius: 11px; }
+      .stroke-preview { width: 36px; }
+      .tbtn-lbl { font-size: 11px; }
+      .top-btn { height: 40px; padding: 0 14px; font-size: 13px; }
+    }
+
     /* ─── Canvas area ────────────────────────────────────────────── */
     #canvas-area {
       flex: 1;
