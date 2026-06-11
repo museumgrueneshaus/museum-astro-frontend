@@ -251,6 +251,10 @@ log "Installing user services (chromium, wayvnc)..."
 mkdir -p "$USER_SYSTEMD_DIR"
 cp "$SCRIPT_DIR/chromium-kiosk.service" "$USER_SYSTEMD_DIR/chromium-kiosk.service"
 cp "$SCRIPT_DIR/wayvnc.service"         "$USER_SYSTEMD_DIR/wayvnc.service"
+# WICHTIG: .config selbst mit chownen — mkdir -p als root erzeugt es sonst
+# root-owned und Chromium kann sein Profil nicht anlegen (Crash-Loop,
+# gefunden bei PI-3BEB 2026-06-11)
+chown "$KIOSK_USER:$KIOSK_USER" "/home/$KIOSK_USER/.config"
 chown -R "$KIOSK_USER:$KIOSK_USER" "/home/$KIOSK_USER/.config/systemd"
 
 log "Configuring labwc autostart..."
