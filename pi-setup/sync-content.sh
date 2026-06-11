@@ -164,7 +164,7 @@ if [ -n "$BEFEHL" ] && [ -f "$TOKEN_FILE" ]; then
     RESET_MUTATION=$(python3 - <<PYEOF
 import json
 print(json.dumps({"mutations": [{"patch": {
-    "query": "*[_type == 'kioskDevice' && kioskId == \$kioskId]",
+    "query": "*[_type == 'kioskDevice' && kioskId == \$kioskId && !(_id in path('drafts.**'))]",
     "params": {"kioskId": "$KIOSK_ID"},
     "unset": ["befehl"]
 }}]}))

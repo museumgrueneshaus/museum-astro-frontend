@@ -77,7 +77,7 @@ import json
 mutation = {
     "mutations": [{
         "patch": {
-            "query": "*[_type == 'kioskDevice' && kioskId == \$kioskId][0]",
+            "query": "*[_type == 'kioskDevice' && kioskId == \$kioskId && !(_id in path('drafts.**'))][0]",
             "params": {"kioskId": "$KIOSK_ID"},
             "set": {
                 "status.online":          True,
