@@ -4,317 +4,351 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="description" content="Museum Digital Kiosk – Slideshow" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#000000" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <title>Slideshow</title>
   <script src="/register-sw.js" defer></script>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" />
   <link rel="manifest" href="/manifest.json" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <style>
-    /* ── CSS Variables & Reset ── */
-    :root {
-      --accent: #3d6b4a;
-      --accent-light: #5a8a68;
-      --text: #1a1a18;
-      --text-secondary: #888;
-      --bg: #fff;
-      --bg-warm: #f7f6f3;
-      --rule: #e0dfdc;
-      --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      --ease: cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font); }
-    html {
-      font-family: var(--font);
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-    }
-    body {
-      min-height: 100vh;
-      background: #0b0f17;
-      color: #fff;
-      overflow-x: hidden;
-      line-height: 1.5;
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
-      user-select: none;
-    }
-    input, select, textarea { font: inherit; }
-    :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
-    [hidden] { display: none !important; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .loading {
-      display: inline-block;
-      width: 48px;
-      height: 48px;
-      border: 4px solid rgba(255,255,255,0.15);
-      border-radius: 50%;
-      border-top-color: var(--accent-light);
-      animation: spin 1s linear infinite;
-    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#fff;
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+      -webkit-font-smoothing:antialiased;touch-action:none;
+      -webkit-user-select:none;user-select:none}
 
-    /* ── Loading / Error States ── */
-    #loading-screen, #error-screen {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: #0b0f17;
-      color: #fff;
-      gap: 1.5rem;
-      z-index: 999;
-    }
-    #loading-screen p, #error-screen p { opacity: 0.7; font-size: 14px; }
-    #error-screen h2 { font-size: 20px; }
+    /* ── Loading ── */
+    #loader{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+      background:#000;z-index:900}
+    #loader::after{content:'';width:40px;height:40px;border:3px solid rgba(255,255,255,.15);
+      border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
 
-    /* ── Slideshow ── */
-    .slideshow-app { background: #0b0f17; min-height: 100vh; color: #fff; }
-    .slideshow-main { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
-    .slideshow-container { width: 100%; max-width: 1600px; }
-    .slideshow-track { position: relative; width: 100%; height: min(80vh, 70vw); }
-    .slide { position: absolute; inset: 0; display: flex; gap: 3rem; align-items: center; opacity: 0; transition: opacity 1s var(--ease); }
-    .slide.active { opacity: 1; }
-    .slide-image { flex: 1; height: 100%; }
-    .slide-image img { width: 100%; height: 100%; object-fit: contain; }
-    .slide-info { flex: 1; color: #fff; position: relative; }
-    .caption { position: absolute; left: 12px; bottom: 12px; color: #fff; background: rgba(0,0,0,.45); padding: 10px 16px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transition: opacity .3s; }
-    .cap-title { font-weight: 600; font-size: 16px; }
-    .cap-sub { font-size: 13px; opacity: .7; margin-top: 2px; }
-    .slide-info h2 { font-size: clamp(1.5rem, 3vw, 2.5rem); margin-bottom: 1rem; }
-    .slideshow-controls { display: flex; gap: 1rem; margin-top: 2rem; transition: opacity .3s; }
-    .slideshow-controls button { width: 44px; height: 44px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: #fff; cursor: pointer; font-size: 18px; transition: border-color .2s; }
-    .slideshow-controls button:hover { border-color: var(--accent-light); }
-    .slideshow-dots { display: flex; gap: 8px; margin-top: .75rem; transition: opacity .3s; }
-    .dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.25); cursor: pointer; transition: background .2s, transform .2s; }
-    .dot.active { background: var(--accent-light); transform: scale(1.3); }
-    .ui-hidden { opacity: 0; pointer-events: none; }
+    /* ── Stage ── */
+    #stage{position:fixed;inset:0;overflow:hidden;background:#000}
+
+    /* ── Slide mode (translate) ── */
+    #track{display:flex;height:100%;transition:transform 750ms cubic-bezier(.22,1,.36,1);
+      will-change:transform}
+    #track.dragging{transition:none}
+    .slide{flex:0 0 100%;width:100%;height:100%;position:relative;display:flex;
+      align-items:center;justify-content:center}
+    .slide img.main{max-width:100%;max-height:100%;object-fit:contain;
+      position:relative;z-index:2;opacity:0;transition:opacity .3s}
+    .slide img.main.loaded{opacity:1}
+    .slide img.lqip{position:absolute;inset:0;width:100%;height:100%;
+      object-fit:contain;filter:blur(20px);transform:scale(1.1);z-index:1}
+
+    /* ── Fade mode ── */
+    #stage.fade #track{display:block;height:100%;transform:none !important;transition:none !important}
+    #stage.fade .slide{position:absolute;inset:0;opacity:0;
+      transition:opacity 800ms ease;pointer-events:none}
+    #stage.fade .slide.active{opacity:1;pointer-events:auto}
+
+    /* ── Navigation arrows ── */
+    .nav-btn{position:fixed;top:50%;transform:translateY(-50%);z-index:50;
+      width:56px;height:80px;border:none;cursor:pointer;
+      background:rgba(0,0,0,.35);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+      border-radius:8px;display:flex;align-items:center;justify-content:center;
+      opacity:0;transition:opacity .4s,background .2s}
+    .nav-btn:hover{background:rgba(0,0,0,.55)}
+    .nav-btn svg{width:28px;height:28px;stroke:#fff;stroke-width:2.5;fill:none;
+      stroke-linecap:round;stroke-linejoin:round}
+    #btn-prev{left:16px}
+    #btn-next{right:16px}
+
+    /* ── Counter ── */
+    #counter{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:50;
+      font-size:14px;letter-spacing:.08em;color:rgba(255,255,255,.6);
+      opacity:0;transition:opacity .4s}
+
+    /* ── Progress bar ── */
+    #progress{position:fixed;bottom:0;left:0;width:100%;height:3px;z-index:60;
+      background:rgba(255,255,255,.1)}
+    #progress-fill{height:100%;background:rgba(255,255,255,.45);
+      transform-origin:left;transform:scaleX(0);transition:none}
+    #progress-fill.animate{transition:transform var(--interval) linear}
+
+    /* ── Caption ── */
+    #caption{position:fixed;bottom:32px;left:20px;z-index:50;
+      background:rgba(0,0,0,.45);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+      padding:10px 18px;border-radius:6px;opacity:0;transition:opacity .4s;
+      max-width:50vw}
+    #cap-title{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #cap-sub{font-size:12px;opacity:.65;margin-top:2px}
+
+    /* ── UI visibility ── */
+    .chrome-visible .nav-btn,
+    .chrome-visible #counter,
+    .chrome-visible #caption{opacity:1}
   </style>
 </head>
 <body>
-  <div id="loading-screen">
-    <div class="loading"></div>
-    <p>Lade Kiosk-Konfiguration…</p>
+  <div id="loader"></div>
+
+  <div id="stage">
+    <div id="track"></div>
   </div>
 
-  <div id="error-screen" style="display:none;">
-    <h2>Fehler</h2>
-    <p id="error-msg">Kiosk-Konfiguration konnte nicht geladen werden.</p>
+  <button class="nav-btn" id="btn-prev" aria-label="Zurück">
+    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <button class="nav-btn" id="btn-next" aria-label="Weiter">
+    <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
+  </button>
+
+  <div id="counter"></div>
+
+  <div id="caption">
+    <div id="cap-title"></div>
+    <div id="cap-sub"></div>
   </div>
 
-  <div id="app" style="display:none;">
-    <div class="slideshow-app">
-      <main class="slideshow-main">
-        <div class="slideshow-container">
-          <div class="slideshow-track" id="slideshow-track">
-            <!-- Slides injected by JS -->
-          </div>
-          <div class="slideshow-controls" id="slideshow-controls">
-            <button class="prev-btn" aria-label="Vorherige Folie">←</button>
-            <button class="play-pause-btn" aria-label="Pause">⏸</button>
-            <button class="next-btn" aria-label="Nächste Folie">→</button>
-          </div>
-          <div class="slideshow-dots" id="slideshow-dots">
-            <!-- Dots injected by JS -->
-          </div>
-        </div>
-      </main>
-    </div>
-  </div>
+  <div id="progress"><div id="progress-fill"></div></div>
 
   <script>
-    // ── Sanity helpers ──
-    const SANITY_PROJECT = import.meta.env.PUBLIC_SANITY_PROJECT_ID || '832k5je1';
-    const SANITY_DATASET = import.meta.env.PUBLIC_SANITY_DATASET || 'production';
-    async function sanityFetch(query, params = {}) {
-      const paramStr = Object.entries(params).map(([k,v]) => `$${k}=${encodeURIComponent(JSON.stringify(v))}`).join('&');
-      const url = `https://${SANITY_PROJECT}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}?query=${encodeURIComponent(query)}${paramStr ? '&'+paramStr : ''}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      return data.result;
-    }
-    function imageUrl(ref, width = 800) {
-      if (!ref) return '';
-      // _ref (Referenz) oder _id (bereits dereferenziertes Asset aus kiosk-content.json)
-      const r = ref.asset?._ref || ref.asset?._id;
+  (async () => {
+    /* ── Sanity config ── */
+    const PROJECT = '832k5je1';
+    const DATASET = 'production';
+
+    function imgUrl(ref, w) {
+      const r = ref?.asset?._ref || ref?.asset?._id;
       if (!r) return '';
-      const parts = r.split('-');
-      const fmt = parts[parts.length - 1];
-      const dims = parts[parts.length - 2];
-      const id = parts.slice(1, parts.length - 2).join('-');
-      return `https://cdn.sanity.io/images/${SANITY_PROJECT}/${SANITY_DATASET}/${id}-${dims}.${fmt}?w=${width}&auto=format&fit=crop`;
+      const p = r.split('-');
+      const fmt = p[p.length - 1];
+      const dims = p[p.length - 2];
+      const id = p.slice(1, -2).join('-');
+      return `https://cdn.sanity.io/images/${PROJECT}/${DATASET}/${id}-${dims}.${fmt}?w=${w}&auto=format&q=82`;
     }
 
-    // ── Kiosk ID resolution ──
-    async function getKioskId() {
-      try {
-        const res = await fetch('/kiosk-config.json');
-        if (res.ok) {
-          const cfg = await res.json();
-          if (cfg && cfg.kioskId) return cfg.kioskId;
-        }
-      } catch (_) { /* fallback */ }
-      const params = new URLSearchParams(location.search);
-      return params.get('id') || null;
+    function lqipSrc(ref) {
+      return ref?.asset?.metadata?.lqip || '';
     }
 
-    // ── Bootstrap ──
-    (async () => {
-      const loadingScreen = document.getElementById('loading-screen');
-      const errorScreen = document.getElementById('error-screen');
-      const errorMsg = document.getElementById('error-msg');
-      const appEl = document.getElementById('app');
+    /* ── Load data ── */
+    let data = null;
+    try {
+      const r = await fetch('/kiosk-content.json', { cache: 'no-store' });
+      if (r.ok) { const j = await r.json(); if (j?.kioskId) data = j; }
+    } catch (_) {}
 
-      function showErr(msg) {
-        loadingScreen.style.display = 'none';
-        errorMsg.textContent = msg;
-        errorScreen.style.display = 'flex';
+    if (!data) {
+      const id = new URLSearchParams(location.search).get('id');
+      if (!id) { document.getElementById('loader').textContent = 'Kein Kiosk-ID'; return; }
+      const q = `*[_type=="kioskDevice" && (kioskId==$id || hostname==$id || _id==$id)][0]{
+        "exponate": coalesce(
+          ausstellung->exponate[]->{_id,titel,untertitel,inventarnummer,
+            hauptbild{...,asset->{_id,_ref,metadata{lqip,dimensions}}}},
+          ausstellung->galerie[]{"_id":_key,"titel":alt,
+            "hauptbild":{"asset":asset->{_id,metadata{lqip,dimensions}}}}
+        ),
+        "slideshowSettings": ausstellung->kioskTemplate.slideshowSettings
+      }`;
+      const url = `https://${PROJECT}.api.sanity.io/v2024-01-01/data/query/${DATASET}?query=${encodeURIComponent(q)}&$id=${encodeURIComponent(JSON.stringify(id))}`;
+      const res = await fetch(url);
+      data = (await res.json()).result;
+    }
+
+    if (!data) { document.getElementById('loader').textContent = 'Keine Daten'; return; }
+
+    const settings = data.slideshowSettings || {};
+    const items = (data.exponate || []).filter(e => e.hauptbild);
+    const N = items.length;
+    if (N === 0) { document.getElementById('loader').textContent = 'Keine Bilder'; return; }
+
+    const INTERVAL = Math.max(4, settings.interval || 10) * 1000;
+    const FADE = settings.uebergang === 'fade';
+    const SHOW_INFO = settings.zeige_info === true;
+    const RESUME_DELAY = 45000;
+    const CHROME_HIDE = 4000;
+
+    /* ── DOM refs ── */
+    const stage    = document.getElementById('stage');
+    const track    = document.getElementById('track');
+    const prevBtn  = document.getElementById('btn-prev');
+    const nextBtn  = document.getElementById('btn-next');
+    const counter  = document.getElementById('counter');
+    const caption  = document.getElementById('caption');
+    const capTitle = document.getElementById('cap-title');
+    const capSub   = document.getElementById('cap-sub');
+    const progFill = document.getElementById('progress-fill');
+
+    if (FADE) stage.classList.add('fade');
+    if (!SHOW_INFO) caption.style.display = 'none';
+
+    progFill.style.setProperty('--interval', INTERVAL + 'ms');
+
+    /* ── Build slides ── */
+    items.forEach((item, i) => {
+      const div = document.createElement('div');
+      div.className = 'slide';
+      const lq = lqipSrc(item.hauptbild);
+      if (lq) {
+        const lqEl = document.createElement('img');
+        lqEl.className = 'lqip'; lqEl.src = lq; lqEl.alt = '';
+        lqEl.setAttribute('aria-hidden', 'true');
+        div.appendChild(lqEl);
       }
+      const img = document.createElement('img');
+      img.className = 'main'; img.alt = item.titel || '';
+      img.dataset.src = imgUrl(item.hauptbild, 1920);
+      div.appendChild(img);
+      track.appendChild(div);
+    });
 
-      let result = null;
+    const slides = track.querySelectorAll('.slide');
+    document.getElementById('loader').remove();
 
-      // 1. Try local content cache (Pi: populated by sync-content.sh every 5 min)
-      try {
-        const r = await fetch('/kiosk-content.json', { cache: 'no-store' });
-        if (r.ok) {
-          const cached = await r.json();
-          if (cached?.kioskId) result = cached;
+    /* ── Lazy loader ── */
+    function ensureLoaded(center) {
+      for (let d = 0; d <= 2; d++) {
+        for (const off of (d === 0 ? [0] : [-d, d])) {
+          const idx = (center + off + N) % N;
+          const img = slides[idx].querySelector('img.main');
+          if (img && img.dataset.src && !img.src) {
+            img.src = img.dataset.src;
+            img.onload = () => img.classList.add('loaded');
+          }
         }
-      } catch (_) {}
-
-      // 2. Fall back to Sanity API (dev / first boot before first sync)
-      if (!result) {
-        const kioskId = await getKioskId();
-        if (!kioskId) { showErr('Kein Kiosk-ID gefunden. Bitte ?id= Parameter angeben.'); return; }
-
-        const QUERY = `*[_type=="kioskDevice" && (kioskId==$id || hostname==$id || _id==$id)][0]{
-          "exponate": coalesce(
-            ausstellung->exponate[]->{
-              _id, titel, untertitel, inventarnummer,
-              hauptbild{..., asset->{_id, _ref, metadata{lqip, dimensions}}}
-            },
-            ausstellung->galerie[]{
-              "_id": _key, "titel": alt,
-              "hauptbild": { "asset": asset->{_id, metadata{lqip, dimensions}} }
-            }
-          ),
-          "slideshowSettings": ausstellung->kioskTemplate.slideshowSettings,
-          "idle_timeout": 300000
-        }`;
-
-        try {
-          result = await sanityFetch(QUERY, { id: kioskId });
-        } catch (e) { showErr(`Fehler beim Laden: ${e.message}`); return; }
-
-        if (!result) { showErr(`Kiosk "${kioskId}" nicht gefunden.`); return; }
       }
+    }
 
-      const exponate = result.exponate || [];
-      const idleTimeout = result.idle_timeout || 300000;
+    /* ── Navigate ── */
+    let cur = 0;
 
-      // ── Build DOM ──
-      const track = document.getElementById('slideshow-track');
-      const dotsContainer = document.getElementById('slideshow-dots');
-
-      exponate.forEach((exponat, index) => {
-        const slide = document.createElement('div');
-        slide.className = 'slide';
-        slide.dataset.slide = String(index);
-        const imgSrc = imageUrl(exponat.hauptbild, 1600);
-        slide.innerHTML = `
-          <div class="slide-image">
-            ${imgSrc ? `<img src="${imgSrc}" alt="${escHtml(exponat.titel || '')}" />` : ''}
-          </div>
-          <div class="slide-info">
-            <div class="caption">
-              <div class="cap-title">${escHtml(exponat.titel || '')}</div>
-              ${exponat.inventarnummer ? `<div class="cap-sub">${escHtml(exponat.inventarnummer)}</div>` : ''}
-            </div>
-          </div>
-        `;
-        track.appendChild(slide);
-
-        const dot = document.createElement('span');
-        dot.className = 'dot';
-        dot.dataset.dot = String(index);
-        dotsContainer.appendChild(dot);
-      });
-
-      loadingScreen.style.display = 'none';
-      appEl.style.display = '';
-
-      // ── Slideshow logic ──
-      let slideshowInterval;
-      let currentSlide = 0;
-      const slides = document.querySelectorAll('.slide');
-      const dots = document.querySelectorAll('.dot');
-
-      function showSlide(index) {
-        slides.forEach(s => s.classList.remove('active'));
-        dots.forEach(d => d.classList.remove('active'));
-        if (slides[index]) slides[index].classList.add('active');
-        if (dots[index]) dots[index].classList.add('active');
-        currentSlide = index;
+    function goTo(idx, skipTransition) {
+      cur = ((idx % N) + N) % N;
+      if (FADE) {
+        slides.forEach((s, i) => s.classList.toggle('active', i === cur));
+      } else {
+        if (skipTransition) track.classList.add('dragging');
+        track.style.transform = `translate3d(${-cur * 100}%, 0, 0)`;
+        if (skipTransition) requestAnimationFrame(() => requestAnimationFrame(() => track.classList.remove('dragging')));
       }
-      function nextSlide() { currentSlide = (currentSlide + 1) % (slides.length || 1); showSlide(currentSlide); }
-      function prevSlide() { currentSlide = (currentSlide - 1 + (slides.length || 1)) % (slides.length || 1); showSlide(currentSlide); }
-      function startSlideshow() { if (!slides || slides.length === 0) return; showSlide(0); slideshowInterval = setInterval(nextSlide, 10000); }
-      function stopSlideshow() { clearInterval(slideshowInterval); slideshowInterval = null; }
-
-      document.querySelector('.prev-btn')?.addEventListener('click', () => { stopSlideshow(); prevSlide(); });
-      document.querySelector('.next-btn')?.addEventListener('click', () => { stopSlideshow(); nextSlide(); });
-      document.querySelector('.play-pause-btn')?.addEventListener('click', (e) => {
-        if (slideshowInterval) { stopSlideshow(); e.target.textContent = '▶'; }
-        else { startSlideshow(); e.target.textContent = '⏸'; }
-      });
-
-      // Dot click
-      dots.forEach((dot, i) => dot.addEventListener('click', () => { stopSlideshow(); showSlide(i); }));
-
-      startSlideshow();
-
-      // ── Auto-hide chrome ──
-      const chromeEls = [
-        document.querySelector('.slideshow-controls'),
-        document.querySelector('.slideshow-dots'),
-        ...Array.from(document.querySelectorAll('.caption')),
-      ].filter(Boolean);
-      let hideTimer;
-      const HIDE_MS = 2000;
-      const showChrome = () => chromeEls.forEach(el => el.classList.remove('ui-hidden'));
-      const hideChrome = () => chromeEls.forEach(el => el.classList.add('ui-hidden'));
-      const resetHide = () => { showChrome(); clearTimeout(hideTimer); hideTimer = setTimeout(hideChrome, HIDE_MS); };
-      ['mousemove','touchstart','keydown','click'].forEach(ev => document.addEventListener(ev, resetHide, { passive: true }));
-      resetHide();
-
-      // ── Idle timeout → redirect to kiosk home ──
-      let idleTimer;
-      const resetIdle = () => {
-        clearTimeout(idleTimer);
-        idleTimer = setTimeout(() => {
-          window.location.href = `/kiosk/?id=${encodeURIComponent(kioskId)}`;
-        }, idleTimeout);
-      };
-      ['pointerdown','touchstart','mousedown','keydown','scroll'].forEach(ev => {
-        document.addEventListener(ev, resetIdle, { passive: true });
-      });
-      resetIdle();
-
-      // ── Helper ──
-      function escHtml(str) {
-        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      ensureLoaded(cur);
+      counter.textContent = `${cur + 1}\u2009/\u2009${N}`;
+      if (SHOW_INFO) {
+        capTitle.textContent = items[cur].titel || '';
+        const sub = items[cur].inventarnummer || items[cur].untertitel || '';
+        capSub.textContent = sub;
+        capSub.style.display = sub ? '' : 'none';
       }
-    })();
+      resetProgress();
+    }
+
+    /* ── Progress bar ── */
+    function resetProgress() {
+      progFill.classList.remove('animate');
+      progFill.style.transform = 'scaleX(0)';
+      void progFill.offsetWidth;          // force reflow
+      if (playing) {
+        progFill.classList.add('animate');
+        progFill.style.transform = 'scaleX(1)';
+      }
+    }
+
+    /* ── Auto-play ── */
+    let playing = true;
+    let timer = null;
+    let resumeTimer = null;
+
+    function tick() { goTo(cur + 1); }
+
+    function startAuto() {
+      playing = true;
+      clearInterval(timer);
+      timer = setInterval(tick, INTERVAL);
+      resetProgress();
+    }
+
+    function pauseAuto() {
+      playing = false;
+      clearInterval(timer); timer = null;
+      clearTimeout(resumeTimer);
+      progFill.classList.remove('animate');
+      progFill.style.transform = `scaleX(0)`;
+    }
+
+    function pauseAndResume() {
+      pauseAuto();
+      resumeTimer = setTimeout(startAuto, RESUME_DELAY);
+    }
+
+    /* ── Chrome visibility ── */
+    let chromeTimer;
+    function showChrome() {
+      document.body.classList.add('chrome-visible');
+      clearTimeout(chromeTimer);
+      chromeTimer = setTimeout(() => document.body.classList.remove('chrome-visible'), CHROME_HIDE);
+    }
+
+    /* ── User interaction ── */
+    function userPrev() { pauseAndResume(); goTo(cur - 1); showChrome(); }
+    function userNext() { pauseAndResume(); goTo(cur + 1); showChrome(); }
+
+    prevBtn.addEventListener('click', userPrev);
+    nextBtn.addEventListener('click', userNext);
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft') userPrev();
+      else if (e.key === 'ArrowRight') userNext();
+    });
+
+    /* ── Swipe (pointer events) ── */
+    let sx = 0, dx = 0, swiping = false;
+    const THRESHOLD = 0.12;    // 12% of screen width
+
+    track.addEventListener('pointerdown', e => {
+      if (FADE) return;
+      sx = e.clientX; dx = 0; swiping = true;
+      track.classList.add('dragging');
+      track.setPointerCapture(e.pointerId);
+    });
+
+    track.addEventListener('pointermove', e => {
+      if (!swiping) return;
+      dx = e.clientX - sx;
+      track.style.transform = `translate3d(calc(${-cur * 100}% + ${dx}px), 0, 0)`;
+    });
+
+    function endSwipe() {
+      if (!swiping) return;
+      swiping = false;
+      track.classList.remove('dragging');
+      const ratio = dx / window.innerWidth;
+      if (Math.abs(ratio) > THRESHOLD) {
+        if (ratio < 0) userNext(); else userPrev();
+      } else {
+        goTo(cur);
+        showChrome();
+      }
+    }
+
+    track.addEventListener('pointerup', endSwipe);
+    track.addEventListener('pointercancel', endSwipe);
+
+    /* ── Touch on stage (show chrome in fade mode too) ── */
+    if (FADE) {
+      stage.addEventListener('pointerup', e => {
+        const w = window.innerWidth;
+        if (e.clientX < w * 0.3) userPrev();
+        else if (e.clientX > w * 0.7) userNext();
+        else showChrome();
+      });
+    }
+
+    /* ── Activity → show chrome ── */
+    ['mousemove', 'touchstart'].forEach(ev =>
+      document.addEventListener(ev, showChrome, { passive: true })
+    );
+
+    /* ── Start ── */
+    goTo(0, true);
+    startAuto();
+    showChrome();
+
+  })();
   </script>
 </body>
 </html>
