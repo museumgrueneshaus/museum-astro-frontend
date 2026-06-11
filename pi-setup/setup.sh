@@ -51,10 +51,11 @@ fi
 
 log "Kiosk ID: $KIOSK_ID"
 
-# ── WiFi (Bootstrap) ─────────────────────────────────────────────────────────
-# Initiale WLAN-Konfiguration um den Pi online zu bekommen.
-# Danach übernimmt sync-content.sh die WLAN-Pflege aus Sanity
-# (kioskDevice → wlanNetworks). Hier nur Bootstrap für Erstinstallation.
+# ── WiFi ─────────────────────────────────────────────────────────────────────
+# Quelle der Wahrheit: /etc/museum-kiosk/wlans.conf (kommt aus dem Golden Image
+# oder wird per scp eingespielt — NICHT im Repo, enthält Passwörter).
+# Format pro Zeile:  SSID<TAB>PASSWORT<TAB>PRIORITÄT   (# = Kommentar)
+# Fallback für Erstinstallation ohne Datei: TTY-Prompt bzw. Imager-WLAN/Ethernet.
 
 add_wifi() {
     local SSID="$1" PASS="$2" PRIO="$3"
@@ -74,7 +75,24 @@ add_wifi() {
     fi
 }
 
-# Prüfe ob bereits WLAN verbunden
+# 1) Fixe Netze aus wlans.conf einspielen (idempotent — Image-Variante)
+WLANS_CONF="/etc/museum-kiosk/wlans.conf"
+if [ -f "$WLANS_CONF" ]; then
+    while IFS=$'\t' read -r SSID PASS PRIO; do
+        case "$SSID" in ''|'#'*) continue ;; esac
+        PRIO="${PRIO:-10}"
+        if command -v nmcli &>/dev/null && nmcli -t -f NAME con show 2>/dev/null | grep -qxF "$SSID"; then
+            nmcli con modify "$SSID" wifi-sec.psk "$PASS" connection.autoconnect yes connection.autoconnect-priority "$PRIO" 2>/dev/null \
+                && log "WLAN '$SSID' aktualisiert (Priorität $PRIO)." \
+                || error "WLAN '$SSID' konnte nicht aktualisiert werden."
+        else
+            add_wifi "$SSID" "$PASS" "$PRIO"
+        fi
+    done < "$WLANS_CONF"
+    chmod 600 "$WLANS_CONF"
+fi
+
+# 2) Prüfe ob bereits WLAN verbunden
 WIFI_CONNECTED=false
 if command -v nmcli &>/dev/null; then
     nmcli -t -f TYPE,STATE dev 2>/dev/null | grep -q "wifi:connected" && WIFI_CONNECTED=true
@@ -82,9 +100,8 @@ elif iwconfig wlan0 2>/dev/null | grep -q "ESSID:\""; then
     WIFI_CONNECTED=true
 fi
 
-if [ "$WIFI_CONNECTED" = true ]; then
-    log "WLAN bereits verbunden — Bootstrap übersprungen."
-    log "Weitere Netze werden über Sanity (kioskDevice → WLAN-Netzwerke) verwaltet."
+if [ "$WIFI_CONNECTED" = true ] || [ -f "$WLANS_CONF" ]; then
+    log "WLAN konfiguriert — interaktiver Bootstrap übersprungen."
 elif [ ! -t 0 ]; then
     log "Non-interaktiv und kein WLAN — Ethernet oder Imager-WLAN wird vorausgesetzt."
 else
@@ -109,7 +126,7 @@ else
         error "SSID darf nicht leer sein — WLAN übersprungen."
     fi
 fi
-log "Hinweis: WLAN-Netze können zentral über Sanity Studio verwaltet werden."
+log "Hinweis: Fixe WLAN-Netze stehen in $WLANS_CONF (Image bzw. per scp)."
 
 # ── Packages ─────────────────────────────────────────────────────────────────
 

@@ -92,9 +92,7 @@ GROQ='*[_type=="kioskDevice" && kioskId==$kioskId][0]{
   "explorerSettings":  ausstellung->kioskTemplate.explorerSettings,
 
   "pdf_url":     ausstellung->kioskTemplate.readerSettings.pdf_url,
-  "website_url": coalesce(websiteUrl, ausstellung->kioskTemplate.websiteSettings.url),
-
-  "wlanNetworks": wlanNetworks[]{ ssid, password, priority, description }
+  "website_url": coalesce(websiteUrl, ausstellung->kioskTemplate.websiteSettings.url)
 }'
 
 SANITY_URL=$(python3 - <<PYEOF
@@ -237,61 +235,8 @@ fi
 MODUS=$(echo "$RESULT" | python3 -c "import json,sys; print(json.loads(sys.stdin.read()).get('modus','?'))" 2>/dev/null || echo "?")
 log "Done — modus: $MODUS, saved to $CONTENT_FILE"
 
-# ── WiFi: sync WLAN networks from Sanity kioskDevice.wlanNetworks ──────────
-WLAN_JSON=$(echo "$RESULT" | python3 -c "
-import json, sys
-data = json.loads(sys.stdin.read())
-networks = data.get('wlanNetworks') or []
-if networks:
-    print(json.dumps(networks))
-else:
-    sys.exit(1)
-" 2>/dev/null) && {
-    WLAN_HASH=$(echo "$WLAN_JSON" | md5sum | cut -d' ' -f1)
-    WLAN_HASH_FILE="/etc/museum-kiosk/wlan-hash"
-    OLD_HASH=$(cat "$WLAN_HASH_FILE" 2>/dev/null || echo "")
-
-    if [ "$WLAN_HASH" != "$OLD_HASH" ]; then
-        log "WLAN-Konfiguration geändert — aktualisiere..."
-        echo "$WLAN_JSON" | python3 -c "
-import json, sys, subprocess, shutil
-
-networks = json.load(sys.stdin)
-use_nmcli = shutil.which('nmcli') is not None
-
-for net in networks:
-    ssid = net.get('ssid', '')
-    pw   = net.get('password', '')
-    prio = str(net.get('priority', 10))
-    if not ssid or not pw:
-        continue
-    if use_nmcli:
-        # Remove existing connection with same name (idempotent)
-        subprocess.run(['nmcli', 'con', 'delete', ssid], capture_output=True)
-        r = subprocess.run([
-            'nmcli', 'con', 'add', 'type', 'wifi', 'ifname', 'wlan0',
-            'con-name', ssid, 'ssid', ssid,
-            'wifi-sec.key-mgmt', 'wpa-psk', 'wifi-sec.psk', pw,
-            'connection.autoconnect', 'yes',
-            'connection.autoconnect-priority', prio
-        ], capture_output=True)
-        status = 'OK' if r.returncode == 0 else 'FEHLER'
-        print(f'  WLAN {ssid} (Prio {prio}): {status}')
-    else:
-        import os
-        wpa_conf = '/etc/wpa_supplicant/wpa_supplicant.conf'
-        r = subprocess.run(['wpa_passphrase', ssid, pw], capture_output=True, text=True)
-        if r.returncode == 0:
-            with open(wpa_conf, 'a') as f:
-                f.write(r.stdout)
-            print(f'  WLAN {ssid}: gespeichert (wpa_supplicant)')
-        subprocess.run(['wpa_cli', '-i', 'wlan0', 'reconfigure'], capture_output=True)
-" 2>&1 | while read -r line; do log "$line"; done
-
-        echo "$WLAN_HASH" > "$WLAN_HASH_FILE"
-        log "WLAN-Konfiguration aktualisiert."
-    fi
-} || true  # no wlanNetworks is fine
+# WLAN wird NICHT mehr aus Sanity gesynct (Passwörter wären öffentlich lesbar).
+# Fixe Netze: /etc/museum-kiosk/wlans.conf (Golden Image / scp) → setup.sh.
 
 # ── Signage: fetch and cache museum-wide data if this is a signage kiosk ────
 if [ "$MODUS" = "signage" ]; then
