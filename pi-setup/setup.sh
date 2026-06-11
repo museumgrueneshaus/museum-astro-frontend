@@ -258,6 +258,20 @@ mkdir -p "$LABWC_DIR"
 cp "$SCRIPT_DIR/labwc-autostart" "$LABWC_DIR/autostart"
 chown -R "$KIOSK_USER:$KIOSK_USER" "$LABWC_DIR"
 
+log "Configuring autologin → $KIOSK_USER (lightdm)..."
+# Ohne das hält der Default-User (raspberry) die Grafiksitzung und der
+# Kiosk unter $KIOSK_USER startet nie (entdeckt bei PI-3BEB, 2026-06-11).
+if [ -f /etc/lightdm/lightdm.conf ]; then
+    if grep -q "^autologin-user=" /etc/lightdm/lightdm.conf; then
+        sed -i "s/^autologin-user=.*/autologin-user=$KIOSK_USER/" /etc/lightdm/lightdm.conf
+    else
+        sed -i "/^\[Seat:\*\]/a autologin-user=$KIOSK_USER" /etc/lightdm/lightdm.conf
+    fi
+    log "lightdm autologin: $(grep '^autologin-user=' /etc/lightdm/lightdm.conf)"
+else
+    log "WARN: /etc/lightdm/lightdm.conf nicht gefunden — Autologin manuell prüfen!"
+fi
+
 log "Enabling chromium user service (loginctl linger)..."
 # linger allows user services to start without an interactive session
 loginctl enable-linger "$KIOSK_USER"
