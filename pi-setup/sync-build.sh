@@ -89,7 +89,7 @@ KIOSK_UID=$(id -u "$KIOSK_USER" 2>/dev/null || echo "1000")
 
 log "Deploying to $DEPLOY_DIR..."
 # Copy everything except videos (persistent) and pi-setup (system scripts, not web content)
-rsync -a --delete --exclude='/videos/' --exclude='/pi-setup/' "$STAGE_DIR/" "$DEPLOY_DIR/" || {
+rsync -a --delete --exclude='/videos/' --exclude='/pi-setup/' --exclude='kiosk-content.json' "$STAGE_DIR/" "$DEPLOY_DIR/" || {
     error "rsync deploy failed"
     exit 1
 }
