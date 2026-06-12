@@ -41,11 +41,16 @@
     #track.dragging{transition:none}
     .slide{flex:0 0 100vw;width:100vw;height:100%;position:relative;display:flex;
       align-items:center;justify-content:center}
+    .slide img{-webkit-user-drag:none;user-drag:none}
     .slide img.main{max-width:100%;max-height:100%;object-fit:contain;
       position:relative;z-index:2;opacity:0;transition:opacity .3s}
     .slide img.main.loaded{opacity:1}
+    /* LQIP nur als Lade-Platzhalter — nach dem Laden ausblenden,
+       sonst bleibt bei Hochformat-Bildern ein verschwommener Rand stehen */
     .slide img.lqip{position:absolute;inset:0;width:100%;height:100%;
-      object-fit:contain;filter:blur(20px);transform:scale(1.1);z-index:1}
+      object-fit:contain;filter:blur(20px);transform:scale(1.1);z-index:1;
+      transition:opacity .4s}
+    .slide.loaded img.lqip{opacity:0}
 
     /* ── Fade mode ──
        Nur aktiver Slide + Nachbarn (.near) bleiben sichtbar/decodiert —
@@ -293,10 +298,14 @@
       for (let d = 0; d <= 2; d++) {
         for (const off of (d === 0 ? [0] : [-d, d])) {
           const idx = (center + off + N) % N;
-          const img = slides[idx].querySelector('img.main');
+          const slide = slides[idx];
+          const img = slide.querySelector('img.main');
           if (img && img.dataset.src && !img.src) {
             img.src = img.dataset.src;
-            img.decode().catch(() => {}).then(() => img.classList.add('loaded'));
+            img.decode().catch(() => {}).then(() => {
+              img.classList.add('loaded');
+              slide.classList.add('loaded');   // blendet das LQIP aus
+            });
           }
         }
       }
@@ -392,6 +401,10 @@
     });
 
     /* ── Swipe (pointer events) — works in both slide + fade mode ── */
+    // Nativen Bild-Drag unterbinden, sonst schluckt er am Desktop die
+    // pointermove-Events und Maus-Swipe funktioniert nicht
+    document.addEventListener('dragstart', e => e.preventDefault());
+
     let sx = 0, dx = 0, swiping = false;
     const THRESHOLD = 0.12;    // 12% of screen width
 
