@@ -15,6 +15,11 @@
        kein Astro-Scope-Attribut — gescopte Selektoren würden sie nie treffen
        (Ursache des 2-Slides-Bugs auf 4K-Displays). */
     *{margin:0;padding:0;box-sizing:border-box}
+    html{
+      /* Eine Quelle für alle Bottom-UI-Positionen; wird per JS auf 0 gesetzt
+         wenn der Filmstreifen deaktiviert ist */
+      --strip-h:clamp(96px,10vmin,220px);
+    }
     html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#fff;
       font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
       -webkit-font-smoothing:antialiased;touch-action:none;
@@ -42,23 +47,29 @@
     .slide img.lqip{position:absolute;inset:0;width:100%;height:100%;
       object-fit:contain;filter:blur(20px);transform:scale(1.1);z-index:1}
 
-    /* ── Fade mode ── */
-    #stage.fade #track{display:block;height:100%;transform:none !important;transition:none !important}
-    #stage.fade .slide{position:absolute;inset:0;opacity:0;
-      transition:opacity 800ms ease;pointer-events:none}
-    #stage.fade .slide.active{opacity:1;pointer-events:auto}
+    /* ── Fade mode ──
+       Nur aktiver Slide + Nachbarn (.near) bleiben sichtbar/decodiert —
+       sonst hält der Pi alle Bilder als GPU-Layer im Speicher */
+    #stage.fade #track{display:block;height:100%;transform:none !important;
+      transition:none !important;will-change:auto}
+    #stage.fade .slide{position:absolute;inset:0;opacity:0;visibility:hidden;
+      transition:opacity 800ms ease,visibility 0s 800ms;pointer-events:none}
+    #stage.fade .slide.near{visibility:visible;transition:opacity 800ms ease}
+    #stage.fade .slide.active{opacity:1;visibility:visible;pointer-events:auto;
+      transition:opacity 800ms ease}
 
     /* ── Navigation arrows ──
        vmin-Einheiten: gleiche physische Größe auf beiden Pis
-       (D8D8 rendert mit 1920er-Viewport, RPI020 mit 3840) */
+       (D8D8 rendert mit 1920er-Viewport, RPI020 mit 3840).
+       43" FHD: 1px ≈ 0,5mm → Ziel ≥40px = 20mm Touchfläche (WCAG/Kiosk-Praxis) */
     .nav-btn{position:fixed;top:50%;transform:translateY(-50%);z-index:50;
-      width:clamp(64px,7vmin,160px);height:clamp(96px,13vmin,300px);border:none;cursor:pointer;
+      width:clamp(72px,8vmin,180px);height:clamp(120px,16vmin,360px);border:none;cursor:pointer;
       background:rgba(0,0,0,.4);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
       border-radius:clamp(8px,1vmin,20px);display:flex;align-items:center;justify-content:center;
       opacity:0;transition:opacity .4s,background .2s}
     .nav-btn:hover{background:rgba(0,0,0,.55)}
     .nav-btn:active{background:rgba(255,255,255,.25)}
-    .nav-btn svg{width:clamp(32px,3.5vmin,80px);height:clamp(32px,3.5vmin,80px);
+    .nav-btn svg{width:clamp(36px,4vmin,90px);height:clamp(36px,4vmin,90px);
       stroke:#fff;stroke-width:2.5;fill:none;
       stroke-linecap:round;stroke-linejoin:round}
     #btn-prev{left:clamp(12px,1.5vmin,32px)}
@@ -66,37 +77,41 @@
 
     /* ── Thumbnail strip ── */
     #thumbstrip{position:fixed;bottom:0;left:0;right:0;z-index:55;
-      height:clamp(88px,9vmin,200px);padding:clamp(10px,1vmin,24px) 0;
+      height:var(--strip-h);padding:clamp(10px,1vmin,24px) 0;
       background:linear-gradient(transparent,rgba(0,0,0,.7));
       display:flex;align-items:center;
       overflow-x:auto;overflow-y:hidden;
       scroll-behavior:smooth;-webkit-overflow-scrolling:touch;
-      scrollbar-width:none;gap:clamp(6px,.6vmin,14px);
+      scrollbar-width:none;gap:clamp(8px,.8vmin,18px);
       opacity:0;transition:opacity .4s;touch-action:pan-x}
     #thumbstrip::-webkit-scrollbar{display:none}
     #thumbstrip::before,#thumbstrip::after{content:'';flex:0 0 16px}
-    .thumb{flex:0 0 auto;width:clamp(60px,6.5vmin,150px);height:clamp(60px,6.5vmin,150px);
+    .thumb{flex:0 0 auto;width:clamp(72px,7.5vmin,170px);height:clamp(72px,7.5vmin,170px);
       border-radius:6px;overflow:hidden;
       cursor:pointer;border:2px solid transparent;opacity:.5;
       transition:opacity .25s,border-color .25s,transform .25s;position:relative}
-    .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
     .thumb:active{transform:scale(.92)}
     .thumb.on{opacity:1;border-color:rgba(255,255,255,.85);transform:scale(1.08)}
 
-    /* ── Counter ── */
-    #counter{position:fixed;bottom:calc(clamp(88px,9vmin,200px) + 8px);left:50%;transform:translateX(-50%);z-index:56;
-      font-size:clamp(14px,1.6vmin,36px);letter-spacing:.08em;color:rgba(255,255,255,.6);
-      opacity:0;transition:opacity .4s}
+    /* ── Counter — immer sichtbar (Orientierung), bei Interaktion voll ── */
+    #counter{position:fixed;bottom:calc(var(--strip-h) + clamp(8px,1vmin,20px));
+      right:clamp(16px,2vmin,44px);z-index:56;
+      font-size:clamp(18px,2.2vmin,52px);font-variant-numeric:tabular-nums;
+      letter-spacing:.08em;color:rgba(255,255,255,.85);
+      background:rgba(0,0,0,.45);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+      padding:clamp(4px,.5vmin,12px) clamp(10px,1.2vmin,28px);border-radius:6px;
+      opacity:.6;transition:opacity .4s}
 
     /* ── Progress bar ── */
-    #progress{position:fixed;bottom:clamp(88px,9vmin,200px);left:0;width:100%;height:clamp(3px,.3vmin,7px);z-index:60;
+    #progress{position:fixed;bottom:var(--strip-h);left:0;width:100%;height:clamp(3px,.3vmin,7px);z-index:60;
       background:rgba(255,255,255,.1)}
     #progress-fill{height:100%;background:rgba(255,255,255,.45);
       transform-origin:left;transform:scaleX(0);transition:none}
     #progress-fill.animate{transition:transform var(--interval) linear}
 
     /* ── Caption ── */
-    #caption{position:fixed;bottom:calc(clamp(88px,9vmin,200px) + 12px);left:20px;z-index:50;
+    #caption{position:fixed;bottom:calc(var(--strip-h) + clamp(12px,1.2vmin,28px));left:20px;z-index:50;
       background:rgba(0,0,0,.45);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
       padding:10px 18px;border-radius:6px;opacity:0;transition:opacity .4s;
       max-width:50vw}
@@ -105,9 +120,9 @@
 
     /* ── UI visibility ── */
     .chrome-visible .nav-btn,
-    .chrome-visible #counter,
     .chrome-visible #caption,
     .chrome-visible #thumbstrip{opacity:1}
+    .chrome-visible #counter{opacity:1}
   </style>
 </head>
 <body>
@@ -141,6 +156,13 @@
     const PROJECT = '832k5je1';
     const DATASET = 'production';
 
+    /* Bildbreite passend zum Display anfordern statt fix 1920:
+       4K-Pi bekommt 2560 (mehr bringt auf dem Pi nichts, kostet nur Decode-Zeit),
+       FHD-Pi 1920. Feste Stufen → Service-Worker-Cache trifft. */
+    const px = Math.round(window.screen.width * (window.devicePixelRatio || 1));
+    const MAIN_W  = px > 2200 ? 2560 : (px > 1500 ? 1920 : 1280);
+    const THUMB_W = px > 2200 ? 360 : 240;
+
     function imgUrl(ref, w) {
       const r = ref?.asset?._ref || ref?.asset?._id;
       if (!r) return '';
@@ -148,7 +170,7 @@
       const fmt = p[p.length - 1];
       const dims = p[p.length - 2];
       const id = p.slice(1, -2).join('-');
-      return `https://cdn.sanity.io/images/${PROJECT}/${DATASET}/${id}-${dims}.${fmt}?w=${w}&auto=format&q=82`;
+      return `https://cdn.sanity.io/images/${PROJECT}/${DATASET}/${id}-${dims}.${fmt}?w=${w}&fit=max&auto=format&q=80`;
     }
 
     function lqipSrc(ref) {
@@ -166,11 +188,19 @@
       const id = new URLSearchParams(location.search).get('id');
       if (!id) { document.getElementById('loader').textContent = 'Kein Kiosk-ID'; return; }
       const q = `*[_type=="kioskDevice" && (kioskId==$id || hostname==$id || _id==$id)][0]{
-        "exponate": coalesce(
-          ausstellung->exponate[]->{_id,titel,untertitel,inventarnummer,
+        "slides": select(
+          ausstellung->kioskTemplate.slideshowSettings.bildquelle == "galerie" => ausstellung->galerie[]{
+            "_id":_key,"titel":coalesce(caption,alt),
+            "hauptbild":{"asset":asset->{_id,metadata{lqip,dimensions}}}},
+          ausstellung->kioskTemplate.slideshowSettings.bildquelle == "exponate" => ausstellung->exponate[]->{
+            _id,titel,untertitel,inventarnummer,
             hauptbild{...,asset->{_id,_ref,metadata{lqip,dimensions}}}},
-          ausstellung->galerie[]{"_id":_key,"titel":alt,
-            "hauptbild":{"asset":asset->{_id,metadata{lqip,dimensions}}}}
+          coalesce(
+            ausstellung->exponate[]->{_id,titel,untertitel,inventarnummer,
+              hauptbild{...,asset->{_id,_ref,metadata{lqip,dimensions}}}},
+            ausstellung->galerie[]{"_id":_key,"titel":coalesce(caption,alt),
+              "hauptbild":{"asset":asset->{_id,metadata{lqip,dimensions}}}}
+          )
         ),
         "slideshowSettings": ausstellung->kioskTemplate.slideshowSettings
       }`;
@@ -182,13 +212,18 @@
     if (!data) { document.getElementById('loader').textContent = 'Keine Daten'; return; }
 
     const settings = data.slideshowSettings || {};
-    const items = (data.exponate || []).filter(e => e.hauptbild);
+    /* "slides" ist die neue dedizierte Liste; "exponate" als Fallback solange
+       auf den Pis noch ein altes kiosk-content.json liegt */
+    const items = (data.slides || data.exponate || []).filter(e => e.hauptbild);
     const N = items.length;
     if (N === 0) { document.getElementById('loader').textContent = 'Keine Bilder'; return; }
 
-    const INTERVAL = Math.max(4, settings.interval || 10) * 1000;
+    const INTERVAL = Math.max(4, settings.interval || 8) * 1000;
     const FADE = settings.uebergang === 'fade';
-    const SHOW_INFO = settings.zeige_info === true;
+    /* "!== false": Felder fehlen bei älteren Dokumenten → Default ist AN */
+    const SHOW_INFO   = settings.zeige_info !== false;
+    const SHOW_THUMBS = settings.zeige_thumbnails !== false;
+    const SHOW_COUNT  = settings.zeige_counter !== false;
     const RESUME_DELAY = 45000;
     const CHROME_HIDE = 4000;
 
@@ -206,6 +241,11 @@
 
     if (FADE) stage.classList.add('fade');
     if (!SHOW_INFO) caption.style.display = 'none';
+    if (!SHOW_COUNT) counter.style.display = 'none';
+    if (!SHOW_THUMBS) {
+      thumbstrip.style.display = 'none';
+      document.documentElement.style.setProperty('--strip-h', '0px');
+    }
 
     progFill.style.setProperty('--interval', INTERVAL + 'ms');
 
@@ -224,27 +264,31 @@
       }
       const img = document.createElement('img');
       img.className = 'main'; img.alt = item.titel || '';
-      img.dataset.src = imgUrl(item.hauptbild, 1920);
+      img.decoding = 'async';
+      img.dataset.src = imgUrl(item.hauptbild, MAIN_W);
       div.appendChild(img);
       track.appendChild(div);
 
       // Thumbnail
-      const th = document.createElement('div');
-      th.className = 'thumb';
-      const thImg = document.createElement('img');
-      thImg.src = imgUrl(item.hauptbild, 240) || lq;
-      thImg.alt = '';
-      thImg.loading = 'lazy';
-      th.appendChild(thImg);
-      th.addEventListener('click', () => { pauseAndResume(); goTo(i); showChrome(); });
-      thumbstrip.appendChild(th);
-      thumbEls.push(th);
+      if (SHOW_THUMBS) {
+        const th = document.createElement('div');
+        th.className = 'thumb';
+        const thImg = document.createElement('img');
+        thImg.src = imgUrl(item.hauptbild, THUMB_W) || lq;
+        thImg.alt = '';
+        thImg.loading = 'lazy';
+        thImg.decoding = 'async';
+        th.appendChild(thImg);
+        th.addEventListener('click', () => { pauseAndResume(); goTo(i); showChrome(); });
+        thumbstrip.appendChild(th);
+        thumbEls.push(th);
+      }
     });
 
     const slides = track.querySelectorAll('.slide');
     document.getElementById('loader').remove();
 
-    /* ── Lazy loader ── */
+    /* ── Lazy loader — decode() abwarten, sonst ruckelt der Wechsel auf dem Pi ── */
     function ensureLoaded(center) {
       for (let d = 0; d <= 2; d++) {
         for (const off of (d === 0 ? [0] : [-d, d])) {
@@ -252,7 +296,7 @@
           const img = slides[idx].querySelector('img.main');
           if (img && img.dataset.src && !img.src) {
             img.src = img.dataset.src;
-            img.onload = () => img.classList.add('loaded');
+            img.decode().catch(() => {}).then(() => img.classList.add('loaded'));
           }
         }
       }
@@ -264,7 +308,11 @@
     function goTo(idx, skipTransition) {
       cur = ((idx % N) + N) % N;
       if (FADE) {
-        slides.forEach((s, i) => s.classList.toggle('active', i === cur));
+        slides.forEach((s, i) => {
+          s.classList.toggle('active', i === cur);
+          // Nachbarn sichtbar halten → flüssige Überblendung, Rest gibt GPU-Speicher frei
+          s.classList.toggle('near', i === (cur + 1) % N || i === (cur - 1 + N) % N);
+        });
       } else {
         if (skipTransition) track.classList.add('dragging');
         track.style.transform = `translate3d(${-cur * 100}%, 0, 0)`;
@@ -274,12 +322,13 @@
       // Highlight thumbnail + scroll into view
       thumbEls.forEach((t, i) => t.classList.toggle('on', i === cur));
       if (thumbEls[cur]) thumbEls[cur].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-      counter.textContent = `${cur + 1}\u2009/\u2009${N}`;
+      counter.textContent = `${cur + 1} / ${N}`;
       if (SHOW_INFO) {
         capTitle.textContent = items[cur].titel || '';
         const sub = items[cur].inventarnummer || items[cur].untertitel || '';
         capSub.textContent = sub;
         capSub.style.display = sub ? '' : 'none';
+        caption.style.visibility = (items[cur].titel || sub) ? '' : 'hidden';
       }
       resetProgress();
     }

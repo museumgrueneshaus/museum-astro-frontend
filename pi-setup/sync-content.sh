@@ -95,6 +95,29 @@ GROQ='*[_type=="kioskDevice" && kioskId==$kioskId][0]{
     }
   ),
   "kategorien": ausstellung->kategorien[]->{ _id, titel },
+
+  "slides": select(
+    ausstellung->kioskTemplate.slideshowSettings.bildquelle == "galerie" => ausstellung->galerie[]{
+      "_id": _key,
+      "titel": coalesce(caption, alt),
+      "hauptbild": { "asset": asset->{ _id, url, "metadata": metadata{ lqip, dimensions } } }
+    },
+    ausstellung->kioskTemplate.slideshowSettings.bildquelle == "exponate" => ausstellung->exponate[]->{
+      _id, titel, untertitel, inventarnummer,
+      "hauptbild": hauptbild{ "asset": asset->{ _id, url, "metadata": metadata{ lqip, dimensions } } }
+    },
+    coalesce(
+      ausstellung->exponate[]->{
+        _id, titel, untertitel, inventarnummer,
+        "hauptbild": hauptbild{ "asset": asset->{ _id, url, "metadata": metadata{ lqip, dimensions } } }
+      },
+      ausstellung->galerie[]{
+        "_id": _key,
+        "titel": coalesce(caption, alt),
+        "hauptbild": { "asset": asset->{ _id, url, "metadata": metadata{ lqip, dimensions } } }
+      }
+    )
+  ),
   "slideshowSettings": ausstellung->kioskTemplate.slideshowSettings,
   "explorerSettings":  ausstellung->kioskTemplate.explorerSettings,
 
