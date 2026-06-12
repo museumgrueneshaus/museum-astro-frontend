@@ -49,7 +49,10 @@ jobs:
             Branch: ${{ github.ref_name }}
           files: museum-kiosk-build.zip
 
-      # Netlify baut NICHT automatisch bei Push — ohne diesen Hook zeigt
-      # museumgh.netlify.app (Vorschau) einen veralteten Stand
-      - name: Trigger Netlify deploy
-        run: curl -sf -X POST -d '{}' "${{ secrets.NETLIFY_BUILD_HOOK_URL || 'https://api.netlify.com/build_hooks/68c029e04a4a99209a1825e8' }}"
+      # Vorschau-Site: https://museumgh-preview.netlify.app (Account MGA/mga-Team).
+      # Direkter Upload des fertigen dist/ — kein Build-Hook: die alte Site
+      # "museumgh" liegt in einem unzugänglichen Account und blieb veraltet.
+      - name: Deploy preview to Netlify
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        run: npx -y netlify-cli deploy --prod --dir dist --site 96a99170-c560-49da-9ae4-467b96e5d54b
