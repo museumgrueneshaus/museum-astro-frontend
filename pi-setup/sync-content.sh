@@ -19,6 +19,32 @@ LOG_PREFIX="[sync-content]"
 log()   { echo "$LOG_PREFIX $*"; }
 error() { echo "$LOG_PREFIX ERROR: $*" >&2; }
 
+# ── Self-Heal: unvollständig provisionierte Pis reparieren (idempotent) ─────
+# rpi020 wurde ohne raspberry-Admin-User und ohne Cron aufgesetzt — Gerät war
+# remote unerreichbar und hat sich nie aktualisiert. Läuft als root, no-op
+# auf korrekt aufgesetzten Pis.
+if [ "$(id -u)" = "0" ]; then
+    # Admin-User für Tailscale-SSH (ACL erlaubt nur "raspberry")
+    if ! id raspberry >/dev/null 2>&1; then
+        useradd -m -s /bin/bash raspberry
+        echo 'raspberry ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/010-raspberry
+        chmod 440 /etc/sudoers.d/010-raspberry
+        log "Self-Heal: Admin-User raspberry angelegt"
+    fi
+    # Cron-Jobs (nur wenn weder root-crontab noch cron.d sie kennt)
+    if ! crontab -l 2>/dev/null | grep -q sync-content && [ ! -f /etc/cron.d/museum-kiosk ]; then
+        cat > /etc/cron.d/museum-kiosk <<'CRON'
+* * * * *    root /usr/local/bin/heartbeat.sh    >> /var/log/heartbeat.log 2>&1
+*/5 * * * *  root /usr/local/bin/sync-content.sh >> /var/log/sync-content.log 2>&1
+*/15 * * * * root /usr/local/bin/sync-build.sh   >> /var/log/sync-build.log 2>&1
+0 2 * * *    root /usr/local/bin/sync-videos.sh  >> /var/log/sync-videos.log 2>&1
+0 3 * * *    root /sbin/reboot
+CRON
+        chmod 644 /etc/cron.d/museum-kiosk
+        log "Self-Heal: Cron-Jobs installiert (/etc/cron.d/museum-kiosk)"
+    fi
+fi
+
 # ── Read kiosk ID (or derive it from the hardware serial — golden image) ────
 if [ ! -f "$KIOSK_CONFIG" ]; then
     SERIAL=$(awk '/^Serial/ {print $3}' /proc/cpuinfo 2>/dev/null || true)
