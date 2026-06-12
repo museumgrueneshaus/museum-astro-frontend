@@ -48,3 +48,8 @@ jobs:
             Automated build from commit ${{ github.sha }}
             Branch: ${{ github.ref_name }}
           files: museum-kiosk-build.zip
+
+      # Netlify baut NICHT automatisch bei Push — ohne diesen Hook zeigt
+      # museumgh.netlify.app (Vorschau) einen veralteten Stand
+      - name: Trigger Netlify deploy
+        run: curl -sf -X POST -d '{}' "${{ secrets.NETLIFY_BUILD_HOOK_URL || 'https://api.netlify.com/build_hooks/68c029e04a4a99209a1825e8' }}"
