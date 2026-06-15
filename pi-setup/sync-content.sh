@@ -43,6 +43,20 @@ CRON
         chmod 644 /etc/cron.d/museum-kiosk
         log "Self-Heal: Cron-Jobs installiert (/etc/cron.d/museum-kiosk)"
     fi
+
+    # Drucker (Kyocera "Kassa", IPP driverless) auf JEDEM Pi sicherstellen —
+    # so kann das Malspiel nach einem Inhaltstausch auf jedem Gerät drucken.
+    # Idempotent: nur wenn CUPS da ist und der Drucker noch fehlt.
+    if command -v lpadmin >/dev/null 2>&1 && ! lpstat -p Kassa >/dev/null 2>&1; then
+        if lpadmin -p Kassa -E -v ipp://192.168.2.200/ipp/print -m everywhere 2>/dev/null; then
+            lpadmin -d Kassa 2>/dev/null || true        # als Standarddrucker setzen
+            cupsenable Kassa 2>/dev/null || true
+            cupsaccept Kassa 2>/dev/null || true
+            log "Self-Heal: Drucker 'Kassa' (Kyocera 192.168.2.200) eingerichtet"
+        else
+            log "Self-Heal: Drucker 192.168.2.200 nicht erreichbar — Versuch beim nächsten Sync"
+        fi
+    fi
 fi
 
 # ── Read kiosk ID (or derive it from the hardware serial — golden image) ────
@@ -204,6 +218,9 @@ PYEOF
     exit 0   # keep old file; content arrives once the device is assigned
 }
 
+# ── Modus vor dem Überschreiben merken (für Chromium-Neustart-Erkennung) ─────
+OLD_MODUS=$(python3 -c "import json;print(json.load(open('$CONTENT_FILE')).get('modus') or '')" 2>/dev/null || echo "")
+
 # ── Add timestamp and write atomically ──────────────────────────────────────
 echo "$RESULT" | jq --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '. + {lastSync: $ts}' > "$CONTENT_TMP" || {
     error "jq failed — keeping existing content"
@@ -212,6 +229,19 @@ echo "$RESULT" | jq --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '. + {lastSync: $t
 
 mv "$CONTENT_TMP" "$CONTENT_FILE"
 chown www-data:www-data "$CONTENT_FILE" 2>/dev/null || true
+
+# ── Chromium bei Modus-Wechsel neu starten ──────────────────────────────────
+# Nötig beim Inhaltstausch (z.B. Slideshow ⇄ Malspiel): Chromium lädt dann die
+# richtige Seite UND liest die CUPS-Druckerliste neu (sonst druckt das Malspiel
+# auf einem frisch zugewiesenen Gerät nicht — war die Ursache bei PI-C3B6).
+NEW_MODUS=$(echo "$RESULT" | python3 -c "import json,sys;print(json.loads(sys.stdin.read()).get('modus') or '')" 2>/dev/null || echo "")
+if [ -n "$NEW_MODUS" ] && [ -n "$OLD_MODUS" ] && [ "$OLD_MODUS" != "$NEW_MODUS" ]; then
+    log "Modus-Wechsel: '$OLD_MODUS' → '$NEW_MODUS' — starte Chromium neu"
+    KIOSK_USER="museumgh"
+    KIOSK_UID=$(id -u "$KIOSK_USER" 2>/dev/null || echo "1000")
+    XDG_RUNTIME_DIR="/run/user/$KIOSK_UID" sudo -u "$KIOSK_USER" \
+        systemctl --user restart chromium-kiosk.service 2>/dev/null || true
+fi
 
 # ── Remote command from Sanity (befehl field) ───────────────────────────────
 BEFEHL=$(echo "$RESULT" | python3 -c "import json,sys; print(json.loads(sys.stdin.read()).get('befehl') or '')" 2>/dev/null || echo "")
