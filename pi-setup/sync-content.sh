@@ -259,7 +259,11 @@ if command -v tailscale >/dev/null 2>&1; then
     LOCATION=$(echo "$RESULT" | python3 -c "import json,sys;print(json.loads(sys.stdin.read()).get('location') or '')" 2>/dev/null || echo "")
     TS_NAME=$(KID="$KIOSK_ID" LOC="$LOCATION" python3 - <<'PYEOF'
 import os, re
-def slug(s): return re.sub(r'-+', '-', re.sub(r'[^a-z0-9]+', '-', s.lower())).strip('-')
+UML = {'ä':'ae','ö':'oe','ü':'ue','ß':'ss','Ä':'ae','Ö':'oe','Ü':'ue'}
+def slug(s):
+    s = s.lower()
+    for k, v in UML.items(): s = s.replace(k.lower(), v)
+    return re.sub(r'-+', '-', re.sub(r'[^a-z0-9]+', '-', s)).strip('-')
 parts = [slug(os.environ.get('KID', ''))]
 loc = os.environ.get('LOC', '').strip()
 if loc: parts.append(slug(loc))
