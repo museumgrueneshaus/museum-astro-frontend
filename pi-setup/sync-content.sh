@@ -91,6 +91,7 @@ log "Fetching content for kiosk: $KIOSK_ID"
 GROQ='*[_type=="kioskDevice" && kioskId==$kioskId][0]{
   _id,
   "kioskId": kioskId,
+  "location": location,
   "befehl": befehl,
   "modus": select(
     modus == "malspiel" => "malspiel",
@@ -249,6 +250,29 @@ if [ -n "$NEW_MODUS" ] && [ -n "$OLD_MODUS" ] && [ "$OLD_MODUS" != "$NEW_MODUS" 
     sudo -u "$KIOSK_USER" rm -f "/home/$KIOSK_USER/.config/chromium/Singleton"* 2>/dev/null || true
     XDG_RUNTIME_DIR="/run/user/$KIOSK_UID" sudo -u "$KIOSK_USER" \
         systemctl --user start chromium-kiosk.service 2>/dev/null || true
+fi
+
+# ── Tailscale-Name aus Sanity ableiten (kioskId + location) ─────────────────
+# Selbstpflegend: location in Sanity ändern → Tailscale-Name folgt beim Sync.
+# Schema: pi-<serial>-<location>, z.B. "pi-00f0-raum-12-fensterseitig".
+if command -v tailscale >/dev/null 2>&1; then
+    LOCATION=$(echo "$RESULT" | python3 -c "import json,sys;print(json.loads(sys.stdin.read()).get('location') or '')" 2>/dev/null || echo "")
+    TS_NAME=$(KID="$KIOSK_ID" LOC="$LOCATION" python3 - <<'PYEOF'
+import os, re
+def slug(s): return re.sub(r'-+', '-', re.sub(r'[^a-z0-9]+', '-', s.lower())).strip('-')
+parts = [slug(os.environ.get('KID', ''))]
+loc = os.environ.get('LOC', '').strip()
+if loc: parts.append(slug(loc))
+print('-'.join(p for p in parts if p)[:63])
+PYEOF
+)
+    TS_STAMP="/etc/museum-kiosk/ts-hostname"
+    if [ -n "$TS_NAME" ] && [ "$TS_NAME" != "$(cat "$TS_STAMP" 2>/dev/null)" ]; then
+        if tailscale set --hostname="$TS_NAME" 2>/dev/null; then
+            echo "$TS_NAME" > "$TS_STAMP"
+            log "Tailscale-Name aus Sanity gesetzt: $TS_NAME"
+        fi
+    fi
 fi
 
 # ── Remote command from Sanity (befehl field) ───────────────────────────────
