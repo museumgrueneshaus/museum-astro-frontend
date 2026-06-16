@@ -353,7 +353,10 @@
   const ctx      = cvs.getContext('2d');
 
   const cvsA   = document.getElementById('cvs-active');
-  const ctxA   = cvsA.getContext('2d');
+  // desynchronized = Low-Latency-Renderpfad (Finger-zu-Pixel). NUR auf der
+  // Live-Ebene: die Basis-Ebene cvs wird beim Drucken ausgelesen (toDataURL),
+  // und desynchronized kann das Auslesen stören → cvs bleibt normal.
+  const ctxA   = cvsA.getContext('2d', { desynchronized: true }) || cvsA.getContext('2d');
 
   let color    = '#e53935';
   let size     = 14;
@@ -363,6 +366,7 @@
   let strokePts = [];
   let lastDrawn = 0;     // index of last rendered point → incremental draw
   let rafId     = 0;
+  let strokeRect = null; // Canvas-Position 1× pro Strich cachen (kein Layout-Read pro Punkt)
 
 
   /* ── Fetch ──────────────────────────────────────────────────────── */
@@ -530,7 +534,7 @@
   // No putImageData anywhere → minimal per-frame cost.
 
   function pt(e) {
-    const r  = cvs.getBoundingClientRect();
+    const r  = strokeRect || cvs.getBoundingClientRect();
     const sx = cvs.width  / r.width;
     const sy = cvs.height / r.height;
     return { x: (e.clientX - r.left) * sx, y: (e.clientY - r.top) * sy };
@@ -547,6 +551,7 @@
   function dn(e) {
     e.preventDefault();
     if (e.pointerId != null) cvsA.setPointerCapture(e.pointerId);
+    strokeRect = cvs.getBoundingClientRect();   // 1× pro Strich, dann gecacht
     drawing   = true;
     strokePts = [pt(e)];
     lastDrawn = 0;
