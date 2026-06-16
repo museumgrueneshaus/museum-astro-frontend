@@ -28,6 +28,10 @@ ExecStartPre=/bin/bash -c '\
     fi; \
     true'
 
+# Remove stale profile lock (SingletonLock/-Cookie/-Socket). A leftover lock from
+# an orphaned Chromium makes every start fail ("profile in use") → restart loop.
+ExecStartPre=/bin/bash -c 'rm -f "$HOME/.config/chromium/Singleton"* 2>/dev/null; true'
+
 ExecStart=/bin/bash -c '\
     CHROMIUM=$(which chromium chromium-browser 2>/dev/null | head -1); \
     [ -n "$CHROMIUM" ] || { echo "Chromium not found"; exit 1; }; \

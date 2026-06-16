@@ -236,11 +236,19 @@ chown www-data:www-data "$CONTENT_FILE" 2>/dev/null || true
 # auf einem frisch zugewiesenen Gerät nicht — war die Ursache bei PI-C3B6).
 NEW_MODUS=$(echo "$RESULT" | python3 -c "import json,sys;print(json.loads(sys.stdin.read()).get('modus') or '')" 2>/dev/null || echo "")
 if [ -n "$NEW_MODUS" ] && [ -n "$OLD_MODUS" ] && [ "$OLD_MODUS" != "$NEW_MODUS" ]; then
-    log "Modus-Wechsel: '$OLD_MODUS' → '$NEW_MODUS' — starte Chromium neu"
+    log "Modus-Wechsel: '$OLD_MODUS' → '$NEW_MODUS' — starte Chromium sauber neu"
     KIOSK_USER="museumgh"
     KIOSK_UID=$(id -u "$KIOSK_USER" 2>/dev/null || echo "1000")
+    # Sauberer Neustart: ein simples `systemctl restart` ließ einen verwaisten
+    # Chromium-Prozess zurück, der die Profilsperre (SingletonLock) hielt → jeder
+    # Neustart scheiterte → Absturzschleife. Daher hart beenden + Lock entfernen.
     XDG_RUNTIME_DIR="/run/user/$KIOSK_UID" sudo -u "$KIOSK_USER" \
-        systemctl --user restart chromium-kiosk.service 2>/dev/null || true
+        systemctl --user stop chromium-kiosk.service 2>/dev/null || true
+    pkill -9 -u "$KIOSK_USER" chromium 2>/dev/null || true
+    sleep 2
+    sudo -u "$KIOSK_USER" rm -f "/home/$KIOSK_USER/.config/chromium/Singleton"* 2>/dev/null || true
+    XDG_RUNTIME_DIR="/run/user/$KIOSK_UID" sudo -u "$KIOSK_USER" \
+        systemctl --user start chromium-kiosk.service 2>/dev/null || true
 fi
 
 # ── Remote command from Sanity (befehl field) ───────────────────────────────
