@@ -651,8 +651,6 @@
     if (tmpl.complete && tmpl.naturalWidth > 0) {
       oc.drawImage(tmpl, 0, 0, off.width, off.height);
     }
-    document.getElementById('pimg').src = off.toDataURL('image/png');
-
     // Seitenformat passend zum Bild (quer/hoch)
     let pageStyle = document.getElementById('page-style');
     if (!pageStyle) {
@@ -662,7 +660,18 @@
     }
     pageStyle.textContent = `@page { size: A4 ${off.width >= off.height ? 'landscape' : 'portrait'}; margin: 8mm; }`;
 
-    window.print();
+    // Druckbild setzen und ERST drucken, wenn es fertig dekodiert ist.
+    // #pimg ist das einzige im @media print sichtbare Element. Wird window.print()
+    // synchron direkt nach dem src-Setzen aufgerufen, ist das (große) Data-URL-PNG
+    // noch nicht gemalt → weiße Seite. Auf dem Pi verliert diese Race zuverlässig.
+    const pimg = document.getElementById('pimg');
+    const doPrint = () => window.print();
+    pimg.src = off.toDataURL('image/png');
+    if (pimg.decode) {
+      pimg.decode().then(doPrint).catch(doPrint);
+    } else {
+      pimg.onload = doPrint;
+    }
 
     // Bild zusätzlich archivieren (lokaler Upload-Dienst auf dem Pi → Sanity).
     // Fire-and-forget: existiert der Endpunkt nicht (z.B. Netlify), passiert nichts.
