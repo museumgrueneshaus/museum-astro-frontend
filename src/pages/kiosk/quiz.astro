@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Museumsquiz – Museum im Grünen Haus Reutte</title>
+<style>
+:root{
+  --green:#2e6b3f; --green-dark:#1f4a2c; --cream:#faf6ec; --card:#fff;
+  --gold:#c9962c; --ink:#2b2620; --salt:#7fb2c9; --bar:#e8e0cf;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{font-family:Georgia,'Times New Roman',serif; background:var(--cream); color:var(--ink); line-height:1.55;}
+.wrap{max-width:1000px; margin:0 auto; padding:0 18px;}
+.hidden{display:none!important;}
+.topbar{background:linear-gradient(160deg,var(--green-dark),var(--green)); color:#fff; padding:28px 0 18px; border-bottom:6px solid var(--gold);}
+.topbar h1{font-size:2rem; letter-spacing:.5px;}
+.topbar p{opacity:.9; font-style:italic; margin-top:4px;}
+.progress-strip{display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-top:14px; font-family:Verdana,sans-serif; font-size:.8rem;}
+.progress-bar{flex:1; min-width:180px; height:14px; background:rgba(255,255,255,.25); border-radius:8px; overflow:hidden;}
+#progressFill{height:100%; width:0; background:var(--gold); transition:width .4s;}
+.btn{background:var(--gold); color:#fff; border:none; padding:9px 18px; border-radius:8px; cursor:pointer; font-family:Verdana,sans-serif; font-size:.85rem; font-weight:bold;}
+.btn:hover{filter:brightness(1.08);}
+.btn.ghost{background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.5);}
+.card{background:var(--card); border:1px solid var(--bar); border-radius:14px; padding:24px; margin:22px 0; box-shadow:0 3px 10px rgba(43,38,32,.07);}
+.intro h2,.quiz h2{color:var(--green-dark); margin-bottom:10px;}
+.intro ol{margin:10px 0 10px 22px;}
+.intro .hint{font-style:italic; color:var(--green); margin-top:8px;}
+.station-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; margin:20px 0;}
+.station-btn{background:var(--card); border:2px solid var(--bar); border-radius:12px; padding:14px; text-align:left; cursor:pointer; font-family:inherit; transition:.2s;}
+.station-btn:hover:not(:disabled){border-color:var(--gold); transform:translateY(-2px); box-shadow:0 4px 10px rgba(43,38,32,.1);}
+.station-btn:disabled{opacity:.55; cursor:default;}
+.station-num{display:inline-block; background:var(--green); color:#fff; border-radius:50%; width:30px; height:30px; line-height:30px; text-align:center; font-family:Verdana,sans-serif; font-size:.85rem; margin-bottom:6px;}
+.station-btn.done .station-num{background:var(--gold);}
+.station-topic{font-weight:bold; color:var(--green-dark); font-size:.95rem; display:block;}
+.station-sub{font-size:.8rem; color:#7a7266; font-style:italic;}
+.station-sticker{font-size:.75rem; color:var(--gold); font-weight:bold;}
+.quiz-head{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;}
+.quiz-topic{color:var(--gold); font-style:italic; font-size:.95rem;}
+.q-block{background:var(--cream); border-radius:10px; padding:14px 16px; margin:14px 0;}
+.q-text{font-weight:bold; margin-bottom:8px;}
+.q-block label{display:block; padding:8px 10px; margin:4px 0; border:1.5px solid var(--bar); border-radius:8px; cursor:pointer; background:#fff; font-size:.95rem;}
+.q-block label:hover{border-color:var(--green);}
+.q-block input{margin-right:8px;}
+label.correct{border-color:#3a8f4d!important; background:#e7f4ea!important;}
+label.wrong{border-color:#c0574f!important; background:#faeae8!important;}
+.quiz-result{border-radius:10px; padding:14px 16px; margin:14px 0; font-weight:bold; font-family:Verdana,sans-serif; font-size:.9rem;}
+.quiz-result.ok{background:#e7f4ea; border:2px solid #3a8f4d; color:#23602f;}
+.quiz-result.bad{background:#faeae8; border:2px solid #c0574f; color:#8f3a34;}
+.sticker-reveal{margin-top:14px; display:flex; gap:16px; align-items:center; flex-wrap:wrap;}
+.sticker{width:150px; height:150px; border-radius:14px; display:flex; flex-direction:column; justify-content:center; align-items:center; color:#fff; text-align:center; padding:10px; box-shadow:0 4px 12px rgba(43,38,32,.25); transform:rotate(-2deg); border:5px dashed rgba(255,255,255,.55);}
+.sticker .letter{font-size:3rem; font-weight:bold; font-family:Verdana,sans-serif; text-shadow:0 2px 4px rgba(0,0,0,.3);}
+.sticker .field-no{background:rgba(255,255,255,.25); border-radius:6px; padding:2px 10px; margin-top:6px; font-family:Verdana,sans-serif; font-size:.8rem;}
+.sticker.img{padding:0; overflow:hidden; transform:rotate(-2deg); display:block;}
+.sticker.img img{width:100%; height:100%; object-fit:cover; display:block;}
+.sticker-caption{background:rgba(0,0,0,.55); color:#fff; font-family:Verdana,sans-serif; font-size:.75rem; padding:4px 8px; text-align:center;}
+.sticker-info{flex:1; min-width:200px; font-size:.9rem;}
+.album-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:16px 0;}
+@media(max-width:600px){.album-grid{grid-template-columns:repeat(3,1fr);}}
+.field{aspect-ratio:1/1; border:2px dashed var(--bar); border-radius:12px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; background:#fff; padding:6px; position:relative; cursor:pointer; transition:.15s;}
+.field:hover{border-color:var(--gold); box-shadow:0 3px 10px rgba(43,38,32,.15); transform:translateY(-2px);}
+.field .fimg{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.22; filter:grayscale(35%); border-radius:10px; z-index:0; pointer-events:none;}
+.field.filled .fimg{opacity:.28; filter:grayscale(0%);}
+.field.filled.wrong-letter .fimg{opacity:.2; filter:grayscale(80%);}
+.field > span{position:relative; z-index:1; pointer-events:none;}
+.field .fno{position:absolute; top:4px; left:8px; font-family:Verdana,sans-serif; font-size:.7rem; color:#b3a98f; font-weight:bold; background:rgba(255,255,255,.75); padding:1px 6px; border-radius:6px;}
+.field .fletter{font-size:2.2rem; font-weight:bold; font-family:Verdana,sans-serif; color:var(--green-dark); text-shadow:0 1px 2px rgba(255,255,255,.9);}
+.field .fword{font-size:.65rem; color:#8b8271; font-style:italic;}
+.field.filled{border-style:solid; animation:pop .4s;}
+.field.wrong-letter{border-color:#c0574f; background:#faeae8;}
+.field.wrong-letter .fletter{color:#c0574f;}
+.warn-hint{color:#8f3a34; font-size:.85rem; display:block; margin-top:4px;}
+@keyframes pop{0%{transform:scale(.5);}70%{transform:scale(1.12);}100%{transform:scale(1);}}
+.field.empty .fletter{color:#d8cfb8;}
+#printBtn{display:none; margin-top:10px; font-size:1.05rem; padding:12px 28px; animation:pop .4s;}
+#printBtn.show{display:inline-block;}
+@media print{
+  body *{visibility:hidden;}
+  #album, #album *{visibility:visible;}
+  #album{position:absolute; left:0; top:0; width:100%;}
+  .center, .foot, #albumMsg, .progress-strip{display:none !important;}
+  .field{border-color:#999; break-inside:avoid; cursor:default;}
+  .field .fimg{opacity:.3;}
+  #printBtn{display:none !important;}
+}
+.album-msg{border-radius:10px; padding:14px 16px; font-family:Verdana,sans-serif; font-size:.9rem; margin-bottom:14px;}
+.album-msg.win{background:#e7f4ea; border:2px solid #3a8f4d;}
+.album-msg.part{background:#fdf6e3; border:2px solid var(--gold);}
+.album-msg.bad{background:#faeae8; border:2px solid #c0574f; color:#8f3a34;}
+.center{text-align:center; margin-top:8px;}
+.foot{background:var(--green-dark); color:#fff; text-align:center; padding:16px 0; margin-top:30px; font-size:.85rem;}
+.confetti{position:fixed; top:-20px; width:12px; height:12px; z-index:9999; pointer-events:none; border-radius:3px; animation:fall linear forwards;}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg); opacity:.9;}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <h1>🏛️ Das Museumsquiz</h1>
+    <p>Museum im Grünen Haus · Reutte · Stationsrallye für Entdecker von 10 bis 14 Jahren</p>
+    <div class="progress-strip">
+      <span id="progressCount">0 / 12 Aufkleber gesammelt</span>
+      <div class="progress-bar"><div id="progressFill"></div></div>
+      <button class="btn ghost" id="albumBtn">🖼️ Sammelalbum ansehen</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="intro" class="card intro">
+    <h2>Wie funktioniert's?</h2>
+    <ol>
+      <li>Du startest an einer Station und beantwortest dort <strong>3 Fragen</strong>.</li>
+      <li>Weißt du alle Antworten, darfst du dir den <strong>Aufkleber</strong> der Station nehmen.</li>
+      <li>Auf jedem Aufkleber steht ein <strong>Buchstabe</strong> und eine <strong>Feld-Nummer</strong> – klebe ihn ins richtige Feld deines Sammelalbums.</li>
+      <li>Alle 12 Aufkleber richtig verteilt ergeben ein <strong>Lösungswort</strong>. Sprich es beim Abschluss am Empfang vor und sichere dir deine Überraschung!</li>
+    </ol>
+    <p class="hint">Wähle unten deine Station. Du kannst sie in jeder Reihenfolge lösen!</p>
+  </section>
+
+  <section id="stationMap" class="station-grid"></section>
+
+  <section id="quiz" class="card quiz hidden"></section>
+
+  <section id="album" class="hidden">
+    <div class="card">
+      <h2>🖼️ Dein Sammelalbum – das Lösungswort</h2>
+      <p>Klebe jeden Aufkleber in das Feld, das auf ihm steht. Von links nach rechts ergibt sich das Lösungswort. Tipp: Klicke auf ein Bild, um direkt zur passenden Frage zu springen.</p>
+      <div id="albumGrid" class="album-grid"></div>
+      <div id="albumMsg" class="album-msg hidden"></div>
+      <div class="center"><button class="btn" id="backToMap">⬅️ Zurück zu den Stationen</button>
+      <button class="btn" id="printBtn">🖨️ Drucken</button></div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot"><div class="wrap">Museum im Grünen Haus · Untermarkt 24 · 6600 Reutte · Viel Erfolg, mutige Entdecker! 🧭</div></footer>
+<script>
+const STATIONS = [
+  {id:1, topic:"Reutte & der Markt", sub:"Deine Heimat am Lech", color:"#2e6b3f", word:"D", field:1,
+  sticker:"Das alte Marktzeichen von Reutte",
+  questions:[
+   {q:"Seit wann darf Reutte sich Markt nennen? Kaiser Maximilian verlieh das Marktrecht im Jahr …",
+    a:["1489","1526","1601"], c:0},
+   {q:"Welcher Fluss fließt direkt an Reutte vorbei?", a:["Der Lech","Der Inn","Die Donau"], c:0},
+   {q:"Warum entstand der Markt gerade hier?", a:["Wegen des Salzhandels über den Fernpass","Wegen der Goldwaschung","Weil es hier keine Steuern gab"], c:0}]},
+  {id:2, topic:"Salzhandel", sub:"Das weiße Gold", color:"#7fb2c9", word:"A", field:2,
+  sticker:"Ein Salzsack aus Hall in Tirol",
+  questions:[
+   {q:"Warum nannte man Salz früher auch „weißes Gold“?",
+    a:["Weil es so glitzerte","Weil es kostbar und wertvoll war","Weil es in Goldminen gefunden wurde"], c:1},
+   {q:"Wozu brauchte man Salz dringend – auch im Außerfern?",
+    a:["Zum Konservieren von Fleisch, Fisch und Käse","Zum Malen von Bildern","Zum Bau von Brücken"], c:0},
+   {q:"Aus welchem Salzlager stammte das Salz, das über Reutte gehandelt wurde?",
+    a:["Aus dem Schwarzmeer","Aus Hall in Tirol und Bayern","Aus den Alpen seen"], c:1}]},
+  {id:3, topic:"Die Salzfuhr (Saumtiere)", sub:"Schwere Arbeit auf dem Säumerweg", color:"#c9962c", word:"S", field:3,
+  sticker:"Ein Saumtier mit Salzsäcken",
+  questions:[
+   {q:"Wie brachte man das Salz über die Pässe, bevor es Lastwagen gab?",
+    a:["Mit Saumtieren wie Pferden und Maultieren","Mit Tauben","Auf Flößen bergauf"], c:0},
+   {q:"Wie schwer war eine Saum-Last ungefähr?",
+    a:["Bis zu 100 kg","Bis zu 3 kg","Bis zu 1000 kg"], c:0},
+   {q:"Wie nannte man die Männer, die die Tiere über die Berge führten?",
+    a:["Ritter","Säumer","Piraten"], c:1}]},
+  {id:4, topic:"Das Außerfern", sub:"Unser Tal hinter den Bergen", color:"#5a7d4f", word:"G", field:4,
+  sticker:"Eine Landkarte des Außerfern",
+  questions:[
+   {q:"Warum heißt unsere Region „Außer“fern?",
+     a:["Weil sie außerhalb des Fernpasses liegt","Weil das Tal weit abgelegen und fern von den großen Handelsstraßen war","Weil die Leute gerne wandern gingen"], c:0},
+   {q:"Welcher Pass verbindet das Außerfern mit dem Oberland und dem Weg nach Süden?",
+    a:["Der Fernpass","Der Brenner","Der Semmering"], c:0},
+   {q:"Zu welchem Bundesland gehört Reutte?",
+    a:["Salzburg","Vorarlberg","Tirol"], c:2}]},
+  {id:5, topic:"Barock-Malerei", sub:"Pracht, Gold und Wolken", color:"#8f5a2b", word:"R", field:5,
+  sticker:"Ein Putto aus einem Barockbild",
+  questions:[
+   {q:"Woran erkennst du ein barockes Gemälde?",
+    a:["Ruhige, flache Farben und viele Linien","Bewegte Figuren, viel Gold und dramatisches Licht","Nur schwarze Quadrat"], c:1},
+   {q:"Wen oder was zeigt die Barockmalerei am liebsten?",
+    a:["Heilige, Himmelsszenen und Fürsten","Autos und Straßen","Reine Landschaften ohne Figuren"], c:0},
+   {q:"Was sind „Putten“ in solchen Bildern?",
+    a:["Fußbodenfliesen","Kleine fliegende Kinderengel","Mützen"], c:1}]},
+  {id:6, topic:"Klassizismus-Malerei", sub:"Ruhe, Klarheit, Antike", color:"#6b7d8f", word:"Ü", field:6,
+  sticker:"Ein Marmor-Vasenornament",
+  questions:[
+   {q:"Der Klassizismus ahmt den Stil nach, den man in … wiederentdeckt hat.",
+    a:["Antike Ruinen aus Griechenland und Rom","Mittelalterlichen Burgen","Skateparken"], c:0},
+   {q:"Wie wirken klassizistische Bilder im Vergleich zum Barock?",
+    a:["Ruhiger, klarer, mit geraden Linien","Wild und chaotisch","Bunter und verspielter"], c:0},
+   {q:"Womit arbeitete man im Klassizismus sehr gerne?",
+    a:["Mit Sprühdosen","Mit Marmor und klaren Umrissen","Mit Neonfarben"], c:1}]},
+  {id:7, topic:"Uhren", sub:"Zeit im Museum", color:"#4f6d7d", word:"N", field:7,
+  sticker:"Ein kleines Zifferblatt",
+  questions:[
+   {q:"Womit trieb man alte Uhren im Haus an, bevor es Batterien gab?",
+    a:["Mit Gewichten und Federn","Mit Sonnenlicht","Mit Wasserdampf"], c:0},
+    {q:"Auf vielen alten Uhren siehst du Zeichen, die nicht wie Zahlen aussehen. Warum?",
+     a:["Es sind römische Ziffern (I, V, X …), so war das früher üblich","Es sind Geheimschrift-Zeichen","Das sind alles Fehler des Uhrmachers"], c:0},
+    {q:"Eine unserer Uhren hat einen anderen Sinn: Sie läuft verkehrt herum. Warum tut sie das?",
+     a:["Sie ist eine Friseureuhr – im Spiegel betrachtet läuft sie richtig herum","Sie ist kaputt","Jemand hat sie zum Spaß falsch aufgezogen"], c:0}]},
+  {id:8, topic:"Alte Schrift", sub:"Krimi mit der Feder", color:"#7d4f5f", word:"E", field:8,
+  sticker:"Eine Kanzlei-Feder",
+  questions:[
+   {q:"Womit schrieb man alte Urkunden und Rechnungsbücher?",
+    a:["Mit Federkiel und Tinte","Mit Bleistift","Mit Kugelschreiber"], c:0},
+   {q:"Warum kann man alte Schriften heute oft schwer lesen?",
+    a:["Die Buchstaben sahen anders aus als heute","Man schrieb rückwärts","Man schrieb nur mit Zahlen"], c:0},
+   {q:"Wie nannte man die flüssige Farbe zum Schreiben mit der Feder?",
+    a:["Tinte","Ketchup","Lack"], c:0}]},
+  {id:9, topic:"Wiegen & Messen", sub:"Fair gehandelt am Markt", color:"#a0762b", word:"H", field:9,
+  sticker:"Eine alte Balkenwaage",
+  questions:[
+   {q:"Wozu brauchte man auf dem Markt eine Waage?",
+    a:["Um genau abzuwiegen, wie viel Salz oder Getreide gekauft wurde","Um Kinder zu wiegen","Zum Spielen"], c:0},
+    {q:"Welche Waage siehst du oft auf Marktdarstellungen – sowie auf unserem Schreibtisch?",
+     a:["Die Balkenwaage mit zwei Schalen","Die Küchenwaage","Die elektrische Waage"], c:0},
+   {q:"Was passierte, wenn ein Händler betrog und manipulierte Gewichte benutzte?",
+    a:["Er musste Strafe zahlen und durfte oft nicht mehr handeln","Nichts, das war erlaubt","Er musste in die Kirche gehen"], c:0}]},
+  {id:10, topic:"Mathematik am Fuhrwerk", sub:"Rechnen wie ein Säumer", color:"#4d7a5f", word:"A", field:10,
+  sticker:"Ein Rechenzettel der Säumer",
+  questions:[
+    {q:"Ein Fuhrwerk kann 400 kg laden. Die Fässer Salz wiegen je 80 kg. Wie viele Fässer kann das Fuhrwerk maximal laden?",
+     a:["5 Fässer","4 Fässer","6 Fässer"], c:0},
+   {q:"Wie viel wiegen 3 Säcke zu je 50 kg zusammen?",
+    a:["100 kg","150 kg","53 kg"], c:1},
+    {q:"Ein Säumer verdient an einer Fahrt 12 Heller. Wie viel bekommt er für 5 Fahrten?",
+     a:["60 Heller","50 Heller","17 Heller"], c:0}]},
+  {id:11, topic:"Handel & Wege", sub:"Auf den Spuren der Händler", color:"#8a6d3b", word:"U", field:11,
+  sticker:"Ein Wegweiser zum Fernpass",
+  questions:[
+   {q:"Welche Waren wurden über die Alpen gehandelt?",
+    a:["Salz, Gewürze, Stoffe und Wein","Nur Sand","Nur Steine"], c:0},
+   {q:"Warum waren Fuhrwerke auf bergigen Wegen oft unterwegs?",
+    a:["Es gab noch keine Eisenbahn und Lastwagen","Die Wege waren kürzer","Die Berge waren schöner"], c:0},
+   {q:"Wo konnten die Händler und Säumer in Reutte übernachten und ihre Pferde füttern?",
+    a:["In Gasthöfen und Herbergen","In Schulen","In der Kirche"], c:0}]},
+  {id:12, topic:"Das Museum selbst", sub:"Ein Haus mit Geschichte", color:"#3f5f73", word:"S", field:12,
+  sticker:"Das Museumsgebäude",
+  questions:[
+   {q:"In welchem Gebäude befindet sich unser Museum?",
+    a:["In einem alten, denkmalgeschützten Bürgerhaus","In einem Einkaufszentrum","In einer Burg"], c:0},
+   {q:"Was bedeutet „denkmalgeschützt“?",
+    a:["Das Gebäude ist besonders wertvoll und darf nicht einfach umgebaut werden","Man darf es nicht fotografieren","Es ist ein Denkmal für eine Person"], c:0},
+   {q:"Wer sorgt dafür, dass die Ausstellungen entstehen?",
+    a:["Mitarbeiterinnen, Kuratorinnen und viele Helfer","Roboter","Zufall"], c:0}]}
+];
+// Lösungswort: D-A-S-G-R-Ü-N-E-H-A-U-S = DASGRÜNEHAUS (Felder 1-12)
+
+const done = new Map(); // Station-ID -> Buchstabe (richtig oder falsch)
+
+function shiftLetter(ch){
+  const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZÜ';
+  const i = A.indexOf(ch);
+  return i < 0 ? '?' : A[(i + 1) % A.length];
+}
+
+const mapEl = document.getElementById('stationMap');
+const quizEl = document.getElementById('quiz');
+const introEl = document.getElementById('intro');
+const albumEl = document.getElementById('album');
+const albumGrid = document.getElementById('albumGrid');
+const albumMsg = document.getElementById('albumMsg');
+const shuffledAnswers = {};
+
+function renderMap(){
+  mapEl.innerHTML = '';
+  STATIONS.forEach(s=>{
+    const b = document.createElement('button');
+    b.className = 'station-btn' + (done.has(s.id)?' done':'');
+    b.innerHTML = `<span class="station-num">${s.id}</span>
+      <span class="station-topic">${s.topic}</span>
+      <span class="station-sub">${s.sub}</span><br>
+      <span class="station-sticker">${done.has(s.id)?'✅ Aufkleber erhalten':'🎁 Aufkleber: '+s.sticker}</span>`;
+    b.onclick = ()=>openStation(s.id);
+    mapEl.appendChild(b);
+  });
+  updateProgress();
+}
+
+function updateProgress(){
+  document.getElementById('progressCount').textContent = done.size + ' / 12 Aufkleber gesammelt';
+  document.getElementById('progressFill').style.width = (done.size/12*100)+'%';
+}
+
+function openStation(id){
+  const s = STATIONS.find(x=>x.id===id);
+  introEl.classList.add('hidden');
+  albumEl.classList.add('hidden');
+  mapEl.classList.add('hidden');
+  quizEl.classList.remove('hidden');
+  quizEl.innerHTML = `<div class="quiz-head"><div>
+      <h2>Station ${s.id}: ${s.topic}</h2>
+      <div class="quiz-topic">${s.sub}</div></div>
+      <button class="btn ghost" id="backMap">⬅️ Stationen</button></div>
+    <p>Beantworte alle drei Fragen richtig, um den Aufkleber <strong>„${s.sticker}“</strong> zu verdienen.</p>` +
+    s.questions.map((q,i)=>{
+      const order = q.a.map((t,j)=>({t,j}));
+      for(let k=order.length-1;k>0;k--){
+        const r = Math.floor(Math.random()*(k+1));
+        [order[k],order[r]] = [order[r],order[k]];
+      }
+      shuffledAnswers[id+':'+i] = order.map(o=>o.j);
+      return `<div class="q-block" data-q="${i}">
+      <div class="q-text">${i+1}. ${q.q}</div>
+      ${order.map(o=>`<label><input type="radio" name="q${i}" value="${o.j}">${o.t}</label>`).join('')}
+    </div>`;
+    }).join('') +
+    `<button class="btn" id="checkBtn">Antworten prüfen</button><div id="qResult"></div>`;
+  document.getElementById('backMap').onclick = backToMap;
+  document.getElementById('checkBtn').onclick = ()=>{
+    let allOk = true;
+    s.questions.forEach((q,i)=>{
+      const chosen = quizEl.querySelector(`input[name="q${i}"]:checked`);
+      const labels = quizEl.querySelectorAll(`.q-block[data-q="${i}"] label`);
+      labels.forEach((l,j)=>{l.classList.remove('correct','wrong');});
+      if(!chosen){ allOk = false; return; }
+      const val = parseInt(chosen.value);
+      labels[val].classList.add(val === q.c ? 'correct' : 'wrong');
+      if(val !== q.c){ allOk = false; }
+    });
+    const res = document.getElementById('qResult');
+    if(!allOk){
+      const wrongLetter = shiftLetter(s.word);
+      done.set(s.id, wrongLetter);
+      res.innerHTML = `<div class="quiz-result bad">Du hast die Station abgeschlossen! 🎁<br>
+      <span class="subtle">Vorerst bekommst du diesen Aufkleber – machen wir weiter und kommen später noch mal zurück.</span></div>
+      <div class="sticker-reveal">
+        <div class="sticker img" style="border-color:${s.color}">
+          <img src="/quiz/sticker${s.id}.png" alt="${s.sticker}"
+               onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'fallback',style:'background:${s.color}',innerHTML:'<div class=&quot;letter&quot;>${wrongLetter}</div><div class=&quot;field-no&quot;>kommt auf Feld ${s.field}</div>'}))">
+          <div class="sticker-caption">kommt auf Feld ${s.field}</div>
+        </div>
+        <div class="sticker-info">📦 <strong>Aufkleber: „${s.sticker}“</strong><br>
+        Klebe ihn zu Hause (oder am Empfang) in <strong>Feld ${s.field}</strong> deines Sammelalbums.<br>
+        <button class="btn" id="toAlbum" style="margin-top:8px">🖼️ Ins Sammelalbum einfügen</button></div>
+      </div>`;
+      document.getElementById('toAlbum').onclick = showAlbum;
+      updateProgress(); renderMap();
+      return;
+    }
+    done.set(s.id, s.word);
+    res.innerHTML = `<div class="quiz-result ok">Super, alles richtig! Du hast den Aufkleber verdient. 🎉</div>
+      <div class="sticker-reveal">
+        <div class="sticker img" style="border-color:${s.color}">
+          <img src="/quiz/sticker${s.id}.png" alt="${s.sticker}"
+               onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'fallback',style:'background:${s.color}',innerHTML:'<div class=&quot;letter&quot;>${s.word}</div><div class=&quot;field-no&quot;>kommt auf Feld ${s.field}</div>'}))">
+          <div class="sticker-caption">kommt auf Feld ${s.field}</div>
+        </div>
+        <div class="sticker-info">📦 <strong>Aufkleber: „${s.sticker}“</strong><br>
+        Klebe ihn zu Hause (oder am Empfang) in <strong>Feld ${s.field}</strong> deines Sammelalbums.<br>
+        <button class="btn" id="toAlbum" style="margin-top:8px">🖼️ Ins Sammelalbum einfügen</button></div>
+      </div>`;
+    document.getElementById('toAlbum').onclick = showAlbum;
+    updateProgress(); renderMap();
+  };
+}
+
+function backToMap(){
+  quizEl.classList.add('hidden');
+  albumEl.classList.add('hidden');
+  introEl.classList.remove('hidden');
+  mapEl.classList.remove('hidden');
+  renderMap();
+}
+
+function showAlbum(){
+  quizEl.classList.add('hidden');
+  mapEl.classList.add('hidden');
+  introEl.classList.add('hidden');
+  albumEl.classList.remove('hidden');
+  albumGrid.innerHTML = '';
+  STATIONS.forEach(s=>{
+    const filled = done.has(s.id);
+    const letter = done.get(s.id) || s.word;
+    const correct = filled && letter === s.word;
+    const d = document.createElement('div');
+    d.className = 'field' + (filled?' filled':' empty') + (filled ? (correct?'':' wrong-letter') : '');
+    d.title = 'Station ' + s.id + ': ' + s.topic + ' – hier klicken für die Fragen';
+    d.innerHTML = `<img class="fimg" src="/quiz/sticker${s.id}.png" alt=""
+        onerror="this.remove()">
+      <span class="fno">Feld ${s.field}</span>
+      <span class="fletter">${filled?letter:'?'}</span>
+      <span class="fword">${filled ? s.topic : 'noch leer'}</span>`;
+    d.onclick = ()=>openStation(s.id);
+    albumGrid.appendChild(d);
+  });
+  if(done.size === 12){
+    const word = STATIONS.map(s=>done.get(s.id)).join('');
+    if(word === 'DASGRÜNEHAUS'){
+      albumMsg.className = 'album-msg win';
+      albumMsg.textContent = '🎉 Lösungswort geschafft: DAS GRÜNE HAUS! Alle Buchstaben sind richtig – lauf schnell zum Empfang und hol dir deine Belohnung ab!';
+      launchConfetti();
+      setTimeout(()=>printBtn.classList.add('show'), 6000);
+    } else {
+      albumMsg.className = 'album-msg bad';
+      albumMsg.textContent = 'Fast geschafft! Aber schau dir die Fragen noch mal an – nicht jeder Buchstabe stimmt. Die roten Felder zeigen dir, wo du noch einmal nachsetzen musst. 💪';
+    }
+  } else {
+    albumMsg.className = 'album-msg part';
+    albumMsg.textContent = `Schon ${done.size} von 12 Feldern gefüllt. Sammle weiter – das Lösungswort wird langsam sichtbar!`;
+  }
+}
+
+document.getElementById('albumBtn').onclick = showAlbum;
+document.getElementById('backToMap').onclick = backToMap;
+function launchConfetti(){
+  const colors=['#e74c3c','#f1c40f','#2ecc71','#3498db','#9b59b6','#e67e22','#ff69b4'];
+  for(let i=0;i<150;i++){
+    const c=document.createElement('div');
+    c.className='confetti';
+    c.style.left=Math.random()*100+'vw';
+    c.style.background=colors[Math.floor(Math.random()*colors.length)];
+    c.style.animationDuration=(2+Math.random()*2.5)+'s';
+    c.style.animationDelay=Math.random()*1.2+'s';
+    if(Math.random()<.4){ c.style.borderRadius='50%'; c.style.width='9px'; c.style.height='9px'; }
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),6000);
+  }
+}
+const printBtn = document.getElementById('printBtn');
+printBtn.onclick = ()=>window.print();
+
+// A kiosk must return to its configured start screen after inactivity. The
+// quiz has no persistent state on purpose: a new visitor always starts fresh.
+const kioskId = new URLSearchParams(window.location.search).get('id');
+let idleTimer;
+function resetIdleTimer(){
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => {
+    window.location.replace(kioskId ? `/kiosk/?id=${encodeURIComponent(kioskId)}` : '/kiosk/');
+  }, 5 * 60_000);
+}
+['pointerdown', 'touchstart', 'mousedown', 'keydown'].forEach((eventName) =>
+  document.addEventListener(eventName, resetIdleTimer, { passive: true })
+);
+resetIdleTimer();
+renderMap();
+</script>
+</body>
+</html>

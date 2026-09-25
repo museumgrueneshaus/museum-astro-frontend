@@ -87,7 +87,7 @@ fi
 log "Fetching content for kiosk: $KIOSK_ID"
 
 # ── GROQ: fetch everything in one request ───────────────────────────────────
-# Covers all kiosk modes: video, slideshow, explorer, reader
+# Covers all kiosk modes: video, slideshow, explorer, reader, quiz
 GROQ='*[_type=="kioskDevice" && kioskId==$kioskId][0]{
   _id,
   "kioskId": kioskId,
@@ -97,6 +97,7 @@ GROQ='*[_type=="kioskDevice" && kioskId==$kioskId][0]{
     modus == "malspiel" => "malspiel",
     modus == "signage"  => "signage",
     modus == "website"  => "website",
+    modus == "quiz"     => "quiz",
     ausstellung->kioskTemplate.template
   ),
   "malspiel_id": select(

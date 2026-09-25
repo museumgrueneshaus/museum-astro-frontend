@@ -146,7 +146,8 @@ Optional kann per Link/QR-Code direkt auf die Mobile-Seite verwiesen werden.
 - Modus-Seiten (Desktop):
   - Explorer: `/explorer`
   - Slideshow: `/slideshow`
-  - Reader (PDF): `/reader`
+- Reader (PDF): `/reader`
+- Museumsquiz: `/kiosk/quiz` – Stationsrallye mit zwölf Stickerbildern
 - Exponat-Detail: `/exponat/[id]`
 
 ### Pro‑Kiosk (Pi) Routen (SSR)
@@ -240,6 +241,10 @@ Dokumenttyp: `kioskConfig`
   - `reader_settings`: `pdf_url` (string)
   - `design`: `theme` (string)
   - `funktionen`: `zeige_qr_codes` (bool), `zeige_uhr` (bool)
+
+Zusätzlich kann ein Gerät direkt den Modus `quiz` erhalten. Das Quiz ist als
+vollständiger, offline-fähiger Inhalt im Frontend gebündelt; der Pi synchronisiert
+nur den Modus und leitet nach `/kiosk/quiz?id=<kioskId>` weiter.
 - `museumInfo`: `name`, `untertitel`, `logo`, `willkommenstext`, `kontakt`, `oeffnungszeiten`, `sprachen`.
 
 3) .env
