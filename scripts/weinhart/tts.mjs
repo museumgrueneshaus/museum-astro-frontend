@@ -2,9 +2,11 @@
 // Anbieter per env: TTS=elevenlabs (Standard) oder TTS=openai.
 //   ELEVENLABS_API_KEY=… ELEVENLABS_VOICE=<voice_id> node scripts/weinhart/tts.mjs
 //   TTS=openai OPENAI_API_KEY=… node scripts/weinhart/tts.mjs
+//   TTS=say node scripts/weinhart/tts.mjs   (macOS-Stimmen, nur als Probe)
 // Optional: NUR=01,04 nur einzelne Stationen, SPRACHEN=de,en nur einzelne Sprachen.
 // Ergebnis: audio/<sprache>/NN.m4a (mono, AAC 128k, -16 LUFS).
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -67,13 +69,24 @@ async function openai(text, l) {
   return Buffer.from(await res.arrayBuffer());
 }
 
+// Probe ohne Schlüssel: Systemstimmen des Mac. Stimme je Sprache per SAY_DE, SAY_EN … änderbar.
+const SAY = { de: 'Anna', en: 'Daniel', nl: 'Xander', it: 'Alice' };
+function say(text, l) {
+  const f = join(tmpdir(), `weinhart-say-${process.pid}.aiff`);
+  execFileSync('say', ['-v', process.env[`SAY_${l.toUpperCase()}`] || SAY[l], '-r', '165', '-o', f, text]);
+  return readFile(f);
+}
+
+const ENGINE = { elevenlabs, openai, say }[TTS];
+if (!ENGINE) throw new Error(`Unbekannter Anbieter TTS=${TTS}`);
+
 for (const t of tracks) {
   await mkdir(join(RAW, t.l), { recursive: true });
   await mkdir(join(OUT, t.l), { recursive: true });
-  const raw = join(RAW, t.l, `${t.nr}.mp3`);
+  const raw = join(RAW, t.l, `${t.nr}.${TTS === 'say' ? 'aiff' : 'mp3'}`);
   const out = join(OUT, t.l, `${t.nr}.m4a`);
   process.stdout.write(`${t.l}/${t.nr} … `);
-  await writeFile(raw, TTS === 'openai' ? await openai(t.text, t.l) : await elevenlabs(t.text, t.l));
+  await writeFile(raw, await ENGINE(t.text, t.l));
   execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', raw,
     '-af', 'adelay=400|400,loudnorm=I=-16:TP=-1.5:LRA=11,apad=pad_dur=0.8',
     '-ac', '1', '-ar', '44100', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', out]);
