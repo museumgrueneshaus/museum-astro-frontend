@@ -1,0 +1,228 @@
+{
+  "ausstellung": {
+    "_id": "ausstellung-weinhart",
+    "titel": "Johann Weinhart. Bildhauer",
+    "untertitel": "Audioguide zu fünf Bronzen",
+    "slug": "weinhart",
+    "kurzbeschreibung": "Johann Weinhart (1925–2019) lebte und arbeitete ab 1958 in Biberwier. Seine Bronzen goss er nach einem eigenen Verfahren in der eigenen Werkstatt. Viele stehen im öffentlichen Raum zwischen Ehrwald, Berwang und Innsbruck.",
+    "intro_audio_text": "Willkommen. Johann Weinhart wurde 1925 in Salzburg geboren und lernte zuerst Tischler. Nach Arbeitsdienst und Kriegsgefangenschaft in Russland kam er Ende 1945 zurück, besuchte die Fachschule für Holz- und Steinbearbeitung in Hallein und lernte ein Jahr beim Bildhauer Fritz Behn in Ehrwald. Fünf Jahre arbeitete er als Steinmetz in Salzburg, ab 1958 lebte er in Biberwier. Lange verdiente er sein Geld als Gewehrschäfter. Erst ab 1972 arbeitete er frei als Bildhauer. Dieser Rundgang führt zu fünf seiner Bronzen. Jede Station hat einen QR-Code. Scannen Sie ihn, und der Text zur Station beginnt.",
+    "i18n": {
+      "en": {
+        "titel": "Johann Weinhart. Sculptor",
+        "untertitel": "Audio guide to five bronzes",
+        "kurzbeschreibung": "Johann Weinhart (1925–2019) lived and worked in Biberwier from 1958. He cast his bronzes in his own workshop, using a method he developed himself. Many of them stand in public spaces between Ehrwald, Berwang and Innsbruck.",
+        "audio_text": "Welcome. Johann Weinhart was born in Salzburg in 1925 and first trained as a carpenter. After labour service and time as a prisoner of war in Russia, he came back at the end of 1945. He attended the technical school for wood and stone working in Hallein and spent a year learning from the sculptor Fritz Behn in Ehrwald. For five years he worked as a stonemason in Salzburg, and from 1958 he lived in Biberwier. For a long time he earned his living as a gunstock maker. Only from 1972 did he work freely as a sculptor. This tour leads to five of his bronzes. Each stop has a QR code. Scan it, and the text for that stop begins."
+      },
+      "nl": {
+        "titel": "Johann Weinhart. Beeldhouwer",
+        "untertitel": "Audiotour langs vijf bronzen beelden",
+        "kurzbeschreibung": "Johann Weinhart (1925–2019) woonde en werkte vanaf 1958 in Biberwier. Zijn bronzen beelden goot hij volgens een eigen methode in zijn eigen werkplaats. Veel ervan staan in de openbare ruimte tussen Ehrwald, Berwang en Innsbruck.",
+        "audio_text": "Welkom. Johann Weinhart werd in 1925 in Salzburg geboren en leerde eerst het vak van meubelmaker. Na de arbeidsdienst en krijgsgevangenschap in Rusland kwam hij eind 1945 terug. Hij volgde de vakschool voor hout- en steenbewerking in Hallein en leerde een jaar bij de beeldhouwer Fritz Behn in Ehrwald. Vijf jaar werkte hij als steenhouwer in Salzburg, vanaf 1958 woonde hij in Biberwier. Lange tijd verdiende hij zijn geld als geweerkolfmaker. Pas vanaf 1972 werkte hij als zelfstandig beeldhouwer. Deze rondgang voert langs vijf van zijn bronzen beelden. Elke halte heeft een QR-code. Scan die, en de tekst bij de halte begint."
+      },
+      "it": {
+        "titel": "Johann Weinhart. Scultore",
+        "untertitel": "Audioguida a cinque bronzi",
+        "kurzbeschreibung": "Johann Weinhart (1925–2019) visse e lavorò a Biberwier dal 1958. Fondeva i suoi bronzi nella propria bottega, con un procedimento ideato da lui. Molti si trovano in spazi pubblici tra Ehrwald, Berwang e Innsbruck.",
+        "audio_text": "Benvenuti. Johann Weinhart nacque a Salisburgo nel 1925 e imparò dapprima il mestiere di falegname. Dopo il servizio di lavoro e la prigionia di guerra in Russia, tornò alla fine del 1945. Frequentò la scuola professionale per la lavorazione del legno e della pietra di Hallein e per un anno fu allievo dello scultore Fritz Behn a Ehrwald. Per cinque anni lavorò come scalpellino a Salisburgo, dal 1958 visse a Biberwier. A lungo si guadagnò da vivere costruendo calci di fucile. Solo dal 1972 lavorò come scultore indipendente. Questo percorso conduce a cinque dei suoi bronzi. Ogni tappa ha un codice QR. Inquadratelo, e il testo della tappa comincia."
+      }
+    }
+  },
+  "stationen": [
+    {
+      "nr": "01",
+      "titel": "Zugspitzgeist",
+      "untertitel": "Bronze, 300 cm",
+      "ort": "Biberwier",
+      "jahr_text": "ohne Datierung",
+      "material": "Bronze",
+      "masse": "H: 300 cm",
+      "kurzbeschreibung": "Drei Meter hohe Bronze in Biberwier, dem Ort, in dem Weinhart ab 1958 lebte. Im Hintergrund der Schneefernerkopf.",
+      "bild": "bilder/01.jpg",
+      "bildnachweis": "Foto: Tiia Monto, Wikimedia Commons, CC BY-SA 4.0",
+      "audio_text": "Station eins. Der Zugspitzgeist. Diese Bronze ist drei Meter hoch und steht in Biberwier, dem Ort, in dem Johann Weinhart ab 1958 lebte. Hinter ihr steht der Schneefernerkopf, ein Gipfel im Zugspitzmassiv. Weinhart kam spät zur Bildhauerei. Viele Jahre arbeitete er als Gewehrschäfter, also als Handwerker, der Schäfte für Gewehre aus Holz baut. Erst 1972 machte er sich als Bildhauer selbständig. Ab 1976 entwickelte er durch eigene Versuche ein Gussverfahren für Bronze. Es vereinfachte die Arbeitsschritte, und er konnte damit auch große Plastiken wie diese in der eigenen Werkstatt gießen.",
+      "i18n": {
+        "en": {
+          "titel": "Zugspitzgeist",
+          "untertitel": "Bronze, 300 cm",
+          "jahr_text": "undated",
+          "material": "bronze",
+          "kurzbeschreibung": "A three-metre bronze in Biberwier, the village where Weinhart lived from 1958. Behind it, the Schneefernerkopf.",
+          "audio_text": "Stop one. The Zugspitzgeist, the spirit of the Zugspitze. This bronze is three metres tall and stands in Biberwier, the village where Johann Weinhart lived from 1958. Behind it rises the Schneefernerkopf, a peak in the Zugspitze massif. Weinhart came to sculpture late. For many years he worked as a gunstock maker, a craftsman who makes the wooden stocks of rifles. Only in 1972 did he set up as an independent sculptor. From 1976, through his own experiments, he developed a method of casting bronze. It simplified the work, and it allowed him to cast large sculptures like this one in his own workshop."
+        },
+        "nl": {
+          "titel": "Zugspitzgeist",
+          "untertitel": "Brons, 300 cm",
+          "jahr_text": "ongedateerd",
+          "material": "brons",
+          "kurzbeschreibung": "Drie meter hoog bronzen beeld in Biberwier, het dorp waar Weinhart vanaf 1958 woonde. Op de achtergrond de Schneefernerkopf.",
+          "audio_text": "Halte één. De Zugspitzgeist, de geest van de Zugspitze. Dit bronzen beeld is drie meter hoog en staat in Biberwier, het dorp waar Johann Weinhart vanaf 1958 woonde. Erachter ligt de Schneefernerkopf, een top in het Zugspitzmassief. Weinhart begon pas laat met beeldhouwen. Jarenlang werkte hij als geweerkolfmaker, een vakman die de houten kolven van geweren maakt. Pas in 1972 vestigde hij zich als zelfstandig beeldhouwer. Vanaf 1976 ontwikkelde hij met eigen proeven een gietmethode voor brons. Die vereenvoudigde het werk, en zo kon hij ook grote beelden zoals dit in zijn eigen werkplaats gieten."
+        },
+        "it": {
+          "titel": "Zugspitzgeist",
+          "untertitel": "Bronzo, 300 cm",
+          "jahr_text": "non datato",
+          "material": "bronzo",
+          "kurzbeschreibung": "Bronzo alto tre metri a Biberwier, il paese in cui Weinhart visse dal 1958. Sullo sfondo lo Schneefernerkopf.",
+          "audio_text": "Tappa uno. Lo Zugspitzgeist, lo spirito della Zugspitze. Questo bronzo è alto tre metri e si trova a Biberwier, il paese in cui Johann Weinhart visse dal 1958. Alle sue spalle si alza lo Schneefernerkopf, una vetta del massiccio della Zugspitze. Weinhart arrivò tardi alla scultura. Per molti anni lavorò costruendo calci di fucile, cioè le parti in legno delle armi. Solo nel 1972 si mise in proprio come scultore. Dal 1976, con esperimenti propri, sviluppò un metodo di fusione del bronzo. Semplificava le fasi di lavoro e gli permetteva di fondere nella propria bottega anche grandi sculture come questa."
+        }
+      }
+    },
+    {
+      "nr": "02",
+      "titel": "Hl. Jakobus",
+      "untertitel": "Brunnenfigur am Jakobusbrunnen",
+      "ort": "Berwang",
+      "jahr_text": "1989",
+      "material": "Bronze",
+      "masse": "",
+      "kurzbeschreibung": "Bronzefigur des heiligen Jakobus des Älteren auf dem Laufbrunnen in Berwang, 1989.",
+      "bild": "bilder/02.jpg",
+      "bildnachweis": "Foto: David Short, Wikimedia Commons, CC BY 2.0",
+      "audio_text": "Station zwei. Der heilige Jakobus in Berwang. Weinhart schuf die Figur 1989 für den Jakobusbrunnen. Der Tiroler Kunstkataster führt ihn als Laufbrunnen mit der Figur des heiligen Jakobus des Älteren. Ein Laufbrunnen ist ein Brunnen, aus dem das Wasser ständig fließt. Die Bronze steht in der Mitte des achteckigen Steinbeckens, den Arm weit ausgestreckt. Im selben Jahr entstand auch sein Mahnmal an der Friedhofsmauer in Bichlbach, ein Relief aus Bronze.",
+      "i18n": {
+        "en": {
+          "titel": "St. James",
+          "untertitel": "Figure on the Jakobusbrunnen",
+          "material": "bronze",
+          "kurzbeschreibung": "Bronze figure of Saint James the Greater on the running fountain in Berwang, 1989.",
+          "audio_text": "Stop two. Saint James in Berwang. Weinhart made the figure in 1989 for the Jakobusbrunnen, the fountain of Saint James. The Tyrolean art register lists it as a running fountain with the figure of Saint James the Greater. A running fountain is one from which water flows constantly. The bronze stands in the middle of the octagonal stone basin, its arm stretched far out. In the same year he also made his memorial on the cemetery wall in Bichlbach, a bronze relief."
+        },
+        "nl": {
+          "titel": "Heilige Jacobus",
+          "untertitel": "Beeld op de Jakobusbrunnen",
+          "material": "brons",
+          "kurzbeschreibung": "Bronzen beeld van de heilige Jacobus de Meerdere op de fontein in Berwang, 1989.",
+          "audio_text": "Halte twee. De heilige Jacobus in Berwang. Weinhart maakte het beeld in 1989 voor de Jakobusbrunnen, de Jacobusfontein. Het Tiroler kunstregister beschrijft hem als een fontein met doorlopend stromend water en het beeld van de heilige Jacobus de Meerdere. Het bronzen beeld staat midden in het achthoekige stenen bekken, met de arm ver uitgestrekt. In hetzelfde jaar ontstond ook zijn gedenkteken aan de kerkhofmuur in Bichlbach, een reliëf in brons."
+        },
+        "it": {
+          "titel": "San Giacomo",
+          "untertitel": "Figura della Jakobusbrunnen",
+          "material": "bronzo",
+          "kurzbeschreibung": "Figura in bronzo di San Giacomo il Maggiore sulla fontana di Berwang, 1989.",
+          "audio_text": "Tappa due. San Giacomo a Berwang. Weinhart realizzò la figura nel 1989 per la fontana di San Giacomo. Il catasto artistico del Tirolo la registra come fontana a getto continuo con la figura di San Giacomo il Maggiore, cioè una fontana da cui l'acqua scorre senza interruzione. Il bronzo sta al centro della vasca ottagonale in pietra, con il braccio teso lontano dal corpo. Nello stesso anno nacque anche il suo monumento commemorativo sul muro del cimitero di Bichlbach, un rilievo in bronzo."
+        }
+      }
+    },
+    {
+      "nr": "03",
+      "titel": "Lealibrunnen",
+      "untertitel": "Brunnen mit Bronzeplastik",
+      "ort": "Ehrwald",
+      "jahr_text": "ohne Datierung",
+      "material": "Bronze, Stein",
+      "masse": "",
+      "kurzbeschreibung": "Brunnen in Ehrwald, dem Ort, an dem Weinhart 1949 ein Jahr bei Fritz Behn lernte. Im Hintergrund der Daniel.",
+      "bild": "bilder/03.jpg",
+      "bildnachweis": "Foto: Bbb, Wikivoyage Shared, CC BY-SA 3.0",
+      "audio_text": "Station drei. Der Lealibrunnen in Ehrwald. Hinter dem Brunnen steigt der Daniel auf. Ehrwald ist für Weinharts Weg ein wichtiger Ort. Hier lernte er nach der Fachschule in Hallein ein Jahr lang beim Akademieprofessor Fritz Behn. Diese Ausbildung bekam er, weil er in Hallein ein ausgezeichneter Schüler war. 1949 stellte er in Ehrwald gemeinsam mit Behn aus. Danach ging er für fünf Jahre als Steinmetz nach Salzburg, bevor er sich 1958 in Biberwier niederließ, nur wenige Kilometer von Ehrwald entfernt.",
+      "i18n": {
+        "en": {
+          "titel": "Lealibrunnen",
+          "untertitel": "Fountain with bronze sculpture",
+          "jahr_text": "undated",
+          "material": "bronze, stone",
+          "kurzbeschreibung": "Fountain in Ehrwald, where Weinhart studied with Fritz Behn for a year in 1949. Behind it, the Daniel.",
+          "audio_text": "Stop three. The Lealibrunnen in Ehrwald. Behind the fountain rises the Daniel. Ehrwald is an important place in Weinhart's life. Here, after the technical school in Hallein, he studied for a year with the academy professor Fritz Behn. He was given this training because he had been an outstanding student in Hallein. In 1949 he exhibited in Ehrwald together with Behn. He then went to Salzburg for five years as a stonemason, before settling in Biberwier in 1958, only a few kilometres from Ehrwald."
+        },
+        "nl": {
+          "titel": "Lealibrunnen",
+          "untertitel": "Fontein met bronzen beeld",
+          "jahr_text": "ongedateerd",
+          "material": "brons, steen",
+          "kurzbeschreibung": "Fontein in Ehrwald, waar Weinhart in 1949 een jaar bij Fritz Behn leerde. Op de achtergrond de Daniel.",
+          "audio_text": "Halte drie. De Lealibrunnen in Ehrwald. Achter de fontein rijst de Daniel op. Ehrwald is een belangrijke plek in Weinharts leven. Hier leerde hij na de vakschool in Hallein een jaar lang bij de academieprofessor Fritz Behn. Die opleiding kreeg hij omdat hij in Hallein een uitstekende leerling was. In 1949 exposeerde hij in Ehrwald samen met Behn. Daarna ging hij voor vijf jaar als steenhouwer naar Salzburg, voordat hij zich in 1958 in Biberwier vestigde, maar een paar kilometer van Ehrwald."
+        },
+        "it": {
+          "titel": "Lealibrunnen",
+          "untertitel": "Fontana con scultura in bronzo",
+          "jahr_text": "non datato",
+          "material": "bronzo, pietra",
+          "kurzbeschreibung": "Fontana a Ehrwald, dove nel 1949 Weinhart studiò per un anno con Fritz Behn. Sullo sfondo il Daniel.",
+          "audio_text": "Tappa tre. Il Lealibrunnen a Ehrwald. Dietro la fontana si innalza il Daniel. Ehrwald è un luogo importante nella vita di Weinhart. Qui, dopo la scuola professionale di Hallein, studiò per un anno con il professore dell'Accademia Fritz Behn. Ottenne questa formazione perché a Hallein era stato un allievo eccellente. Nel 1949 espose a Ehrwald insieme a Behn. Poi lavorò per cinque anni come scalpellino a Salisburgo, prima di stabilirsi nel 1958 a Biberwier, a pochi chilometri da Ehrwald."
+        }
+      }
+    },
+    {
+      "nr": "04",
+      "titel": "Ewige Gewalt",
+      "untertitel": "Bronze und Aluminium, 240 cm",
+      "ort": "Tiroler Landesfriedhof Mariahilf, Innsbruck",
+      "jahr_text": "2009",
+      "material": "Bronze, Aluminium",
+      "masse": "H: 240 cm",
+      "kurzbeschreibung": "Plastik im Urnenhain des Tiroler Landesfriedhofs Mariahilf, 2009 entstanden, als Weinhart über achtzig war.",
+      "bild": "bilder/04.jpg",
+      "bildnachweis": "Foto: Luftschiffhafen, Wikimedia Commons, CC BY-SA 4.0",
+      "audio_text": "Station vier. Ewige Gewalt. Die Plastik steht im Urnenhain des Tiroler Landesfriedhofs Mariahilf in Innsbruck. Sie ist zwei Meter vierzig hoch, aus Bronze und Aluminium, und entstand 2009. Weinhart war damals über achtzig. Krieg und Gewalt beschäftigten ihn sein Leben lang. Er selbst war als junger Mann in russischer Kriegsgefangenschaft und galt als vermisst. 1985 nannte er eine Bronze in Bichlbach: Krieg, Macht, Perfektion sind tödlich. 1988 zeigte er Arbeiten in der Salzburger Ausstellung Mahnbilder, Mahnmale, Mahnzeichen, zu den Jahren 1938 bis 1988.",
+      "i18n": {
+        "en": {
+          "titel": "Ewige Gewalt (Eternal Violence)",
+          "untertitel": "Bronze and aluminium, 240 cm",
+          "material": "bronze, aluminium",
+          "ort": "Tyrolean State Cemetery Mariahilf, Innsbruck",
+          "kurzbeschreibung": "Sculpture in the urn grove of the Tyrolean State Cemetery Mariahilf, made in 2009, when Weinhart was over eighty.",
+          "audio_text": "Stop four. Ewige Gewalt, Eternal Violence. The sculpture stands in the urn grove of the Tyrolean State Cemetery Mariahilf in Innsbruck. It is two metres forty tall, made of bronze and aluminium, and was created in 2009. Weinhart was then over eighty. War and violence occupied him all his life. As a young man he was himself a prisoner of war in Russia and was listed as missing. In 1985 he gave a bronze in Bichlbach the title: War, power, perfection are deadly. In 1988 he showed work in the Salzburg exhibition Mahnbilder, Mahnmale, Mahnzeichen, about the years 1938 to 1988."
+        },
+        "nl": {
+          "titel": "Ewige Gewalt (Eeuwig geweld)",
+          "untertitel": "Brons en aluminium, 240 cm",
+          "material": "brons, aluminium",
+          "ort": "Tiroolse begraafplaats Mariahilf, Innsbruck",
+          "kurzbeschreibung": "Beeld in de urnentuin van de Tiroolse begraafplaats Mariahilf, gemaakt in 2009, toen Weinhart al over de tachtig was.",
+          "audio_text": "Halte vier. Ewige Gewalt, eeuwig geweld. Het beeld staat in de urnentuin van de Tiroolse begraafplaats Mariahilf in Innsbruck. Het is twee meter veertig hoog, gemaakt van brons en aluminium, en ontstond in 2009. Weinhart was toen al over de tachtig. Oorlog en geweld hielden hem zijn hele leven bezig. Als jonge man zat hij zelf in Russische krijgsgevangenschap en werd hij als vermist opgegeven. In 1985 gaf hij een bronzen beeld in Bichlbach de titel: oorlog, macht, perfectie zijn dodelijk. In 1988 toonde hij werk op de Salzburger tentoonstelling Mahnbilder, Mahnmale, Mahnzeichen, over de jaren 1938 tot 1988."
+        },
+        "it": {
+          "titel": "Ewige Gewalt (Violenza eterna)",
+          "untertitel": "Bronzo e alluminio, 240 cm",
+          "material": "bronzo, alluminio",
+          "ort": "Cimitero regionale tirolese di Mariahilf, Innsbruck",
+          "kurzbeschreibung": "Scultura nell'area cineraria del cimitero regionale tirolese di Mariahilf, realizzata nel 2009, quando Weinhart aveva più di ottant'anni.",
+          "audio_text": "Tappa quattro. Ewige Gewalt, violenza eterna. La scultura si trova nell'area cineraria del cimitero regionale tirolese di Mariahilf a Innsbruck. È alta due metri e quaranta, in bronzo e alluminio, ed è nata nel 2009, quando Weinhart aveva più di ottant'anni. La guerra e la violenza lo accompagnarono per tutta la vita. Da giovane fu lui stesso prigioniero di guerra in Russia e venne dato per disperso. Nel 1985 intitolò un bronzo a Bichlbach: guerra, potere, perfezione sono mortali. Nel 1988 espose opere nella mostra salisburghese Mahnbilder, Mahnmale, Mahnzeichen, dedicata agli anni dal 1938 al 1988."
+        }
+      }
+    },
+    {
+      "nr": "05",
+      "titel": "Hl. Dionysius",
+      "untertitel": "Statue am Pfarrheim",
+      "ort": "Bad Vigaun, Salzburg",
+      "jahr_text": "Ende 20. Jahrhundert",
+      "material": "",
+      "masse": "",
+      "kurzbeschreibung": "Figur des heiligen Dionysius in einer Nische an der Außenmauer des Pfarrheims Bad Vigaun, nahe Hallein.",
+      "bild": "bilder/05.jpg",
+      "bildnachweis": "Foto: Ewald Ehtreiber (Eweht), Wikimedia Commons, CC BY-SA 4.0",
+      "audio_text": "Station fünf. Der heilige Dionysius in Bad Vigaun. Die Figur steht in einer Nische an der Außenmauer des Pfarrheims, gleich neben Hallein, wo Weinhart nach dem Krieg die Fachschule besuchte. Sie zeigt den Heiligen als Bischof mit Mitra. Sein Werk kreist um ein Menschsein, das von einer christlich-humanistischen Weltsicht geprägt ist. 1985 erhielt er den Grand Prix d'Art im Schweizer Thurgau, 2003 verlieh ihm die Republik Österreich den Titel Professor. Johann Weinhart starb am 24. November 2019, einen Tag nach seinem vierundneunzigsten Geburtstag. Danke, dass Sie den Rundgang mitgemacht haben.",
+      "i18n": {
+        "en": {
+          "titel": "St. Dionysius",
+          "untertitel": "Statue on the parish hall",
+          "jahr_text": "late 20th century",
+          "kurzbeschreibung": "Figure of Saint Dionysius in a niche in the outer wall of the parish hall in Bad Vigaun, near Hallein.",
+          "audio_text": "Stop five. Saint Dionysius in Bad Vigaun. The figure stands in a niche in the outer wall of the parish hall, close to Hallein, where Weinhart attended the technical school after the war. It shows the saint as a bishop wearing a mitre. His work centres on human existence, seen from a Christian and humanist point of view. In 1985 he received the Grand Prix d'Art in the Swiss canton of Thurgau, and in 2003 the Republic of Austria awarded him the title of Professor. Johann Weinhart died on the twenty-fourth of November 2019, one day after his ninety-fourth birthday. Thank you for joining this tour."
+        },
+        "nl": {
+          "titel": "Heilige Dionysius",
+          "untertitel": "Beeld aan het parochiehuis",
+          "jahr_text": "eind 20e eeuw",
+          "kurzbeschreibung": "Beeld van de heilige Dionysius in een nis in de buitenmuur van het parochiehuis in Bad Vigaun, bij Hallein.",
+          "audio_text": "Halte vijf. De heilige Dionysius in Bad Vigaun. Het beeld staat in een nis in de buitenmuur van het parochiehuis, vlak bij Hallein, waar Weinhart na de oorlog de vakschool bezocht. Het toont de heilige als bisschop met mijter. Zijn werk draait om het menszijn, gezien vanuit een christelijk-humanistisch wereldbeeld. In 1985 ontving hij de Grand Prix d'Art in het Zwitserse Thurgau, in 2003 kende de Republiek Oostenrijk hem de titel professor toe. Johann Weinhart overleed op 24 november 2019, een dag na zijn vierennegentigste verjaardag. Dank u dat u deze rondgang hebt gevolgd."
+        },
+        "it": {
+          "titel": "San Dionigi",
+          "untertitel": "Statua sul centro parrocchiale",
+          "jahr_text": "fine del XX secolo",
+          "ort": "Bad Vigaun, Salisburgo",
+          "kurzbeschreibung": "Figura di San Dionigi in una nicchia nel muro esterno del centro parrocchiale di Bad Vigaun, vicino a Hallein.",
+          "audio_text": "Tappa cinque. San Dionigi a Bad Vigaun. La figura si trova in una nicchia nel muro esterno del centro parrocchiale, vicino a Hallein, dove Weinhart frequentò la scuola professionale dopo la guerra. Mostra il santo come vescovo con la mitra. Il suo lavoro ruota attorno all'essere umano, visto con uno sguardo cristiano e umanista. Nel 1985 ricevette il Grand Prix d'Art nel cantone svizzero di Turgovia, e nel 2003 la Repubblica d'Austria gli conferì il titolo di professore. Johann Weinhart morì il 24 novembre 2019, un giorno dopo il suo novantaquattresimo compleanno. Grazie per aver seguito questo percorso."
+        }
+      }
+    }
+  ],
+  "sprachen": [
+    "de",
+    "en",
+    "nl",
+    "it"
+  ]
+}

@@ -1,0 +1,701 @@
+---
+// Audioguide für Besucherhandys.
+// Aufruf: /audioguide/?a=<ausstellung-slug>            → Übersicht
+//         /audioguide/?a=<ausstellung-slug>&s=<qr_code> → Station direkt (QR-Code)
+// Daten kommen clientseitig aus Sanity: ausstellung.exponate[] in Reihenfolge,
+// Exponat mit inventarnummer *-T00 bzw. qr_code *-00 gilt als Einführung.
+const PROJECT = import.meta.env.PUBLIC_SANITY_PROJECT_ID || '832k5je1';
+const DATASET = import.meta.env.PUBLIC_SANITY_DATASET || 'production';
+---
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#12110f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description" content="Audioguide – Museum im Grünen Haus, Reutte" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <title>Audioguide – Museum im Grünen Haus</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href={`https://${PROJECT}.apicdn.sanity.io`} />
+  <link rel="preconnect" href="https://cdn.sanity.io" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Inter:wght@400;500;600&display=swap" />
+  <style is:global>
+    :root {
+      --ink: #12110f;
+      --ink-2: #1b1916;
+      --ink-3: #26231f;
+      --paper: #f2ede4;
+      --paper-dim: rgba(242, 237, 228, 0.62);
+      --paper-faint: rgba(242, 237, 228, 0.14);
+      --bronze: #c49a63;
+      --bronze-deep: #8a6a40;
+      --serif: 'Fraunces', 'Iowan Old Style', Georgia, serif;
+      --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --gutter: clamp(20px, 6vw, 48px);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { background: var(--ink); -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: var(--sans);
+      color: var(--paper);
+      background: var(--ink);
+      min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: none;
+    }
+    button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+    img { display: block; max-width: 100%; }
+    .num { font-variant-numeric: tabular-nums; }
+    .eyebrow {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--bronze);
+    }
+
+    /* ── Zustände ── */
+    .screen { min-height: 100dvh; }
+    .hidden { display: none !important; }
+    #status {
+      position: fixed; inset: 0; display: grid; place-items: center; text-align: center;
+      padding: var(--gutter); gap: 14px; align-content: center;
+    }
+    #status h1 { font-family: var(--serif); font-weight: 300; font-size: 28px; }
+    #status p { color: var(--paper-dim); font-size: 15px; max-width: 28ch; }
+    .pulse { width: 36px; height: 1px; background: var(--bronze); animation: pulse 1.4s var(--ease) infinite; }
+    @keyframes pulse { 0%,100% { transform: scaleX(0.2); opacity: .4 } 50% { transform: scaleX(1); opacity: 1 } }
+
+    /* ── Übersicht ── */
+    .cover {
+      position: relative; min-height: 78dvh; display: flex; flex-direction: column; justify-content: flex-end;
+      padding: calc(var(--safe-top) + 28px) var(--gutter) 36px; overflow: hidden; isolation: isolate;
+    }
+    .cover-img { position: absolute; inset: 0; z-index: -2; }
+    .cover-img img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.06); animation: drift 24s var(--ease) forwards; }
+    @keyframes drift { to { transform: scale(1); } }
+    .cover::after {
+      content: ''; position: absolute; inset: 0; z-index: -1;
+      background: linear-gradient(180deg, rgba(18,17,15,0.25) 0%, rgba(18,17,15,0.1) 30%, rgba(18,17,15,0.85) 78%, var(--ink) 100%);
+    }
+    .brand { position: absolute; top: calc(var(--safe-top) + 22px); left: var(--gutter); right: var(--gutter);
+      display: flex; justify-content: space-between; align-items: center; font-size: 12px; letter-spacing: 0.04em; color: var(--paper-dim); }
+    .cover h1 {
+      font-family: var(--serif); font-weight: 300; font-size: clamp(44px, 13vw, 88px); line-height: 0.95;
+      letter-spacing: -0.02em; margin: 14px 0 16px; font-variation-settings: 'opsz' 144;
+    }
+    .cover .lede { font-size: 16px; line-height: 1.55; color: var(--paper-dim); max-width: 34ch; }
+
+    .intro-play {
+      margin: 8px var(--gutter) 0; display: flex; align-items: center; gap: 16px; width: calc(100% - 2 * var(--gutter));
+      padding: 16px 18px; border-radius: 18px; background: var(--ink-2); border: 1px solid var(--paper-faint);
+      text-align: left; transition: background .3s var(--ease);
+    }
+    .intro-play:active { background: var(--ink-3); }
+    .intro-play .disc { flex: none; width: 48px; height: 48px; border-radius: 50%; background: var(--bronze); color: var(--ink); display: grid; place-items: center; }
+    .intro-play strong { display: block; font-weight: 500; font-size: 15px; }
+    .intro-play span { font-size: 13px; color: var(--paper-dim); }
+
+    .list-head { display: flex; justify-content: space-between; align-items: baseline; padding: 44px var(--gutter) 14px; }
+    .list-head .count { font-size: 13px; color: var(--paper-dim); }
+    .stations { list-style: none; padding: 0 var(--gutter) calc(var(--safe-bottom) + 120px); display: grid; gap: 2px; }
+    .station-row {
+      width: 100%; display: grid; grid-template-columns: 76px 1fr auto; gap: 16px; align-items: center;
+      padding: 12px 0; text-align: left; border-top: 1px solid var(--paper-faint);
+      opacity: 0; transform: translateY(14px); animation: rise .8s var(--ease) forwards;
+    }
+    @keyframes rise { to { opacity: 1; transform: none; } }
+    .station-row .thumb { width: 76px; height: 96px; border-radius: 10px; overflow: hidden; background: var(--ink-3); }
+    .station-row .thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s var(--ease); }
+    .station-row:active .thumb img { transform: scale(1.05); }
+    .station-row .nr { font-family: var(--serif); font-size: 13px; color: var(--bronze); }
+    .station-row h3 { font-family: var(--serif); font-weight: 400; font-size: 22px; line-height: 1.15; margin: 2px 0 4px; }
+    .station-row .meta { font-size: 13px; color: var(--paper-dim); }
+    .station-row .dur { font-size: 12px; color: var(--paper-dim); display: flex; align-items: center; gap: 6px; }
+    .heard { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--paper-faint); display: grid; place-items: center; }
+    .heard.on { background: var(--bronze); border-color: var(--bronze); color: var(--ink); }
+    .colophon { padding: 0 var(--gutter) calc(var(--safe-bottom) + 140px); font-size: 12px; line-height: 1.6; color: var(--paper-dim); }
+    .colophon a { color: var(--paper-dim); }
+
+    /* ── Station ── */
+    #station { position: relative; }
+    .hero { position: relative; height: 64dvh; min-height: 360px; overflow: hidden; background: var(--ink-2); }
+    .hero img { width: 100%; height: 100%; object-fit: cover; transition: opacity .7s var(--ease), transform 1.2s var(--ease); }
+    .hero img.loading { opacity: 0; transform: scale(1.04); }
+    .hero::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+      background: linear-gradient(180deg, rgba(18,17,15,.55) 0%, rgba(18,17,15,0) 22%, rgba(18,17,15,0) 55%, var(--ink) 100%); }
+    .topbar { position: absolute; z-index: 3; top: calc(var(--safe-top) + 14px); left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .icon-btn { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+      background: rgba(18,17,15,.42); backdrop-filter: blur(14px) saturate(1.4); -webkit-backdrop-filter: blur(14px) saturate(1.4); border: 1px solid rgba(242,237,228,.12); }
+    .progress-dots { display: flex; gap: 6px; padding: 8px 12px; border-radius: 99px; background: rgba(18,17,15,.42); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+    .progress-dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(242,237,228,.3); transition: all .4s var(--ease); }
+    .progress-dots i.on { width: 18px; border-radius: 4px; background: var(--paper); }
+    .credit { position: absolute; z-index: 2; right: 14px; bottom: 84px; font-size: 10px; color: rgba(242,237,228,.5); max-width: 60%; text-align: right; }
+
+    .body { position: relative; z-index: 2; margin-top: -72px; padding: 0 var(--gutter) calc(var(--safe-bottom) + 40px); }
+    .body h1 { font-family: var(--serif); font-weight: 300; font-size: clamp(38px, 11vw, 64px); line-height: 1; letter-spacing: -0.02em; margin: 10px 0 10px; font-variation-settings: 'opsz' 144; }
+    .body .sub { font-size: 15px; color: var(--paper-dim); }
+    .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: 26px 0 30px; border-radius: 14px; overflow: hidden; background: var(--paper-faint); }
+    .facts div { background: var(--ink); padding: 12px 12px 14px; }
+    .facts dt { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--paper-dim); margin-bottom: 4px; }
+    .facts dd { font-size: 14px; line-height: 1.3; }
+
+    /* Player */
+    .player { padding: 20px; border-radius: 22px; background: linear-gradient(160deg, var(--ink-3), var(--ink-2)); border: 1px solid var(--paper-faint); }
+    .wave { position: relative; height: 54px; display: flex; align-items: center; gap: 2px; cursor: pointer; touch-action: none; }
+    .wave span { flex: 1; border-radius: 2px; background: rgba(242,237,228,.22); transition: background .2s; }
+    .wave span.done { background: var(--bronze); }
+    .times { display: flex; justify-content: space-between; font-size: 12px; color: var(--paper-dim); margin: 8px 0 14px; }
+    .controls { display: flex; align-items: center; justify-content: space-between; }
+    .play { width: 76px; height: 76px; border-radius: 50%; background: var(--paper); color: var(--ink); display: grid; place-items: center;
+      box-shadow: 0 10px 40px -10px rgba(196,154,99,.6); transition: transform .25s var(--ease); }
+    .play:active { transform: scale(.94); }
+    .skip { width: 52px; height: 52px; display: grid; place-items: center; color: var(--paper-dim); position: relative; }
+    .skip small { position: absolute; font-size: 9px; font-weight: 600; top: 50%; left: 50%; transform: translate(-50%, -38%); }
+    .rate { min-width: 52px; height: 32px; border-radius: 99px; border: 1px solid var(--paper-faint); font-size: 13px; color: var(--paper-dim); }
+
+    .transcript-toggle { margin: 28px 0 0; display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 16px 0; border-top: 1px solid var(--paper-faint); border-bottom: 1px solid var(--paper-faint); font-size: 15px; }
+    .transcript-toggle svg { transition: transform .4s var(--ease); }
+    .transcript-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+    .transcript { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .5s var(--ease); }
+    .transcript.open { grid-template-rows: 1fr; }
+    .transcript > div { overflow: hidden; }
+    .transcript p.note { font-family: var(--sans); font-size: 13px; color: var(--bronze); padding-top: 18px; }
+    .transcript p { font-family: var(--serif); font-size: 19px; line-height: 1.6; font-weight: 300; padding-top: 20px; color: rgba(242,237,228,.88); }
+
+    .pager { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 34px; }
+    .pager button { text-align: left; padding: 16px; border-radius: 16px; background: var(--ink-2); border: 1px solid var(--paper-faint); min-height: 84px; }
+    .pager button:last-child { text-align: right; }
+    .pager button[disabled] { opacity: .3; }
+    .pager small { display: block; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--paper-dim); margin-bottom: 6px; }
+    .pager span { font-family: var(--serif); font-size: 17px; }
+
+    /* Weiter-Hinweis */
+    .next-toast { position: fixed; z-index: 20; left: 12px; right: 12px; bottom: calc(var(--safe-bottom) + 12px);
+      padding: 14px 16px; border-radius: 18px; background: var(--paper); color: var(--ink);
+      display: flex; align-items: center; gap: 14px; transform: translateY(140%); transition: transform .5s var(--ease); }
+    .next-toast.show { transform: none; }
+    .next-toast .ring { flex: none; width: 36px; height: 36px; }
+    .next-toast .ring circle { transition: stroke-dashoffset 1s linear; }
+    .next-toast strong { display: block; font-size: 14px; }
+    .next-toast span { font-size: 13px; opacity: .7; }
+    .next-toast .later { margin-left: auto; font-size: 13px; font-weight: 600; padding: 8px 10px; }
+
+    /* Mini-Player in der Übersicht */
+    .mini { position: fixed; z-index: 15; left: 12px; right: 12px; bottom: calc(var(--safe-bottom) + 12px);
+      display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 10px; border-radius: 18px;
+      background: rgba(38,35,31,.78); backdrop-filter: blur(20px) saturate(1.5); -webkit-backdrop-filter: blur(20px) saturate(1.5);
+      border: 1px solid var(--paper-faint); transform: translateY(150%); transition: transform .5s var(--ease); overflow: hidden; }
+    .mini.show { transform: none; }
+    .mini img { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; }
+    .mini .txt { flex: 1; min-width: 0; text-align: left; }
+    .mini strong { display: block; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mini span { font-size: 12px; color: var(--paper-dim); }
+    .mini .bar { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--bronze); width: 0; }
+    .mini .pp { width: 44px; height: 44px; border-radius: 50%; background: var(--paper); color: var(--ink); display: grid; place-items: center; flex: none; }
+
+    /* Sprachwahl */
+    .lang-btn { display: flex; align-items: center; gap: 6px; padding: 7px 11px; border-radius: 99px; font-size: 12px; font-weight: 600; letter-spacing: .08em;
+      background: rgba(18,17,15,.42); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(242,237,228,.16); color: var(--paper); }
+    .lang-icon { font-size: 12px; font-weight: 600; letter-spacing: .08em; }
+    .sheet { position: fixed; inset: 0; z-index: 30; pointer-events: none; }
+    .sheet-bg { position: absolute; inset: 0; background: rgba(0,0,0,.5); opacity: 0; transition: opacity .4s var(--ease); }
+    .sheet-panel { position: absolute; left: 0; right: 0; bottom: 0; padding: 22px var(--gutter) calc(var(--safe-bottom) + 22px);
+      background: var(--ink-2); border-radius: 24px 24px 0 0; border-top: 1px solid var(--paper-faint); transform: translateY(100%); transition: transform .5s var(--ease); }
+    .sheet.open { pointer-events: auto; }
+    .sheet.open .sheet-bg { opacity: 1; }
+    .sheet.open .sheet-panel { transform: none; }
+    .sheet-list { display: grid; margin-top: 12px; }
+    .sheet-list button { display: flex; justify-content: space-between; align-items: center; padding: 16px 2px; border-top: 1px solid var(--paper-faint);
+      font-family: var(--serif); font-size: 22px; font-weight: 300; text-align: left; }
+    .sheet-list button small { font-family: var(--sans); font-size: 11px; font-weight: 600; letter-spacing: .14em; color: var(--paper-dim); }
+    .sheet-list button[aria-checked="true"] small { color: var(--bronze); }
+
+    /* Seitenwechsel */
+    .view-enter { animation: viewIn .6s var(--ease); }
+    @keyframes viewIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+    @media (min-width: 820px) {
+      #station { display: grid; grid-template-columns: 1.1fr 1fr; min-height: 100dvh; }
+      .hero { height: 100dvh; position: sticky; top: 0; }
+      .hero::after { background: linear-gradient(90deg, rgba(18,17,15,0) 60%, var(--ink) 100%); }
+      .body { margin-top: 0; padding: calc(var(--safe-top) + 96px) 56px 56px; max-width: 620px; }
+      .topbar { position: fixed; }
+      .credit { bottom: 14px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div id="status">
+    <div class="pulse"></div>
+    <p></p>
+  </div>
+
+  <!-- Übersicht -->
+  <main id="overview" class="screen hidden">
+    <header class="cover">
+      <div class="cover-img"><img id="cover-img" alt="" /></div>
+      <div class="brand"><span>Museum im Grünen Haus</span><button class="lang-btn" data-lang-open data-ta="aria-label:sprache"><span class="lang-cur">DE</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button></div>
+      <div class="eyebrow" id="ov-eyebrow"></div>
+      <h1 id="ov-title"></h1>
+      <p class="lede" id="ov-lede"></p>
+    </header>
+    <button class="intro-play hidden" id="intro-btn">
+      <span class="disc"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l11-6.5a1 1 0 0 0 0-1.72l-11-6.5A1 1 0 0 0 8 5.5z"/></svg></span>
+      <div><strong data-t="introHoeren"></strong><span id="intro-dur"></span></div>
+    </button>
+    <div class="list-head"><span class="eyebrow" data-t="stationen"></span><span class="count num" id="ov-count"></span></div>
+    <ol class="stations" id="station-list"></ol>
+    <p class="colophon" id="colophon"></p>
+  </main>
+
+  <!-- Station -->
+  <article id="station" class="screen hidden">
+    <div class="hero">
+      <img id="st-img" alt="" />
+      <div class="credit" id="st-credit"></div>
+    </div>
+    <div class="topbar">
+      <button class="icon-btn" id="back" data-ta="aria-label:uebersicht">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+      </button>
+      <div class="progress-dots" id="dots"></div>
+      <button class="icon-btn lang-icon" data-lang-open data-ta="aria-label:sprache"><span class="lang-cur">DE</span></button>
+    </div>
+    <div class="body">
+      <div class="eyebrow" id="st-nr"></div>
+      <h1 id="st-title"></h1>
+      <p class="sub" id="st-sub"></p>
+      <dl class="facts" id="st-facts"></dl>
+
+      <section class="player" aria-label="Audio">
+        <div class="wave" id="wave" role="slider" data-ta="aria-label:position" tabindex="0" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+        <div class="times num"><span id="t-cur">0:00</span><span id="t-dur">–:––</span></div>
+        <div class="controls">
+          <button class="rate num" id="rate" data-ta="aria-label:tempo">1×</button>
+          <button class="skip" id="back15" data-ta="aria-label:zurueck15">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4v3.5H8" stroke-linecap="round" stroke-linejoin="round"/></svg><small>15</small>
+          </button>
+          <button class="play" id="play" aria-label="Abspielen">
+            <svg id="ic-play" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l11-6.5a1 1 0 0 0 0-1.72l-11-6.5A1 1 0 0 0 8 5.5z"/></svg>
+            <svg id="ic-pause" class="hidden" width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg>
+          </button>
+          <button class="skip" id="fwd15" data-ta="aria-label:vor15">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4v3.5H16" stroke-linecap="round" stroke-linejoin="round"/></svg><small>15</small>
+          </button>
+          <span style="min-width:52px"></span>
+        </div>
+      </section>
+
+      <button class="transcript-toggle" id="tr-toggle" aria-expanded="false" aria-controls="transcript">
+        <span data-t="mitlesen"></span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="transcript" id="transcript"><div id="tr-text"></div></div>
+
+      <nav class="pager">
+        <button id="prev"><small data-t="zurueck"></small><span id="prev-t"></span></button>
+        <button id="next"><small data-t="weiter"></small><span id="next-t"></span></button>
+      </nav>
+    </div>
+  </article>
+
+  <button class="mini" id="mini" data-ta="aria-label:laufend">
+    <img id="mini-img" alt="" />
+    <div class="txt"><strong id="mini-t"></strong><span id="mini-s"></span></div>
+    <span class="pp" id="mini-pp" role="button" data-ta="aria-label:playPause"></span>
+    <i class="bar" id="mini-bar"></i>
+  </button>
+
+  <div class="next-toast" id="toast" role="status">
+    <svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="rgba(18,17,15,.15)" stroke-width="3"/><circle id="ring" cx="18" cy="18" r="15" fill="none" stroke="#12110f" stroke-width="3" stroke-linecap="round" stroke-dasharray="94.25" stroke-dashoffset="0" transform="rotate(-90 18 18)"/></svg>
+    <div><strong id="toast-t"></strong><span data-t="naechste"></span></div>
+    <button class="later" id="toast-stop" data-t="nichtJetzt"></button>
+  </div>
+
+  <div class="sheet" id="sheet" aria-hidden="true">
+    <div class="sheet-bg" data-sheet-close></div>
+    <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheet-h">
+      <div class="eyebrow" id="sheet-h" data-t="sprache"></div>
+      <div class="sheet-list" id="sheet-list"></div>
+    </div>
+  </div>
+
+  <audio id="audio" preload="metadata" playsinline></audio>
+
+  <script define:vars={{ PROJECT, DATASET }}>
+    const $ = (id) => document.getElementById(id);
+    const params = new URLSearchParams(location.search);
+    const SLUG = params.get('a');
+    const STORE = `audioguide:${SLUG}:gehoert`;
+    const PLAY = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l11-6.5a1 1 0 0 0 0-1.72l-11-6.5A1 1 0 0 0 8 5.5z"/></svg>';
+    const PAUSE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg>';
+    const BARS = 64;
+    const RATES = [1, 1.25, 1.5, 0.85];
+
+    /* ── Sprachen ── */
+    const SPRACHNAMEN = { de: 'Deutsch', en: 'English', nl: 'Nederlands', it: 'Italiano', fr: 'Français' };
+    const UI = {
+      de: { laden: 'Audioguide wird geladen', sonder: 'Sonderausstellung', introHoeren: 'Einführung anhören', einfuehrung: 'Einführung', stationen: 'Stationen', station: 'Station', min: 'min',
+        uebersicht: 'Zur Übersicht', sprache: 'Sprache', position: 'Wiedergabeposition', tempo: 'Wiedergabegeschwindigkeit', zurueck15: '15 Sekunden zurück', vor15: '15 Sekunden vor',
+        abspielen: 'Abspielen', pause: 'Pause', playPause: 'Abspielen oder Pause', laufend: 'Zur laufenden Station', mitlesen: 'Text mitlesen', zurueck: 'Zurück', weiter: 'Weiter', ende: 'Ende',
+        naechste: 'Nächste Station', nichtJetzt: 'Nicht jetzt', bildnachweise: 'Bildnachweise', jahr: 'Jahr', material: 'Material', ort: 'Ort',
+        ohneSlug: 'Bitte scannen Sie den QR-Code an einer Station.', offline: 'Keine Verbindung', offlineText: 'Der Audioguide konnte nicht geladen werden. Bitte prüfen Sie die Internetverbindung.',
+        fehlt: 'Nicht gefunden', fehltText: 'Diese Ausstellung gibt es nicht oder sie ist nicht mehr online.', nurDe: 'Audio für diese Station nur auf Deutsch' },
+      en: { laden: 'Loading audio guide', sonder: 'Special exhibition', introHoeren: 'Listen to the introduction', einfuehrung: 'Introduction', stationen: 'Stops', station: 'Stop', min: 'min',
+        uebersicht: 'Overview', sprache: 'Language', position: 'Playback position', tempo: 'Playback speed', zurueck15: 'Back 15 seconds', vor15: 'Forward 15 seconds',
+        abspielen: 'Play', pause: 'Pause', playPause: 'Play or pause', laufend: 'Go to current stop', mitlesen: 'Read along', zurueck: 'Previous', weiter: 'Next', ende: 'End',
+        naechste: 'Next stop', nichtJetzt: 'Not now', bildnachweis: 'Photo credits', bildnachweise: 'Photo credits', jahr: 'Year', material: 'Material', ort: 'Location',
+        ohneSlug: 'Please scan the QR code at one of the stops.', offline: 'No connection', offlineText: 'The audio guide could not be loaded. Please check your internet connection.',
+        fehlt: 'Not found', fehltText: 'This exhibition does not exist or is no longer online.', nurDe: 'Audio for this stop in German only' },
+      nl: { laden: 'Audiotour wordt geladen', sonder: 'Tijdelijke tentoonstelling', introHoeren: 'Inleiding beluisteren', einfuehrung: 'Inleiding', stationen: 'Haltes', station: 'Halte', min: 'min',
+        uebersicht: 'Overzicht', sprache: 'Taal', position: 'Afspeelpositie', tempo: 'Afspeelsnelheid', zurueck15: '15 seconden terug', vor15: '15 seconden vooruit',
+        abspielen: 'Afspelen', pause: 'Pauze', playPause: 'Afspelen of pauze', laufend: 'Naar de huidige halte', mitlesen: 'Tekst meelezen', zurueck: 'Vorige', weiter: 'Volgende', ende: 'Einde',
+        naechste: 'Volgende halte', nichtJetzt: 'Niet nu', bildnachweise: 'Fotoverantwoording', jahr: 'Jaar', material: 'Materiaal', ort: 'Plaats',
+        ohneSlug: 'Scan de QR-code bij een van de haltes.', offline: 'Geen verbinding', offlineText: 'De audiotour kon niet worden geladen. Controleer uw internetverbinding.',
+        fehlt: 'Niet gevonden', fehltText: 'Deze tentoonstelling bestaat niet of is niet meer online.', nurDe: 'Audio bij deze halte alleen in het Duits' },
+      it: { laden: 'Caricamento audioguida', sonder: 'Mostra temporanea', introHoeren: "Ascolta l'introduzione", einfuehrung: 'Introduzione', stationen: 'Tappe', station: 'Tappa', min: 'min',
+        uebersicht: 'Panoramica', sprache: 'Lingua', position: 'Posizione di riproduzione', tempo: 'Velocità di riproduzione', zurueck15: 'Indietro di 15 secondi', vor15: 'Avanti di 15 secondi',
+        abspielen: 'Riproduci', pause: 'Pausa', playPause: 'Riproduci o pausa', laufend: 'Vai alla tappa in corso', mitlesen: 'Leggi il testo', zurueck: 'Precedente', weiter: 'Successiva', ende: 'Fine',
+        naechste: 'Tappa successiva', nichtJetzt: 'Non ora', bildnachweise: 'Crediti fotografici', jahr: 'Anno', material: 'Materiale', ort: 'Luogo',
+        ohneSlug: 'Inquadrate il codice QR di una tappa.', offline: 'Nessuna connessione', offlineText: "Non è stato possibile caricare l'audioguida. Controllate la connessione a internet.",
+        fehlt: 'Non trovato', fehltText: 'Questa mostra non esiste o non è più online.', nurDe: 'Audio di questa tappa solo in tedesco' },
+    };
+    const LKEY = 'audioguide:sprache';
+    let L = params.get('l') || localStorage.getItem(LKEY) || (navigator.languages || [navigator.language || 'de']).map(x => x.slice(0, 2)).find(x => UI[x]) || 'de';
+    if (!UI[L]) L = 'de';
+    let SPRACHEN = ['de'];
+    const t = (k) => UI[L][k] ?? UI.de[k] ?? k;
+
+    function applyUi() {
+      document.documentElement.lang = L;
+      document.querySelectorAll('[data-t]').forEach(n => { n.textContent = t(n.dataset.t); });
+      document.querySelectorAll('[data-ta]').forEach(n => { const [a, k] = n.dataset.ta.split(':'); n.setAttribute(a, t(k)); });
+      document.querySelectorAll('.lang-cur').forEach(n => { n.textContent = L.toUpperCase(); });
+      document.querySelectorAll('[data-lang-open]').forEach(n => n.classList.toggle('hidden', SPRACHEN.length < 2));
+    }
+    applyUi();
+    document.querySelector('#status p').textContent = t('laden');
+
+    const audio = $('audio');
+    let A = null;          // Ausstellung
+    let intro = null;      // Einführung (optional)
+    let stations = [];     // Exponate ohne Einführung
+    let current = null;    // gerade geladener Track (Station oder Einführung)
+    let heard = new Set(JSON.parse(localStorage.getItem(STORE) || '[]'));
+    let toastTimer = null;
+
+    const img = (asset, w) => asset?.url ? `${asset.url}?w=${w}&auto=format&q=78` : '';
+    const fmt = (s) => !isFinite(s) ? '–:––' : `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+    const ptText = (blocks) => (blocks || []).filter(b => b._type === 'block').map(b => (b.children || []).map(c => c.text).join('')).filter(Boolean);
+    const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const nrOf = (e) => (e.inventarnummer || '').match(/(\d+)\s*$/)?.[1]?.padStart(2, '0') || '';
+    const isIntro = (e) => /-?T?00$/.test(e.inventarnummer || '') || /-00$/.test(e.qr_code?.current || '');
+    // Übersetzte Felder: guide[l].feld, sonst feld_en (vorhandenes Studio-Feld), sonst Deutsch.
+    const tr = (o, k, base) => (L !== 'de' && (o?.guide?.[L]?.[k] || (L === 'en' && o?.[`${k}_en`]))) || base;
+    const audioOf = (e, l = L) => (e?.audio || []).find(a => a.sprache === l) || (e?.audio || []).find(a => a.sprache === 'de') || (e?.audio || [])[0];
+    const qrOf = (e) => e.qr_code?.current || e._id;
+
+    function status(title, msg) {
+      $('status').innerHTML = `${title ? `<h1>${esc(title)}</h1>` : ''}<p>${esc(msg)}</p>`;
+      $('status').classList.remove('hidden');
+    }
+
+    async function load() {
+      if (!SLUG) return status('Audioguide', t('ohneSlug'));
+      const q = `*[_type=="ausstellung" && slug.current==$a][0]{
+        titel, untertitel, kurzbeschreibung, titel_en, untertitel_en, kurzbeschreibung_en, guide, titelbild{asset->{url}},
+        "exponate": exponate[]->{
+          _id, titel, untertitel, titel_en, untertitel_en, kurzbeschreibung_en, inventarnummer, qr_code, kurzbeschreibung, beschreibung, guide,
+          datierung{jahr_text}, herstellung{material, entstehungsort}, physisch{masse},
+          organisation{standort},
+          hauptbild{asset->{url}, bildnachweis},
+          audio[]{asset->{url}, sprache, dauer, transkript}
+        }
+      }`;
+      const url = `https://${PROJECT}.apicdn.sanity.io/v2024-01-01/data/query/${DATASET}?query=${encodeURIComponent(q)}&$a=${encodeURIComponent(JSON.stringify(SLUG))}`;
+      try {
+        const res = await fetch(url);
+        A = (await res.json()).result;
+      } catch { return status(t('offline'), t('offlineText')); }
+      if (!A) return status(t('fehlt'), t('fehltText'));
+      const ex = (A.exponate || []).filter(Boolean);
+      intro = ex.find(isIntro) || null;
+      stations = ex.filter(e => e !== intro);
+      // Angeboten werden die Sprachen, für die es Audio gibt, Deutsch zuerst.
+      const found = new Set(ex.flatMap(e => (e.audio || []).map(a => a.sprache)).filter(l => UI[l]));
+      SPRACHEN = Object.keys(UI).filter(l => found.has(l));
+      if (!SPRACHEN.length) SPRACHEN = ['de'];
+      if (!SPRACHEN.includes(L)) L = 'de';
+      applyUi();
+      renderSheet();
+      $('status').classList.add('hidden');
+      renderOverview();
+      route();
+    }
+
+    /* ── Sprachwahl ── */
+    function renderSheet() {
+      $('sheet-list').innerHTML = SPRACHEN.map(l => `<button role="menuitemradio" aria-checked="${l === L}" data-l="${l}" lang="${l}">${SPRACHNAMEN[l] || l}<small>${l.toUpperCase()}</small></button>`).join('');
+      $('sheet-list').querySelectorAll('button').forEach(b => b.onclick = () => setLang(b.dataset.l));
+    }
+    function openSheet(open) {
+      $('sheet').classList.toggle('open', open);
+      $('sheet').setAttribute('aria-hidden', String(!open));
+      if (open) $('sheet-list').querySelector('[aria-checked="true"]')?.focus();
+    }
+    document.querySelectorAll('[data-lang-open]').forEach(b => b.onclick = (ev) => { ev.stopPropagation(); openSheet(true); });
+    document.querySelector('[data-sheet-close]').onclick = () => openSheet(false);
+    document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') openSheet(false); });
+    function setLang(l) {
+      openSheet(false);
+      if (l === L) return;
+      L = l;
+      localStorage.setItem(LKEY, l);
+      const u = new URL(location.href); u.searchParams.set('l', l); history.replaceState({}, '', u);
+      applyUi(); renderSheet();
+      const wasPlaying = !audio.paused;
+      const track = current;
+      current = null;
+      if ($('station').classList.contains('hidden')) {
+        renderOverview();
+        if (track) loadTrack(track, wasPlaying);
+      } else {
+        showStation(track && track !== intro ? track : stations.find(e => qrOf(e) === new URLSearchParams(location.search).get('s')) || stations[0], { autoplay: wasPlaying });
+      }
+    }
+
+    /* ── Routing: ?a=…&s=<qr_code>&l=<sprache> ── */
+    function route() {
+      const s = new URLSearchParams(location.search).get('s');
+      const e = s && [intro, ...stations].find(x => x && (x.qr_code?.current === s || x._id === s));
+      if (e && e !== intro) showStation(e, { autoplay: false });
+      else { showOverview(); if (e === intro) loadTrack(intro, true); }
+    }
+    function go(s) {
+      const u = new URL(location.href);
+      s ? u.searchParams.set('s', s) : u.searchParams.delete('s');
+      history.pushState({}, '', u);
+    }
+    window.addEventListener('popstate', route);
+
+    /* ── Übersicht ── */
+    function renderOverview() {
+      const titel = tr(A, 'titel', A.titel);
+      document.title = `${titel} – Audioguide`;
+      $('ov-title').textContent = titel;
+      $('ov-lede').textContent = tr(A, 'kurzbeschreibung', A.kurzbeschreibung) || tr(A, 'untertitel', A.untertitel) || '';
+      $('ov-eyebrow').textContent = tr(A, 'untertitel', A.untertitel) || t('sonder');
+      const cover = A.titelbild?.asset || stations[0]?.hauptbild?.asset;
+      if (!$('cover-img').src) $('cover-img').src = img(cover, 1600);
+      $('ov-count').textContent = `${stations.length} ${t('stationen')}`;
+      if (intro && audioOf(intro)) {
+        $('intro-btn').classList.remove('hidden');
+        $('intro-dur').textContent = audioOf(intro).dauer ? `${audioOf(intro).dauer} ${t('min')}` : '';
+        $('intro-btn').onclick = () => loadTrack(intro, true);
+      }
+      $('station-list').innerHTML = stations.map((e, i) => `
+        <li><button class="station-row" data-i="${i}" style="animation-delay:${80 + i * 70}ms">
+          <div class="thumb"><img loading="lazy" src="${img(e.hauptbild?.asset, 240)}" alt=""></div>
+          <div>
+            <div class="nr num">${nrOf(e)}</div>
+            <h3>${esc(tr(e, 'titel', e.titel))}</h3>
+            <div class="meta">${esc([tr(e, 'ort', e.organisation?.standort || e.herstellung?.entstehungsort), tr(e, 'jahr_text', e.datierung?.jahr_text)].filter(Boolean).join(' · '))}</div>
+          </div>
+          <div class="dur num">${esc(audioOf(e)?.dauer || '')}<span class="heard ${heard.has(e._id) ? 'on' : ''}">${heard.has(e._id) ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M5 12l5 5 9-10"/></svg>' : ''}</span></div>
+        </button></li>`).join('');
+      $('station-list').querySelectorAll('.station-row').forEach(b => b.onclick = () => {
+        const e = stations[+b.dataset.i]; go(qrOf(e)); showStation(e, { autoplay: true });
+      });
+      const credits = [...new Set(stations.map(e => e.hauptbild?.bildnachweis).filter(Boolean))];
+      $('colophon').innerHTML = credits.length ? `${t('bildnachweise')}: ${credits.map(esc).join('; ')}.` : '';
+    }
+    function showOverview() {
+      $('station').classList.add('hidden');
+      $('overview').classList.remove('hidden');
+      $('overview').classList.add('view-enter');
+      renderOverview();
+      updateMini();
+      window.scrollTo(0, 0);
+    }
+
+    /* ── Station ── */
+    function showStation(e, { autoplay }) {
+      hideToast();
+      const i = stations.indexOf(e);
+      $('overview').classList.add('hidden');
+      const view = $('station');
+      const same = !view.classList.contains('hidden') && view.dataset.id === e._id;
+      view.dataset.id = e._id;
+      if (!same) {
+        view.classList.remove('hidden', 'view-enter'); void view.offsetWidth; view.classList.add('view-enter');
+        window.scrollTo(0, 0);
+        const pic = $('st-img');
+        pic.classList.add('loading');
+        pic.onload = () => pic.classList.remove('loading');
+        pic.src = img(e.hauptbild?.asset, 1800);
+      }
+      const titel = tr(e, 'titel', e.titel);
+      $('st-img').alt = titel;
+      $('st-credit').textContent = e.hauptbild?.bildnachweis || '';
+      $('st-nr').textContent = `${t('station')} ${nrOf(e)} / ${String(stations.length).padStart(2, '0')}`;
+      $('st-title').textContent = titel;
+      $('st-sub').textContent = tr(e, 'kurzbeschreibung', e.kurzbeschreibung) || tr(e, 'untertitel', e.untertitel) || '';
+      const facts = [
+        [t('jahr'), tr(e, 'jahr_text', e.datierung?.jahr_text)],
+        [t('material'), tr(e, 'material', e.herstellung?.material)],
+        [t('ort'), tr(e, 'ort', e.organisation?.standort || e.herstellung?.entstehungsort)],
+      ].filter(f => f[1]);
+      $('st-facts').innerHTML = facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
+      $('st-facts').style.gridTemplateColumns = `repeat(${facts.length || 1}, 1fr)`;
+      $('dots').innerHTML = stations.map((_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('');
+
+      // Mitlesetext: Transkript der gewählten Tonspur, sonst Beschreibung.
+      const a = audioOf(e);
+      const paras = a?.transkript ? a.transkript.split(/\n\s*\n/).filter(Boolean) : ptText(e.beschreibung);
+      const fallback = a && a.sprache !== L;
+      $('tr-text').innerHTML = (fallback ? `<p class="note">${esc(t('nurDe'))}</p>` : '') + paras.map(p => `<p lang="${a?.sprache || 'de'}">${esc(p)}</p>`).join('');
+      $('tr-toggle').classList.toggle('hidden', !paras.length);
+
+      const prev = stations[i - 1], next = stations[i + 1];
+      $('prev').disabled = !prev; $('prev-t').textContent = prev ? tr(prev, 'titel', prev.titel) : '';
+      $('next').disabled = !next; $('next-t').textContent = next ? tr(next, 'titel', next.titel) : t('ende');
+      $('prev').onclick = () => prev && (go(qrOf(prev)), showStation(prev, { autoplay: !audio.paused }));
+      $('next').onclick = () => next && (go(qrOf(next)), showStation(next, { autoplay: !audio.paused }));
+
+      if (current !== e) loadTrack(e, autoplay); else syncUi();
+    }
+
+    /* ── Audio ── */
+    function buildWave(seedStr) {
+      // Feste Pseudo-Wellenform je Track, damit die Leiste ruhig und wiedererkennbar bleibt.
+      let h = 0; for (const c of seedStr) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+      const rnd = () => ((h = (h * 1664525 + 1013904223) >>> 0) / 4294967296);
+      $('wave').innerHTML = Array.from({ length: BARS }, (_, k) => {
+        const env = 0.45 + 0.55 * Math.sin(Math.PI * (k + 1) / (BARS + 1));
+        return `<span style="height:${Math.round((0.25 + 0.75 * rnd()) * env * 100)}%"></span>`;
+      }).join('');
+    }
+    function loadTrack(e, autoplay) {
+      const a = audioOf(e);
+      if (!a?.asset?.url) return;
+      current = e;
+      audio.src = a.asset.url;
+      audio.playbackRate = RATES[rateIdx];
+      buildWave(e._id);
+      syncUi();
+      setMediaSession(e);
+      if (autoplay) audio.play().catch(() => {});
+    }
+    let rateIdx = 0;
+    $('rate').onclick = () => { rateIdx = (rateIdx + 1) % RATES.length; audio.playbackRate = RATES[rateIdx]; $('rate').textContent = `${RATES[rateIdx]}×`.replace('.', L === 'en' ? '.' : ','); };
+    $('play').onclick = () => audio.paused ? audio.play() : audio.pause();
+    $('back15').onclick = () => { audio.currentTime = Math.max(0, audio.currentTime - 15); };
+    $('fwd15').onclick = () => { audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 15); };
+    $('back').onclick = () => { go(null); showOverview(); };
+    $('tr-toggle').onclick = () => {
+      const open = $('transcript').classList.toggle('open');
+      $('tr-toggle').setAttribute('aria-expanded', open);
+    };
+
+    // Ziehen und Tippen auf der Wellenform
+    const wave = $('wave');
+    const seek = (x) => {
+      const r = wave.getBoundingClientRect();
+      const f = Math.min(1, Math.max(0, (x - r.left) / r.width));
+      if (audio.duration) audio.currentTime = f * audio.duration;
+    };
+    wave.addEventListener('pointerdown', (ev) => { wave.setPointerCapture(ev.pointerId); seek(ev.clientX); });
+    wave.addEventListener('pointermove', (ev) => { if (ev.buttons) seek(ev.clientX); });
+    wave.addEventListener('keydown', (ev) => {
+      if (ev.key === 'ArrowRight') audio.currentTime += 5;
+      if (ev.key === 'ArrowLeft') audio.currentTime -= 5;
+    });
+
+    function syncUi() {
+      const d = audio.duration, ct = audio.currentTime;
+      const f = d ? ct / d : 0;
+      $('t-cur').textContent = fmt(ct);
+      $('t-dur').textContent = d ? `−${fmt(d - ct)}` : (audioOf(current)?.dauer || '–:––');
+      const n = Math.round(f * BARS);
+      wave.querySelectorAll('span').forEach((s, k) => s.classList.toggle('done', k < n));
+      wave.setAttribute('aria-valuenow', Math.round(f * 100));
+      $('ic-play').classList.toggle('hidden', !audio.paused);
+      $('ic-pause').classList.toggle('hidden', audio.paused);
+      $('play').setAttribute('aria-label', audio.paused ? t('abspielen') : t('pause'));
+      updateMini();
+    }
+    ['timeupdate', 'play', 'pause', 'loadedmetadata', 'durationchange'].forEach(ev => audio.addEventListener(ev, syncUi));
+
+    audio.addEventListener('ended', () => {
+      if (!current) return;
+      heard.add(current._id);
+      localStorage.setItem(STORE, JSON.stringify([...heard]));
+      const i = stations.indexOf(current);
+      const next = current === intro ? stations[0] : stations[i + 1];
+      if (next && (current === intro || !$('station').classList.contains('hidden'))) offerNext(next);
+    });
+
+    function offerNext(next) {
+      let left = 6;
+      $('toast-t').textContent = tr(next, 'titel', next.titel);
+      $('toast').classList.add('show');
+      $('mini').classList.remove('show');
+      const ring = $('ring');
+      ring.style.strokeDashoffset = '0';
+      clearInterval(toastTimer);
+      toastTimer = setInterval(() => {
+        left--;
+        ring.style.strokeDashoffset = String(94.25 * (1 - left / 6));
+        if (left <= 0) { hideToast(); go(qrOf(next)); showStation(next, { autoplay: true }); }
+      }, 1000);
+    }
+    function hideToast() { clearInterval(toastTimer); $('toast').classList.remove('show'); }
+    $('toast-stop').onclick = hideToast;
+
+    /* Mini-Player: sichtbar in der Übersicht, solange ein Track geladen ist */
+    function updateMini() {
+      const onOverview = !$('overview').classList.contains('hidden');
+      const show = onOverview && current && (audio.currentTime > 0 || !audio.paused);
+      $('mini').classList.toggle('show', !!show);
+      if (!current) return;
+      $('mini-img').src = img(current.hauptbild?.asset || A?.titelbild?.asset, 120);
+      $('mini-t').textContent = tr(current, 'titel', current.titel);
+      $('mini-s').textContent = current === intro ? t('einfuehrung') : `${t('station')} ${nrOf(current)}`;
+      $('mini-pp').innerHTML = audio.paused ? PLAY : PAUSE;
+      $('mini-bar').style.width = audio.duration ? `${(audio.currentTime / audio.duration) * 100}%` : '0';
+    }
+    $('mini').onclick = (ev) => {
+      if (ev.target.closest('#mini-pp')) { audio.paused ? audio.play() : audio.pause(); return; }
+      if (current && current !== intro) { go(qrOf(current)); showStation(current, { autoplay: false }); }
+    };
+
+    /* Sperrbildschirm-Steuerung */
+    function setMediaSession(e) {
+      if (!('mediaSession' in navigator)) return;
+      const art = img(e.hauptbild?.asset || A?.titelbild?.asset, 512);
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: tr(e, 'titel', e.titel),
+        artist: tr(A, 'titel', A?.titel) || 'Museum im Grünen Haus',
+        album: e === intro ? t('einfuehrung') : `${t('station')} ${nrOf(e)}`,
+        artwork: art ? [{ src: art, sizes: '512x512', type: 'image/jpeg' }] : [],
+      });
+      const i = stations.indexOf(e);
+      navigator.mediaSession.setActionHandler('seekbackward', () => { audio.currentTime -= 15; });
+      navigator.mediaSession.setActionHandler('seekforward', () => { audio.currentTime += 15; });
+      navigator.mediaSession.setActionHandler('previoustrack', i > 0 ? () => { const p = stations[i - 1]; go(qrOf(p)); showStation(p, { autoplay: true }); } : null);
+      navigator.mediaSession.setActionHandler('nexttrack', stations[i + 1] ? () => { const n = stations[i + 1]; go(qrOf(n)); showStation(n, { autoplay: true }); } : null);
+    }
+
+    load();
+  </script>
+</body>
+</html>
