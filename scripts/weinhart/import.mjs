@@ -28,6 +28,24 @@ const exists = (p) => access(p).then(() => true, () => false);
 const codes = (await exists(join(DIR, 'codes.json'))) ? JSON.parse(await readFile(join(DIR, 'codes.json'), 'utf8')) : {};
 const key = (s) => s.replace(/[^a-z0-9]/gi, '').slice(0, 12) || 'k';
 const block = (text, k) => ({ _type: 'block', _key: k, style: 'normal', markDefs: [], children: [{ _type: 'span', _key: `${k}s`, text, marks: [] }] });
+// Lesefassung für den Guide: Sprechtext ohne den gesprochenen Kopf („Station vier. Titel. Untertitel.“,
+// steht im Guide schon als Überschrift) und mit den Schreibweisen, die nur für die Stimme ausgeschrieben wurden.
+const SATZ = /(?<=[^\d][.?!])\s+/;
+const saetze = (t) => (t ? t.trim().split(SATZ).length : 0);
+const LESEN = {
+  de: [['nach Christus', 'n. Chr.'], ['noch zwei Meilen', 'noch 2 Meilen'], ['Doktor Beneder', 'Dr. Beneder'],
+    ['los“, so Goethe. So weit die Interpretation', 'los“ (Goethe) – so die Interpretation']],
+  en: [['Doctor Beneder', 'Dr. Beneder']],
+  nl: [['na Christus', 'n.Chr.'], ['Doctor Beneder', 'Dr. Beneder']],
+  it: [['dopo Cristo', 'd.C.']],
+  fr: [['après Jésus-Christ', 'apr. J.-C.'], ['de deux mille trois', 'de 2003'], ['Docteur Beneder', 'Dr Beneder'], ['docteur Beneder', 'Dr Beneder']],
+};
+function lesetext(text, titel, untertitel, l, mitKopf) {
+  let t = text;
+  if (mitKopf) t = t.trim().split(SATZ).slice(1 + saetze(titel) + saetze(untertitel)).join(' ');
+  for (const [von, zu] of LESEN[l] || []) t = t.replace(von, zu);
+  return t;
+}
 const dauer = (f) => {
   const s = parseFloat(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', f]).toString());
   return `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
@@ -45,10 +63,15 @@ if (fremd) throw new Error(`Slug „${d.ausstellung.slug}“ gehört schon zu ${
 const A = d.ausstellung;
 const eintraege = [
   { nr: '00', titel: 'Einführung', untertitel: A.titel, kurzbeschreibung: A.kurzbeschreibung, audio_text: A.intro_audio_text,
-    i18n: Object.fromEntries(FREMD.map(l => [l, { titel: { en: 'Introduction', nl: 'Inleiding', it: 'Introduzione' }[l], untertitel: A.i18n[l].titel, kurzbeschreibung: A.i18n[l].kurzbeschreibung, audio_text: A.i18n[l].audio_text }])) },
+    i18n: Object.fromEntries(FREMD.map(l => [l, { titel: { en: 'Introduction', nl: 'Inleiding', it: 'Introduzione', fr: 'Introduction' }[l], untertitel: A.i18n[l].titel, kurzbeschreibung: A.i18n[l].kurzbeschreibung, audio_text: A.i18n[l].audio_text }])) },
   ...d.stationen,
 ];
 
+// Einführung (00) hat keinen gesprochenen Kopf.
+const lese = (s, l) => {
+  const q = l === 'de' ? s : s.i18n[l];
+  return lesetext(q.audio_text, q.titel, q.untertitel, l, s.nr !== '00');
+};
 const docs = [];
 for (const s of eintraege) {
   const audio = [];
@@ -57,13 +80,14 @@ for (const s of eintraege) {
     if (!(await exists(f))) { console.warn(`  fehlt: audio/${l}/${s.nr}.m4a`); continue; }
     audio.push({
       _type: 'file', _key: `audio${l}`, asset: await upload('file', f),
-      sprache: l, dauer: dauer(f), transkript: l === 'de' ? s.audio_text : s.i18n[l].audio_text,
+      sprache: l, dauer: dauer(f), transkript: lese(s, l),
     });
   }
   const en = s.i18n?.en || {};
   const guide = Object.fromEntries(FREMD.filter(l => s.i18n?.[l]).map(l => {
     const { audio_text, ...rest } = s.i18n[l];
-    return [l, rest];
+    // Lesefassung auch ohne Tonspur, damit der Guide die Sprache schon zum Mitlesen anbietet.
+    return [l, { ...rest, lesetext: lese(s, l) }];
   }));
   docs.push({
     _id: `exponat-weinhart-${s.nr}`,
@@ -71,9 +95,9 @@ for (const s of eintraege) {
     titel: s.titel,
     untertitel: s.untertitel,
     kurzbeschreibung: s.kurzbeschreibung,
-    beschreibung: [block(s.audio_text, `b${s.nr}`)],
+    beschreibung: [block(lese(s, 'de'), `b${s.nr}`)],
     titel_en: en.titel, untertitel_en: en.untertitel, kurzbeschreibung_en: en.kurzbeschreibung,
-    beschreibung_en: en.audio_text ? [block(en.audio_text, `e${s.nr}`)] : undefined,
+    beschreibung_en: en.audio_text ? [block(lese(s, 'en'), `e${s.nr}`)] : undefined,
     inventarnummer: `WH-${s.nr}`,
     slug: { _type: 'slug', current: `weinhart-${s.nr}` },
     qr_code: { _type: 'slug', current: codes[`weinhart-${s.nr}`] || `weinhart-${s.nr}` },
