@@ -180,8 +180,7 @@ const DATASET = import.meta.env.PUBLIC_SANITY_DATASET || 'production';
       padding: 14px 16px; border-radius: 18px; background: var(--paper); color: var(--ink);
       display: flex; align-items: center; gap: 14px; transform: translateY(140%); transition: transform .5s var(--ease); }
     .next-toast.show { transform: none; }
-    .next-toast .ring { flex: none; width: 36px; height: 36px; }
-    .next-toast .ring circle { transition: stroke-dashoffset 1s linear; }
+    .next-toast .go { text-align: left; }
     .next-toast strong { display: block; font-size: 14px; }
     .next-toast span { font-size: 13px; opacity: .7; }
     .next-toast .later { margin-left: auto; font-size: 13px; font-weight: 600; padding: 8px 10px; }
@@ -316,8 +315,7 @@ const DATASET = import.meta.env.PUBLIC_SANITY_DATASET || 'production';
   </button>
 
   <div class="next-toast" id="toast" role="status">
-    <svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="rgba(18,17,15,.15)" stroke-width="3"/><circle id="ring" cx="18" cy="18" r="15" fill="none" stroke="#12110f" stroke-width="3" stroke-linecap="round" stroke-dasharray="94.25" stroke-dashoffset="0" transform="rotate(-90 18 18)"/></svg>
-    <div><strong id="toast-t"></strong><span data-t="naechste"></span></div>
+    <button class="go" id="toast-go"><strong id="toast-t"></strong><span data-t="naechste"></span></button>
     <button class="later" id="toast-stop" data-t="nichtJetzt"></button>
   </div>
 
@@ -335,7 +333,10 @@ const DATASET = import.meta.env.PUBLIC_SANITY_DATASET || 'production';
     const $ = (id) => document.getElementById(id);
     const params = new URLSearchParams(location.search);
     const SLUG = params.get('a');
-    const STORE = `audioguide:${SLUG}:gehoert`;
+    // QR-Kurzform /g/<code>: Adresse nennt weder Ausstellung noch Station, nur den Zufallscode.
+    const pathCode = () => location.pathname.match(/^\/g\/([a-z0-9]+)/i)?.[1] || null;
+    const KURZ = !SLUG && !!pathCode();
+    let STORE = `audioguide:${SLUG}:gehoert`;
     const PLAY = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l11-6.5a1 1 0 0 0 0-1.72l-11-6.5A1 1 0 0 0 8 5.5z"/></svg>';
     const PAUSE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg>';
     const BARS = 64;
@@ -410,9 +411,10 @@ const DATASET = import.meta.env.PUBLIC_SANITY_DATASET || 'production';
     }
 
     async function load() {
-      if (!SLUG) return status('Audioguide', t('ohneSlug'));
-      const q = `*[_type=="ausstellung" && slug.current==$a][0]{
-        titel, untertitel, kurzbeschreibung, titel_en, untertitel_en, kurzbeschreibung_en, guide, titelbild{asset->{url}},
+      if (!SLUG && !KURZ) return status('Audioguide', t('ohneSlug'));
+      const wer = KURZ ? 'references(*[_type=="exponat" && qr_code.current==$c]._id)' : 'slug.current==$a';
+      const q = `*[_type=="ausstellung" && ${wer}][0]{
+        "slug": slug.current, titel, untertitel, kurzbeschreibung, titel_en, untertitel_en, kurzbeschreibung_en, guide, titelbild{asset->{url}},
         "exponate": exponate[]->{
           _id, titel, untertitel, titel_en, untertitel_en, kurzbeschreibung_en, inventarnummer, qr_code, kurzbeschreibung, beschreibung, guide,
           datierung{jahr_text}, herstellung{material, entstehungsort}, physisch{masse},
@@ -421,12 +423,14 @@ const DATASET = import.meta.env.PUBLIC_SANITY_DATASET || 'production';
           audio[]{asset->{url}, sprache, dauer, transkript}
         }
       }`;
-      const url = `https://${PROJECT}.apicdn.sanity.io/v2024-01-01/data/query/${DATASET}?query=${encodeURIComponent(q)}&$a=${encodeURIComponent(JSON.stringify(SLUG))}`;
+      const url = `https://${PROJECT}.apicdn.sanity.io/v2024-01-01/data/query/${DATASET}?query=${encodeURIComponent(q)}&${KURZ ? '$c' : '$a'}=${encodeURIComponent(JSON.stringify(KURZ ? pathCode() : SLUG))}`;
       try {
         const res = await fetch(url);
         A = (await res.json()).result;
       } catch { return status(t('offline'), t('offlineText')); }
       if (!A) return status(t('fehlt'), t('fehltText'));
+      STORE = `audioguide:${A.slug}:gehoert`;
+      heard = new Set(JSON.parse(localStorage.getItem(STORE) || '[]'));
       const ex = (A.exponate || []).filter(Boolean);
       intro = ex.find(isIntro) || null;
       stations = ex.filter(e => e !== intro);
@@ -469,20 +473,28 @@ const DATASET = import.meta.env.PUBLIC_SANITY_DATASET || 'production';
         renderOverview();
         if (track) loadTrack(track, wasPlaying);
       } else {
-        showStation(track && track !== intro ? track : stations.find(e => qrOf(e) === new URLSearchParams(location.search).get('s')) || stations[0], { autoplay: wasPlaying });
+        showStation(track && track !== intro ? track : stations.find(e => qrOf(e) === codeNow()) || stations[0], { autoplay: wasPlaying });
       }
     }
 
-    /* ── Routing: ?a=…&s=<qr_code>&l=<sprache> ── */
+    /* ── Routing: ?a=…&s=<qr_code>&l=<sprache>  oder  /g/<qr_code>[?ov] ── */
+    function codeNow() {
+      const p = new URLSearchParams(location.search);
+      if (!KURZ) return p.get('s');
+      return p.has('ov') ? null : pathCode();
+    }
     function route() {
-      const s = new URLSearchParams(location.search).get('s');
+      const s = codeNow();
       const e = s && [intro, ...stations].find(x => x && (x.qr_code?.current === s || x._id === s));
       if (e && e !== intro) showStation(e, { autoplay: false });
       else { showOverview(); if (e === intro) loadTrack(intro, true); }
     }
     function go(s) {
       const u = new URL(location.href);
-      s ? u.searchParams.set('s', s) : u.searchParams.delete('s');
+      if (KURZ) {
+        // Übersicht: Code bleibt stehen, ?ov markiert die Übersicht.
+        if (s) { u.pathname = `/g/${s}`; u.searchParams.delete('ov'); } else u.searchParams.set('ov', '');
+      } else s ? u.searchParams.set('s', s) : u.searchParams.delete('s');
       history.pushState({}, '', u);
     }
     window.addEventListener('popstate', route);
@@ -644,19 +656,12 @@ const DATASET = import.meta.env.PUBLIC_SANITY_DATASET || 'production';
       if (next && (current === intro || !$('station').classList.contains('hidden'))) offerNext(next);
     });
 
+    // Kein Autoplay: Besucher gehen erst zum nächsten Werk und starten dort selbst.
     function offerNext(next) {
-      let left = 6;
       $('toast-t').textContent = tr(next, 'titel', next.titel);
       $('toast').classList.add('show');
       $('mini').classList.remove('show');
-      const ring = $('ring');
-      ring.style.strokeDashoffset = '0';
-      clearInterval(toastTimer);
-      toastTimer = setInterval(() => {
-        left--;
-        ring.style.strokeDashoffset = String(94.25 * (1 - left / 6));
-        if (left <= 0) { hideToast(); go(qrOf(next)); showStation(next, { autoplay: true }); }
-      }, 1000);
+      $('toast-go').onclick = () => { hideToast(); go(qrOf(next)); showStation(next, { autoplay: false }); };
     }
     function hideToast() { clearInterval(toastTimer); $('toast').classList.remove('show'); }
     $('toast-stop').onclick = hideToast;

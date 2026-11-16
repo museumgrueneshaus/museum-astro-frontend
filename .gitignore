@@ -24,3 +24,6 @@ pnpm-debug.log*
 # Weinhart-Audioguide: Quelldateien nur lokal (Lizenzen/Größe)
 scripts/weinhart/audio/
 scripts/weinhart/bilder/
+scripts/weinhart/_test_oeffentlicher_raum/
+scripts/weinhart/*.docx
+.env.local

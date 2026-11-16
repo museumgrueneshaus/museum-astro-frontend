@@ -2,219 +2,419 @@
   "ausstellung": {
     "_id": "ausstellung-weinhart",
     "titel": "Johann Weinhart. Bildhauer",
-    "untertitel": "Audioguide zu fünf Bronzen",
+    "untertitel": "Audioguide zu zehn Werken",
     "slug": "weinhart",
-    "kurzbeschreibung": "Johann Weinhart (1925–2019) lebte und arbeitete ab 1958 in Biberwier. Seine Bronzen goss er nach einem eigenen Verfahren in der eigenen Werkstatt. Viele stehen im öffentlichen Raum zwischen Ehrwald, Berwang und Innsbruck.",
-    "intro_audio_text": "Willkommen. Johann Weinhart wurde 1925 in Salzburg geboren und lernte zuerst Tischler. Nach Arbeitsdienst und Kriegsgefangenschaft in Russland kam er Ende 1945 zurück, besuchte die Fachschule für Holz- und Steinbearbeitung in Hallein und lernte ein Jahr beim Bildhauer Fritz Behn in Ehrwald. Fünf Jahre arbeitete er als Steinmetz in Salzburg, ab 1958 lebte er in Biberwier. Lange verdiente er sein Geld als Gewehrschäfter. Erst ab 1972 arbeitete er frei als Bildhauer. Dieser Rundgang führt zu fünf seiner Bronzen. Jede Station hat einen QR-Code. Scannen Sie ihn, und der Text zur Station beginnt.",
+    "kurzbeschreibung": "Johann Weinhart (1925–2019) lebte und arbeitete ab 1958 in Biberwier. Seine Bronzen goss er nach einem eigenen Verfahren in der eigenen Werkstatt. Die Ausstellung zeigt Plastiken und Reliefs aus fünf Jahrzehnten.",
+    "intro_audio_text": "Willkommen. Johann Weinhart wurde 1925 in Salzburg geboren und lernte zuerst Tischler. Nach Arbeitsdienst und Kriegsgefangenschaft in Russland kam er Ende 1945 zurück, besuchte die Fachschule für Holz- und Steinbearbeitung in Hallein und lernte ein Jahr beim Bildhauer Fritz Behn in Ehrwald. Fünf Jahre arbeitete er als Steinmetz in Salzburg, ab 1958 lebte er in Biberwier. Lange verdiente er sein Geld als Gewehrschäfter. Erst ab 1972 arbeitete er frei als Bildhauer. Dieser Rundgang führt zu zehn seiner Werke, Plastiken und Reliefs aus Bronze. Jede Station trägt die Nummer des Werks und einen QR-Code. Scannen Sie ihn, und der Text zur Station beginnt.",
     "i18n": {
       "en": {
         "titel": "Johann Weinhart. Sculptor",
-        "untertitel": "Audio guide to five bronzes",
-        "kurzbeschreibung": "Johann Weinhart (1925–2019) lived and worked in Biberwier from 1958. He cast his bronzes in his own workshop, using a method he developed himself. Many of them stand in public spaces between Ehrwald, Berwang and Innsbruck.",
-        "audio_text": "Welcome. Johann Weinhart was born in Salzburg in 1925 and first trained as a carpenter. After labour service and time as a prisoner of war in Russia, he came back at the end of 1945. He attended the technical school for wood and stone working in Hallein and spent a year learning from the sculptor Fritz Behn in Ehrwald. For five years he worked as a stonemason in Salzburg, and from 1958 he lived in Biberwier. For a long time he earned his living as a gunstock maker. Only from 1972 did he work freely as a sculptor. This tour leads to five of his bronzes. Each stop has a QR code. Scan it, and the text for that stop begins."
+        "untertitel": "Audio guide to ten works",
+        "kurzbeschreibung": "Johann Weinhart (1925–2019) lived and worked in Biberwier from 1958. He cast his bronzes in his own workshop, using a method he developed himself. The exhibition shows sculptures and reliefs spanning five decades.",
+        "audio_text": "Welcome. Johann Weinhart was born in Salzburg in 1925 and first trained as a carpenter. After labour service and time as a prisoner of war in Russia, he came back at the end of 1945. He attended the technical school for wood and stone working in Hallein and spent a year learning from the sculptor Fritz Behn in Ehrwald. For five years he worked as a stonemason in Salzburg, and from 1958 he lived in Biberwier. For a long time he earned his living as a gunstock maker. Only from 1972 did he work freely as a sculptor. This tour leads to ten of his works, sculptures and reliefs in bronze. Each stop carries the number of the work and a QR code. Scan it, and the text for that stop begins."
       },
       "nl": {
         "titel": "Johann Weinhart. Beeldhouwer",
-        "untertitel": "Audiotour langs vijf bronzen beelden",
-        "kurzbeschreibung": "Johann Weinhart (1925–2019) woonde en werkte vanaf 1958 in Biberwier. Zijn bronzen beelden goot hij volgens een eigen methode in zijn eigen werkplaats. Veel ervan staan in de openbare ruimte tussen Ehrwald, Berwang en Innsbruck.",
-        "audio_text": "Welkom. Johann Weinhart werd in 1925 in Salzburg geboren en leerde eerst het vak van meubelmaker. Na de arbeidsdienst en krijgsgevangenschap in Rusland kwam hij eind 1945 terug. Hij volgde de vakschool voor hout- en steenbewerking in Hallein en leerde een jaar bij de beeldhouwer Fritz Behn in Ehrwald. Vijf jaar werkte hij als steenhouwer in Salzburg, vanaf 1958 woonde hij in Biberwier. Lange tijd verdiende hij zijn geld als geweerkolfmaker. Pas vanaf 1972 werkte hij als zelfstandig beeldhouwer. Deze rondgang voert langs vijf van zijn bronzen beelden. Elke halte heeft een QR-code. Scan die, en de tekst bij de halte begint."
+        "untertitel": "Audiotour langs tien werken",
+        "kurzbeschreibung": "Johann Weinhart (1925–2019) woonde en werkte vanaf 1958 in Biberwier. Zijn bronzen goot hij volgens een eigen methode in zijn eigen werkplaats. De tentoonstelling toont beeldhouwwerken en reliëfs uit vijf decennia.",
+        "audio_text": "Welkom. Johann Weinhart werd in 1925 in Salzburg geboren en leerde eerst het vak van meubelmaker. Na de arbeidsdienst en krijgsgevangenschap in Rusland kwam hij eind 1945 terug. Hij volgde de vakschool voor hout- en steenbewerking in Hallein en leerde een jaar bij de beeldhouwer Fritz Behn in Ehrwald. Vijf jaar werkte hij als steenhouwer in Salzburg, vanaf 1958 woonde hij in Biberwier. Lange tijd verdiende hij zijn geld als geweerkolfmaker. Pas vanaf 1972 werkte hij als zelfstandig beeldhouwer. Deze rondgang voert langs tien van zijn werken, beelden en reliëfs in brons. Elke halte draagt het nummer van het werk en een QR-code. Scan die, en de tekst bij de halte begint."
       },
       "it": {
         "titel": "Johann Weinhart. Scultore",
-        "untertitel": "Audioguida a cinque bronzi",
-        "kurzbeschreibung": "Johann Weinhart (1925–2019) visse e lavorò a Biberwier dal 1958. Fondeva i suoi bronzi nella propria bottega, con un procedimento ideato da lui. Molti si trovano in spazi pubblici tra Ehrwald, Berwang e Innsbruck.",
-        "audio_text": "Benvenuti. Johann Weinhart nacque a Salisburgo nel 1925 e imparò dapprima il mestiere di falegname. Dopo il servizio di lavoro e la prigionia di guerra in Russia, tornò alla fine del 1945. Frequentò la scuola professionale per la lavorazione del legno e della pietra di Hallein e per un anno fu allievo dello scultore Fritz Behn a Ehrwald. Per cinque anni lavorò come scalpellino a Salisburgo, dal 1958 visse a Biberwier. A lungo si guadagnò da vivere costruendo calci di fucile. Solo dal 1972 lavorò come scultore indipendente. Questo percorso conduce a cinque dei suoi bronzi. Ogni tappa ha un codice QR. Inquadratelo, e il testo della tappa comincia."
+        "untertitel": "Audioguida a dieci opere",
+        "kurzbeschreibung": "Johann Weinhart (1925–2019) visse e lavorò a Biberwier dal 1958. Fondeva i suoi bronzi nella propria bottega, con un procedimento ideato da lui. La mostra presenta sculture e rilievi di cinque decenni.",
+        "audio_text": "Benvenuti. Johann Weinhart nacque a Salisburgo nel 1925 e imparò dapprima il mestiere di falegname. Dopo il servizio di lavoro e la prigionia di guerra in Russia, tornò alla fine del 1945. Frequentò la scuola professionale per la lavorazione del legno e della pietra di Hallein e per un anno fu allievo dello scultore Fritz Behn a Ehrwald. Per cinque anni lavorò come scalpellino a Salisburgo, dal 1958 visse a Biberwier. A lungo si guadagnò da vivere costruendo calci di fucile. Solo dal 1972 lavorò come scultore indipendente. Questo percorso conduce a dieci delle sue opere, sculture e rilievi in bronzo. Ogni tappa porta il numero dell'opera e un codice QR. Inquadratelo, e il testo della tappa comincia."
       }
     }
   },
   "stationen": [
     {
-      "nr": "01",
-      "titel": "Zugspitzgeist",
-      "untertitel": "Bronze, 300 cm",
-      "ort": "Biberwier",
-      "jahr_text": "ohne Datierung",
-      "material": "Bronze",
-      "masse": "H: 300 cm",
-      "kurzbeschreibung": "Drei Meter hohe Bronze in Biberwier, dem Ort, in dem Weinhart ab 1958 lebte. Im Hintergrund der Schneefernerkopf.",
-      "bild": "bilder/01.jpg",
-      "bildnachweis": "Foto: Tiia Monto, Wikimedia Commons, CC BY-SA 4.0",
-      "audio_text": "Station eins. Der Zugspitzgeist. Diese Bronze ist drei Meter hoch und steht in Biberwier, dem Ort, in dem Johann Weinhart ab 1958 lebte. Hinter ihr steht der Schneefernerkopf, ein Gipfel im Zugspitzmassiv. Weinhart kam spät zur Bildhauerei. Viele Jahre arbeitete er als Gewehrschäfter, also als Handwerker, der Schäfte für Gewehre aus Holz baut. Erst 1972 machte er sich als Bildhauer selbständig. Ab 1976 entwickelte er durch eigene Versuche ein Gussverfahren für Bronze. Es vereinfachte die Arbeitsschritte, und er konnte damit auch große Plastiken wie diese in der eigenen Werkstatt gießen.",
-      "i18n": {
-        "en": {
-          "titel": "Zugspitzgeist",
-          "untertitel": "Bronze, 300 cm",
-          "jahr_text": "undated",
-          "material": "bronze",
-          "kurzbeschreibung": "A three-metre bronze in Biberwier, the village where Weinhart lived from 1958. Behind it, the Schneefernerkopf.",
-          "audio_text": "Stop one. The Zugspitzgeist, the spirit of the Zugspitze. This bronze is three metres tall and stands in Biberwier, the village where Johann Weinhart lived from 1958. Behind it rises the Schneefernerkopf, a peak in the Zugspitze massif. Weinhart came to sculpture late. For many years he worked as a gunstock maker, a craftsman who makes the wooden stocks of rifles. Only in 1972 did he set up as an independent sculptor. From 1976, through his own experiments, he developed a method of casting bronze. It simplified the work, and it allowed him to cast large sculptures like this one in his own workshop."
-        },
-        "nl": {
-          "titel": "Zugspitzgeist",
-          "untertitel": "Brons, 300 cm",
-          "jahr_text": "ongedateerd",
-          "material": "brons",
-          "kurzbeschreibung": "Drie meter hoog bronzen beeld in Biberwier, het dorp waar Weinhart vanaf 1958 woonde. Op de achtergrond de Schneefernerkopf.",
-          "audio_text": "Halte één. De Zugspitzgeist, de geest van de Zugspitze. Dit bronzen beeld is drie meter hoog en staat in Biberwier, het dorp waar Johann Weinhart vanaf 1958 woonde. Erachter ligt de Schneefernerkopf, een top in het Zugspitzmassief. Weinhart begon pas laat met beeldhouwen. Jarenlang werkte hij als geweerkolfmaker, een vakman die de houten kolven van geweren maakt. Pas in 1972 vestigde hij zich als zelfstandig beeldhouwer. Vanaf 1976 ontwikkelde hij met eigen proeven een gietmethode voor brons. Die vereenvoudigde het werk, en zo kon hij ook grote beelden zoals dit in zijn eigen werkplaats gieten."
-        },
-        "it": {
-          "titel": "Zugspitzgeist",
-          "untertitel": "Bronzo, 300 cm",
-          "jahr_text": "non datato",
-          "material": "bronzo",
-          "kurzbeschreibung": "Bronzo alto tre metri a Biberwier, il paese in cui Weinhart visse dal 1958. Sullo sfondo lo Schneefernerkopf.",
-          "audio_text": "Tappa uno. Lo Zugspitzgeist, lo spirito della Zugspitze. Questo bronzo è alto tre metri e si trova a Biberwier, il paese in cui Johann Weinhart visse dal 1958. Alle sue spalle si alza lo Schneefernerkopf, una vetta del massiccio della Zugspitze. Weinhart arrivò tardi alla scultura. Per molti anni lavorò costruendo calci di fucile, cioè le parti in legno delle armi. Solo nel 1972 si mise in proprio come scultore. Dal 1976, con esperimenti propri, sviluppò un metodo di fusione del bronzo. Semplificava le fasi di lavoro e gli permetteva di fondere nella propria bottega anche grandi sculture come questa."
-        }
-      }
-    },
-    {
-      "nr": "02",
-      "titel": "Hl. Jakobus",
-      "untertitel": "Brunnenfigur am Jakobusbrunnen",
-      "ort": "Berwang",
-      "jahr_text": "1989",
-      "material": "Bronze",
-      "masse": "",
-      "kurzbeschreibung": "Bronzefigur des heiligen Jakobus des Älteren auf dem Laufbrunnen in Berwang, 1989.",
-      "bild": "bilder/02.jpg",
-      "bildnachweis": "Foto: David Short, Wikimedia Commons, CC BY 2.0",
-      "audio_text": "Station zwei. Der heilige Jakobus in Berwang. Weinhart schuf die Figur 1989 für den Jakobusbrunnen. Der Tiroler Kunstkataster führt ihn als Laufbrunnen mit der Figur des heiligen Jakobus des Älteren. Ein Laufbrunnen ist ein Brunnen, aus dem das Wasser ständig fließt. Die Bronze steht in der Mitte des achteckigen Steinbeckens, den Arm weit ausgestreckt. Im selben Jahr entstand auch sein Mahnmal an der Friedhofsmauer in Bichlbach, ein Relief aus Bronze.",
-      "i18n": {
-        "en": {
-          "titel": "St. James",
-          "untertitel": "Figure on the Jakobusbrunnen",
-          "material": "bronze",
-          "kurzbeschreibung": "Bronze figure of Saint James the Greater on the running fountain in Berwang, 1989.",
-          "audio_text": "Stop two. Saint James in Berwang. Weinhart made the figure in 1989 for the Jakobusbrunnen, the fountain of Saint James. The Tyrolean art register lists it as a running fountain with the figure of Saint James the Greater. A running fountain is one from which water flows constantly. The bronze stands in the middle of the octagonal stone basin, its arm stretched far out. In the same year he also made his memorial on the cemetery wall in Bichlbach, a bronze relief."
-        },
-        "nl": {
-          "titel": "Heilige Jacobus",
-          "untertitel": "Beeld op de Jakobusbrunnen",
-          "material": "brons",
-          "kurzbeschreibung": "Bronzen beeld van de heilige Jacobus de Meerdere op de fontein in Berwang, 1989.",
-          "audio_text": "Halte twee. De heilige Jacobus in Berwang. Weinhart maakte het beeld in 1989 voor de Jakobusbrunnen, de Jacobusfontein. Het Tiroler kunstregister beschrijft hem als een fontein met doorlopend stromend water en het beeld van de heilige Jacobus de Meerdere. Het bronzen beeld staat midden in het achthoekige stenen bekken, met de arm ver uitgestrekt. In hetzelfde jaar ontstond ook zijn gedenkteken aan de kerkhofmuur in Bichlbach, een reliëf in brons."
-        },
-        "it": {
-          "titel": "San Giacomo",
-          "untertitel": "Figura della Jakobusbrunnen",
-          "material": "bronzo",
-          "kurzbeschreibung": "Figura in bronzo di San Giacomo il Maggiore sulla fontana di Berwang, 1989.",
-          "audio_text": "Tappa due. San Giacomo a Berwang. Weinhart realizzò la figura nel 1989 per la fontana di San Giacomo. Il catasto artistico del Tirolo la registra come fontana a getto continuo con la figura di San Giacomo il Maggiore, cioè una fontana da cui l'acqua scorre senza interruzione. Il bronzo sta al centro della vasca ottagonale in pietra, con il braccio teso lontano dal corpo. Nello stesso anno nacque anche il suo monumento commemorativo sul muro del cimitero di Bichlbach, un rilievo in bronzo."
-        }
-      }
-    },
-    {
-      "nr": "03",
-      "titel": "Lealibrunnen",
-      "untertitel": "Brunnen mit Bronzeplastik",
-      "ort": "Ehrwald",
-      "jahr_text": "ohne Datierung",
-      "material": "Bronze, Stein",
-      "masse": "",
-      "kurzbeschreibung": "Brunnen in Ehrwald, dem Ort, an dem Weinhart 1949 ein Jahr bei Fritz Behn lernte. Im Hintergrund der Daniel.",
-      "bild": "bilder/03.jpg",
-      "bildnachweis": "Foto: Bbb, Wikivoyage Shared, CC BY-SA 3.0",
-      "audio_text": "Station drei. Der Lealibrunnen in Ehrwald. Hinter dem Brunnen steigt der Daniel auf. Ehrwald ist für Weinharts Weg ein wichtiger Ort. Hier lernte er nach der Fachschule in Hallein ein Jahr lang beim Akademieprofessor Fritz Behn. Diese Ausbildung bekam er, weil er in Hallein ein ausgezeichneter Schüler war. 1949 stellte er in Ehrwald gemeinsam mit Behn aus. Danach ging er für fünf Jahre als Steinmetz nach Salzburg, bevor er sich 1958 in Biberwier niederließ, nur wenige Kilometer von Ehrwald entfernt.",
-      "i18n": {
-        "en": {
-          "titel": "Lealibrunnen",
-          "untertitel": "Fountain with bronze sculpture",
-          "jahr_text": "undated",
-          "material": "bronze, stone",
-          "kurzbeschreibung": "Fountain in Ehrwald, where Weinhart studied with Fritz Behn for a year in 1949. Behind it, the Daniel.",
-          "audio_text": "Stop three. The Lealibrunnen in Ehrwald. Behind the fountain rises the Daniel. Ehrwald is an important place in Weinhart's life. Here, after the technical school in Hallein, he studied for a year with the academy professor Fritz Behn. He was given this training because he had been an outstanding student in Hallein. In 1949 he exhibited in Ehrwald together with Behn. He then went to Salzburg for five years as a stonemason, before settling in Biberwier in 1958, only a few kilometres from Ehrwald."
-        },
-        "nl": {
-          "titel": "Lealibrunnen",
-          "untertitel": "Fontein met bronzen beeld",
-          "jahr_text": "ongedateerd",
-          "material": "brons, steen",
-          "kurzbeschreibung": "Fontein in Ehrwald, waar Weinhart in 1949 een jaar bij Fritz Behn leerde. Op de achtergrond de Daniel.",
-          "audio_text": "Halte drie. De Lealibrunnen in Ehrwald. Achter de fontein rijst de Daniel op. Ehrwald is een belangrijke plek in Weinharts leven. Hier leerde hij na de vakschool in Hallein een jaar lang bij de academieprofessor Fritz Behn. Die opleiding kreeg hij omdat hij in Hallein een uitstekende leerling was. In 1949 exposeerde hij in Ehrwald samen met Behn. Daarna ging hij voor vijf jaar als steenhouwer naar Salzburg, voordat hij zich in 1958 in Biberwier vestigde, maar een paar kilometer van Ehrwald."
-        },
-        "it": {
-          "titel": "Lealibrunnen",
-          "untertitel": "Fontana con scultura in bronzo",
-          "jahr_text": "non datato",
-          "material": "bronzo, pietra",
-          "kurzbeschreibung": "Fontana a Ehrwald, dove nel 1949 Weinhart studiò per un anno con Fritz Behn. Sullo sfondo il Daniel.",
-          "audio_text": "Tappa tre. Il Lealibrunnen a Ehrwald. Dietro la fontana si innalza il Daniel. Ehrwald è un luogo importante nella vita di Weinhart. Qui, dopo la scuola professionale di Hallein, studiò per un anno con il professore dell'Accademia Fritz Behn. Ottenne questa formazione perché a Hallein era stato un allievo eccellente. Nel 1949 espose a Ehrwald insieme a Behn. Poi lavorò per cinque anni come scalpellino a Salisburgo, prima di stabilirsi nel 1958 a Biberwier, a pochi chilometri da Ehrwald."
-        }
-      }
-    },
-    {
       "nr": "04",
-      "titel": "Ewige Gewalt",
-      "untertitel": "Bronze und Aluminium, 240 cm",
-      "ort": "Tiroler Landesfriedhof Mariahilf, Innsbruck",
-      "jahr_text": "2009",
-      "material": "Bronze, Aluminium",
-      "masse": "H: 240 cm",
-      "kurzbeschreibung": "Plastik im Urnenhain des Tiroler Landesfriedhofs Mariahilf, 2009 entstanden, als Weinhart über achtzig war.",
-      "bild": "bilder/04.jpg",
-      "bildnachweis": "Foto: Luftschiffhafen, Wikimedia Commons, CC BY-SA 4.0",
-      "audio_text": "Station vier. Ewige Gewalt. Die Plastik steht im Urnenhain des Tiroler Landesfriedhofs Mariahilf in Innsbruck. Sie ist zwei Meter vierzig hoch, aus Bronze und Aluminium, und entstand 2009. Weinhart war damals über achtzig. Krieg und Gewalt beschäftigten ihn sein Leben lang. Er selbst war als junger Mann in russischer Kriegsgefangenschaft und galt als vermisst. 1985 nannte er eine Bronze in Bichlbach: Krieg, Macht, Perfektion sind tödlich. 1988 zeigte er Arbeiten in der Salzburger Ausstellung Mahnbilder, Mahnmale, Mahnzeichen, zu den Jahren 1938 bis 1988.",
+      "titel": "Heiliger Martin des 21. Jahrhunderts",
+      "untertitel": "Wir erleichtern unser Gewissen durch Spenden, vermeiden aber jede Berührung mit dem Elend",
+      "ort": "",
+      "jahr_text": "1997",
+      "material": "Bronze",
+      "masse": "H: 58 cm",
+      "kurzbeschreibung": "Eine noble junge Dame und ein kniender Bettler: die Mantelteilung des heiligen Martin als Parabel auf die Spende.",
+      "bild": "",
+      "bildnachweis": "",
+      "audio_text": "Station vier. Heiliger Martin des 21. Jahrhunderts. Wir erleichtern unser Gewissen durch Spenden, vermeiden aber jede Berührung mit dem Elend. Der Heilige Martin ist der Schutzheilige der Armen und Bettler und der Reiter. In der christlichen Ikonografie wird er in der Regel beim Teilen seines Mantels dargestellt. Weinhart macht daraus eine Parabel, dass heute die Wohltätigkeit nicht am Mitmenschen selbst erfolgt, sondern stellvertretend durch Spenden. Man wahrt den Abstand zum „Elend“. Formal kommt bei Weinhart der Heilige Martin gar nicht vor. Dargestellt werden eine noble junge Dame mit Hut und ein kniender Bettler. Die Dame mit aufrechtem Gang trägt ein figurbetontes Kleid und würdigt das Geschehen am Boden mit keinem Blick. Im Kontrast dazu steht der am Boden kauernde Bettler, dessen Arme aus einer kubischen Form bettelnd hervortreten. Diese Kontraste sind für das Werk von Weinhart in dieser Zeit charakteristisch.",
       "i18n": {
         "en": {
-          "titel": "Ewige Gewalt (Eternal Violence)",
-          "untertitel": "Bronze and aluminium, 240 cm",
-          "material": "bronze, aluminium",
-          "ort": "Tyrolean State Cemetery Mariahilf, Innsbruck",
-          "kurzbeschreibung": "Sculpture in the urn grove of the Tyrolean State Cemetery Mariahilf, made in 2009, when Weinhart was over eighty.",
-          "audio_text": "Stop four. Ewige Gewalt, Eternal Violence. The sculpture stands in the urn grove of the Tyrolean State Cemetery Mariahilf in Innsbruck. It is two metres forty tall, made of bronze and aluminium, and was created in 2009. Weinhart was then over eighty. War and violence occupied him all his life. As a young man he was himself a prisoner of war in Russia and was listed as missing. In 1985 he gave a bronze in Bichlbach the title: War, power, perfection are deadly. In 1988 he showed work in the Salzburg exhibition Mahnbilder, Mahnmale, Mahnzeichen, about the years 1938 to 1988."
+          "titel": "Saint Martin of the Twenty-First Century",
+          "untertitel": "We ease our conscience with donations, yet avoid any contact with misery",
+          "jahr_text": "1997",
+          "material": "Bronze",
+          "kurzbeschreibung": "A refined young lady and a kneeling beggar: the sharing of the cloak by Saint Martin as a parable of charitable giving.",
+          "audio_text": "Stop four. Saint Martin of the Twenty-First Century. We ease our conscience with donations, yet avoid any contact with misery. Saint Martin is the patron saint of the poor, of beggars and of riders. In Christian iconography he is usually shown sharing his cloak. Weinhart turns this into a parable: today, charity is no longer done to the fellow human being directly, but by proxy, through donations. One keeps one's distance from \"misery\". Formally, Saint Martin does not appear in Weinhart's work at all. What we see is a refined young lady in a hat and a kneeling beggar. The lady, walking upright in a figure-hugging dress, does not spare a glance for what is happening on the ground. In contrast stands the beggar, crouching on the ground, his arms reaching out begging from a cubic form. Such contrasts are characteristic of Weinhart's work in this period."
         },
         "nl": {
-          "titel": "Ewige Gewalt (Eeuwig geweld)",
-          "untertitel": "Brons en aluminium, 240 cm",
-          "material": "brons, aluminium",
-          "ort": "Tiroolse begraafplaats Mariahilf, Innsbruck",
-          "kurzbeschreibung": "Beeld in de urnentuin van de Tiroolse begraafplaats Mariahilf, gemaakt in 2009, toen Weinhart al over de tachtig was.",
-          "audio_text": "Halte vier. Ewige Gewalt, eeuwig geweld. Het beeld staat in de urnentuin van de Tiroolse begraafplaats Mariahilf in Innsbruck. Het is twee meter veertig hoog, gemaakt van brons en aluminium, en ontstond in 2009. Weinhart was toen al over de tachtig. Oorlog en geweld hielden hem zijn hele leven bezig. Als jonge man zat hij zelf in Russische krijgsgevangenschap en werd hij als vermist opgegeven. In 1985 gaf hij een bronzen beeld in Bichlbach de titel: oorlog, macht, perfectie zijn dodelijk. In 1988 toonde hij werk op de Salzburger tentoonstelling Mahnbilder, Mahnmale, Mahnzeichen, over de jaren 1938 tot 1988."
+          "titel": "Heilige Martinus van de eenentwintigste eeuw",
+          "untertitel": "We sussen ons geweten met giften, maar mijden elk contact met de ellende",
+          "jahr_text": "1997",
+          "material": "Brons",
+          "kurzbeschreibung": "Een voorname jonge dame en een knielende bedelaar: de manteldeling van de heilige Martinus als gelijkenis over de gift.",
+          "audio_text": "Halte vier. Heilige Martinus van de eenentwintigste eeuw. We sussen ons geweten met giften, maar mijden elk contact met de ellende. De heilige Martinus is de patroonheilige van de armen, de bedelaars en de ruiters. In de christelijke iconografie wordt hij doorgaans afgebeeld terwijl hij zijn mantel deelt. Weinhart maakt daarvan een gelijkenis: tegenwoordig vindt weldadigheid niet plaats bij de medemens zelf, maar bij wijze van vervanging door giften. Men houdt afstand tot de „ellende”. Vormelijk komt de heilige Martinus bij Weinhart helemaal niet voor. Te zien zijn een voorname jonge dame met hoed en een knielende bedelaar. De dame met rechte tred draagt een figuurvolgende jurk en schenkt aan wat er op de grond gebeurt geen blik. Daartegenover staat de op de grond gehurkte bedelaar, wiens armen smekend uit een kubische vorm steken. Dit soort tegenstellingen is in die tijd kenmerkend voor het werk van Weinhart."
         },
         "it": {
-          "titel": "Ewige Gewalt (Violenza eterna)",
-          "untertitel": "Bronzo e alluminio, 240 cm",
-          "material": "bronzo, alluminio",
-          "ort": "Cimitero regionale tirolese di Mariahilf, Innsbruck",
-          "kurzbeschreibung": "Scultura nell'area cineraria del cimitero regionale tirolese di Mariahilf, realizzata nel 2009, quando Weinhart aveva più di ottant'anni.",
-          "audio_text": "Tappa quattro. Ewige Gewalt, violenza eterna. La scultura si trova nell'area cineraria del cimitero regionale tirolese di Mariahilf a Innsbruck. È alta due metri e quaranta, in bronzo e alluminio, ed è nata nel 2009, quando Weinhart aveva più di ottant'anni. La guerra e la violenza lo accompagnarono per tutta la vita. Da giovane fu lui stesso prigioniero di guerra in Russia e venne dato per disperso. Nel 1985 intitolò un bronzo a Bichlbach: guerra, potere, perfezione sono mortali. Nel 1988 espose opere nella mostra salisburghese Mahnbilder, Mahnmale, Mahnzeichen, dedicata agli anni dal 1938 al 1988."
+          "titel": "San Martino del XXI secolo",
+          "untertitel": "Alleggeriamo la coscienza con le offerte, ma evitiamo ogni contatto con la miseria",
+          "jahr_text": "1997",
+          "material": "Bronzo",
+          "kurzbeschreibung": "Una nobile giovane signora e un mendicante inginocchiato: la divisione del mantello di San Martino come parabola dell'elemosina.",
+          "audio_text": "Tappa quattro. San Martino del ventunesimo secolo. Alleggeriamo la coscienza con le offerte, ma evitiamo ogni contatto con la miseria. San Martino è il patrono dei poveri, dei mendicanti e dei cavalieri. Nell'iconografia cristiana viene di norma raffigurato mentre divide il suo mantello. Weinhart ne fa una parabola: oggi la beneficenza non avviene più verso il prossimo stesso, ma per interposta persona, attraverso le offerte. Si mantiene la distanza dalla «miseria». Formalmente, in Weinhart San Martino non compare affatto. Sono raffigurati una nobile giovane signora con il cappello e un mendicante inginocchiato. La signora, dall'andatura eretta, porta un abito aderente e non degna di uno sguardo ciò che accade a terra. In contrasto con lei sta il mendicante accovacciato al suolo, le cui braccia, tese a chiedere l'elemosina, emergono da una forma cubica. Questi contrasti sono caratteristici dell'opera di Weinhart in quel periodo."
         }
       }
     },
     {
       "nr": "05",
-      "titel": "Hl. Dionysius",
-      "untertitel": "Statue am Pfarrheim",
-      "ort": "Bad Vigaun, Salzburg",
-      "jahr_text": "Ende 20. Jahrhundert",
+      "titel": "Studie zur modernen Apokalypse",
+      "untertitel": "Gegensätze versuchen einander zu überwinden und nehmen gleichermaßen Schaden",
+      "ort": "",
+      "jahr_text": "1986",
       "material": "",
-      "masse": "",
-      "kurzbeschreibung": "Figur des heiligen Dionysius in einer Nische an der Außenmauer des Pfarrheims Bad Vigaun, nahe Hallein.",
-      "bild": "bilder/05.jpg",
-      "bildnachweis": "Foto: Ewald Ehtreiber (Eweht), Wikimedia Commons, CC BY-SA 4.0",
-      "audio_text": "Station fünf. Der heilige Dionysius in Bad Vigaun. Die Figur steht in einer Nische an der Außenmauer des Pfarrheims, gleich neben Hallein, wo Weinhart nach dem Krieg die Fachschule besuchte. Sie zeigt den Heiligen als Bischof mit Mitra. Sein Werk kreist um ein Menschsein, das von einer christlich-humanistischen Weltsicht geprägt ist. 1985 erhielt er den Grand Prix d'Art im Schweizer Thurgau, 2003 verlieh ihm die Republik Österreich den Titel Professor. Johann Weinhart starb am 24. November 2019, einen Tag nach seinem vierundneunzigsten Geburtstag. Danke, dass Sie den Rundgang mitgemacht haben.",
+      "masse": "H: 57 cm",
+      "kurzbeschreibung": "Ein zarter Frauenkörper durchdringt einen monumentalen kubischen Block in Menschenform.",
+      "bild": "",
+      "bildnachweis": "",
+      "audio_text": "Station fünf. Studie zur modernen Apokalypse. Gegensätze versuchen einander zu überwinden und nehmen gleichermaßen Schaden. Mehrere Kontraste bestimmen diese Skulptur. Der zarte Frauenkörper, fein modelliert und mit glatter Oberfläche, trifft auf einen monumentalen kubischen Block in Menschenform, dessen Oberfläche steinartig erscheint. Eine besondere Spannung erzeugt die Durchdringung des Blocks durch die Arme der Frau. Die langen gespreizten Frauenfinger wirken sehr expressiv, man könnte meinen, sie verharren in Ekstase. Diese Skulptur gibt es in unterschiedlichen Größen. Selbst in der hier ausgestellten kleinen Variante kann man die monumentale Wirkung spüren.",
       "i18n": {
         "en": {
-          "titel": "St. Dionysius",
-          "untertitel": "Statue on the parish hall",
-          "jahr_text": "late 20th century",
-          "kurzbeschreibung": "Figure of Saint Dionysius in a niche in the outer wall of the parish hall in Bad Vigaun, near Hallein.",
-          "audio_text": "Stop five. Saint Dionysius in Bad Vigaun. The figure stands in a niche in the outer wall of the parish hall, close to Hallein, where Weinhart attended the technical school after the war. It shows the saint as a bishop wearing a mitre. His work centres on human existence, seen from a Christian and humanist point of view. In 1985 he received the Grand Prix d'Art in the Swiss canton of Thurgau, and in 2003 the Republic of Austria awarded him the title of Professor. Johann Weinhart died on the twenty-fourth of November 2019, one day after his ninety-fourth birthday. Thank you for joining this tour."
+          "titel": "Study for the Modern Apocalypse",
+          "untertitel": "Opposites try to overcome each other and both are equally harmed",
+          "jahr_text": "1986",
+          "material": "",
+          "kurzbeschreibung": "A delicate female body penetrates a monumental cubic block in human form.",
+          "audio_text": "Stop five. Study for the Modern Apocalypse. Opposites try to overcome each other and both are equally harmed. Several contrasts shape this sculpture. The delicate female body, finely modelled with a smooth surface, meets a monumental cubic block in human form, whose surface looks like stone. A particular tension arises from the way the woman's arms penetrate the block. The long, spread fingers of the woman look highly expressive; one might think they remain frozen in ecstasy. This sculpture exists in different sizes. Even in the small version exhibited here, one can feel the monumental effect."
+        },
+        "nl": {
+          "titel": "Studie voor de moderne apocalyps",
+          "untertitel": "Tegenpolen proberen elkaar te overwinnen en lijden beide schade",
+          "jahr_text": "1986",
+          "material": "",
+          "kurzbeschreibung": "Een tengere vrouwenfiguur doordringt een monumentaal kubisch blok in menselijke vorm.",
+          "audio_text": "Halte vijf. Studie voor de moderne apocalyps. Tegenpolen proberen elkaar te overwinnen en lijden beide schade. Meerdere contrasten bepalen dit beeld. Het tengere vrouwenlichaam, fijn gemodelleerd en met een gladde oppervlakte, ontmoet een monumentaal kubisch blok in menselijke vorm, waarvan de oppervlakte op steen lijkt. Een bijzondere spanning ontstaat doordat de armen van de vrouw het blok doordringen. De lange, gespreide vingers van de vrouw werken heel expressief, het lijkt alsof ze in extase verstarren. Dit beeld bestaat in verschillende afmetingen. Zelfs in de kleine variant die hier te zien is, voelt men het monumentale effect."
+        },
+        "it": {
+          "titel": "Studio per l'apocalisse moderna",
+          "untertitel": "Gli opposti cercano di superarsi a vicenda e ne escono entrambi danneggiati",
+          "jahr_text": "1986",
+          "material": "",
+          "kurzbeschreibung": "Un esile corpo di donna penetra un monumentale blocco cubico in forma umana.",
+          "audio_text": "Tappa cinque. Studio per l'apocalisse moderna. Gli opposti cercano di superarsi a vicenda e ne escono entrambi danneggiati. Diversi contrasti determinano questa scultura. L'esile corpo di donna, modellato con finezza e dalla superficie liscia, incontra un monumentale blocco cubico in forma umana, la cui superficie sembra di pietra. Una tensione particolare nasce dalla penetrazione del blocco da parte delle braccia della donna. Le lunghe dita aperte della donna appaiono molto espressive: si direbbe che restino in estasi. Questa scultura esiste in dimensioni diverse. Anche nella piccola versione qui esposta si può avvertire l'effetto monumentale."
+        }
+      }
+    },
+    {
+      "nr": "09",
+      "titel": "Vater, warum hast du mich verlassen?",
+      "untertitel": "",
+      "ort": "",
+      "jahr_text": "ca. 2015",
+      "material": "Bronze",
+      "masse": "H: 47 cm",
+      "kurzbeschreibung": "Ein nach rechts gebogenes Kruzifix, Christus hat eine Hand und einen Fuß aus der Fixierung gerissen.",
+      "bild": "",
+      "bildnachweis": "",
+      "audio_text": "Station neun. Vater, warum hast du mich verlassen? Kruzifixe ziehen sich durch das gesamte Werk von Weinhart. In unterschiedlichen Formgebungen versucht er den letztgültigen Ausdruck des Leidens Christi darzustellen. Oft verlässt er dabei die allgemeingültige ikonografische Darstellung und erfährt dadurch immer wieder Ablehnung. Das hier ausgestellte Kruzifix besticht durch die Biegung nach rechts, wodurch eine hohe Dynamik entsteht. Gesteigert wird dies noch durch den expressiv verzerrten Körper von Christus, der eine Hand und einen Fuß aus seiner Fixierung gerissen hat. Man glaubt, den Ruf „Vater, warum hast du mich verlassen“ zu hören.",
+      "i18n": {
+        "en": {
+          "titel": "Father, Why Have You Forsaken Me?",
+          "untertitel": "",
+          "jahr_text": "c. 2015",
+          "material": "Bronze",
+          "kurzbeschreibung": "A crucifix bent to the right; Christ has torn one hand and one foot free from the fixings.",
+          "audio_text": "Stop nine. Father, why have you forsaken me? Crucifixes run through Weinhart's entire oeuvre. In different forms he tries to depict the ultimate expression of Christ's suffering. He often departs from the generally accepted iconographic depiction and, as a result, repeatedly meets with rejection. The crucifix exhibited here is striking for its bend to the right, which creates great dynamism. This is heightened further by the expressively distorted body of Christ, who has torn one hand and one foot free from his fixings. One believes one can hear the cry \"Father, why have you forsaken me\"."
+        },
+        "nl": {
+          "titel": "Vader, waarom hebt u mij verlaten?",
+          "untertitel": "",
+          "jahr_text": "ca. 2015",
+          "material": "Brons",
+          "kurzbeschreibung": "Een naar rechts gebogen kruisbeeld; Christus heeft een hand en een voet losgerukt uit de bevestiging.",
+          "audio_text": "Halte negen. Vader, waarom hebt u mij verlaten? Kruisbeelden lopen als een rode draad door het hele werk van Weinhart. In uiteenlopende vormen probeert hij de uiteindelijke uitdrukking van het lijden van Christus weer te geven. Vaak verlaat hij daarbij de algemeen gangbare iconografische voorstelling en stuit hij daardoor telkens op afwijzing. Het kruisbeeld dat hier staat, valt op door de buiging naar rechts, waardoor een grote dynamiek ontstaat. Dit wordt nog versterkt door het expressief vervormde lichaam van Christus, die een hand en een voet uit zijn bevestiging heeft losgerukt. Men meent de kreet „Vader, waarom hebt u mij verlaten” te horen."
+        },
+        "it": {
+          "titel": "Padre, perché mi hai abbandonato?",
+          "untertitel": "",
+          "jahr_text": "ca. 2015",
+          "material": "Bronzo",
+          "kurzbeschreibung": "Un crocifisso piegato verso destra: Cristo ha strappato dall'inchiodatura una mano e un piede.",
+          "audio_text": "Tappa nove. Padre, perché mi hai abbandonato? I crocifissi attraversano tutta l'opera di Weinhart. Con forme diverse egli cerca di rendere l'espressione definitiva della sofferenza di Cristo. Spesso abbandona la raffigurazione iconografica canonica e per questo incontra più volte rifiuto. Il crocifisso qui esposto colpisce per la curvatura verso destra, che crea una forte dinamica. Questo effetto è accresciuto dal corpo di Cristo, espressivamente deformato, che ha strappato dall'inchiodatura una mano e un piede. Si crede di udire il grido: «Padre, perché mi hai abbandonato»."
+        }
+      }
+    },
+    {
+      "nr": "10",
+      "titel": "Selbstbildnis",
+      "untertitel": "",
+      "ort": "",
+      "jahr_text": "1999",
+      "material": "Bronze",
+      "masse": "H: 49 cm",
+      "kurzbeschreibung": "Bronzenes Selbstbildnis des Bildhauers, mit den Spuren der Tonbearbeitung in der Oberfläche.",
+      "bild": "",
+      "bildnachweis": "",
+      "audio_text": "Station zehn. Selbstbildnis. Dieses bronzene Selbstbildnis zeigt einen Mann, der uns in sich gekehrt ansieht. Im Kontrast dazu vermitteln der geschlossene Mund und die leicht in die Höhe gezogenen Augenbrauen wachsame Spannung. Dies unterstreicht auch die dynamische, in die Stirn gefallene Haarlocke. An diesem Werk kann man Weinharts großes Können gut ablesen. Nicht nur daran, dass „anatomisch alles stimmt“, sondern auch daran, dass es ihm gelingt, den Charakter und das Wesen des Dargestellten zu übermitteln. Die Oberfläche des Gusses zeigt ein durchfurchtes Antlitz mit den Spuren der Tonbearbeitung. Dieses impressionistisch wirkende Licht- und Schattenspiel der Oberfläche wird durch die gekonnt differenzierte Patina noch verstärkt. Das Auslaufen des Halses in eine undefinierbare Form ohne Körper hebt die Gesichtszüge noch stärker hervor.",
+      "i18n": {
+        "en": {
+          "titel": "Self-Portrait",
+          "untertitel": "",
+          "jahr_text": "1999",
+          "material": "Bronze",
+          "kurzbeschreibung": "Bronze self-portrait of the sculptor, with the traces of the work in clay visible in the surface.",
+          "audio_text": "Stop ten. Self-Portrait. This bronze self-portrait shows a man who looks at us, withdrawn into himself. In contrast, the closed mouth and the slightly raised eyebrows convey watchful tension. The dynamic lock of hair fallen onto the forehead underlines this as well. In this work, Weinhart's great skill is easy to read. Not only in the fact that \"anatomically everything is right\", but also in his success at conveying the character and essence of the sitter. The surface of the cast shows a furrowed face bearing the traces of the work in clay. This play of light and shadow on the surface, which looks impressionistic, is reinforced by the skilfully differentiated patina. The neck trailing off into an undefined form without a body emphasises the facial features even more."
+        },
+        "nl": {
+          "titel": "Zelfportret",
+          "untertitel": "",
+          "jahr_text": "1999",
+          "material": "Brons",
+          "kurzbeschreibung": "Bronzen zelfportret van de beeldhouwer, met de sporen van de kleibewerking in het oppervlak.",
+          "audio_text": "Halte tien. Zelfportret. Dit bronzen zelfportret toont een man die ons in zichzelf gekeerd aanziet. Daartegenover brengen de gesloten mond en de licht opgetrokken wenkbrauwen waakzame spanning over. Ook de dynamische haarlok die over het voorhoofd valt, benadrukt dit. Aan dit werk is Weinharts groot kunnen goed af te lezen. Niet alleen doordat „anatomisch alles klopt”, maar ook doordat het hem lukt het karakter en het wezen van de afgebeelde over te brengen. Het oppervlak van de gietstuk toont een doorgroefd gelaat met de sporen van de kleibewerking. Dit impressionistisch aandoende spel van licht en schaduw op het oppervlak wordt door de vakkundig gevarieerde patina nog versterkt. Dat de hals uitloopt in een ondefinieerbare vorm zonder lichaam, laat de gelaatstrekken nog sterker uitkomen."
+        },
+        "it": {
+          "titel": "Autoritratto",
+          "untertitel": "",
+          "jahr_text": "1999",
+          "material": "Bronzo",
+          "kurzbeschreibung": "Autoritratto in bronzo dello scultore, con le tracce della lavorazione dell'argilla nella superficie.",
+          "audio_text": "Tappa dieci. Autoritratto. Questo autoritratto in bronzo mostra un uomo che ci guarda assorto in sé stesso. In contrasto con ciò, la bocca chiusa e le sopracciglia leggermente sollevate comunicano una tensione vigile. Lo sottolinea anche la ciocca di capelli dinamica, caduta sulla fronte. In quest'opera si legge bene la grande abilità di Weinhart. Non solo perché «anatomicamente tutto torna», ma anche perché riesce a trasmettere il carattere e l'essenza del soggetto ritratto. La superficie della fusione mostra un volto solcato, con le tracce della lavorazione dell'argilla. Questo gioco di luce e ombra della superficie, di effetto impressionista, è rafforzato dalla patina sapientemente differenziata. Il collo che si perde in una forma indefinibile, senza corpo, mette ancora più in rilievo i tratti del volto."
+        }
+      }
+    },
+    {
+      "nr": "14",
+      "titel": "Heiliger Dionysius",
+      "untertitel": "Im 3. Jahrhundert erster Bischof von Paris",
+      "ort": "",
+      "jahr_text": "ca. 2003",
+      "material": "Bronze",
+      "masse": "H: 32 cm",
+      "kurzbeschreibung": "Der enthauptete Bischof mit dem Haupt in den Händen, über ihm schwebt die Mitra.",
+      "bild": "",
+      "bildnachweis": "",
+      "audio_text": "Station vierzehn. Heiliger Dionysius. Im 3. Jahrhundert erster Bischof von Paris. Dionysius von Paris wird um 250 nach Christus von den Römern enthauptet. Der Legende nach nahm der Heilige seinen Kopf in die Hände und ging noch zwei Meilen weit bis zu seiner Begräbnisstätte. Er zählt zu den vierzehn Nothelfern der katholischen Kirche. Weinhart stellt ihn in seiner Skulptur in der allgemeingültigen Form dar, mit dem Haupt in den Händen und in breitbeiniger Schrittstellung. Über der Figur schwebt die Mitra als Kennzeichen seiner Bischofswürde. Um die Hüfte hat er einen Strick mit einem einfachen Kreuz gebunden. Der Faltenwurf der Skulptur ist nur angedeutet. Die Oberfläche, die wohl auf sein Leiden hinweisen will, ist mit Narben überzogen. Die ausgestreckte Hand mit den langen Fingern deutet auf einen entfernten Ort. Diese Geste finden wir im Werk von Weinhart öfter. Auf den zwei Ölbildern der vierzehn Nothelfer im gleichen Raum finden wir auch den Heiligen Dionysius, allerdings in der Formensprache des Barocks und Rokokos.",
+      "i18n": {
+        "en": {
+          "titel": "Saint Dionysius",
+          "untertitel": "First Bishop of Paris in the third century",
+          "jahr_text": "c. 2003",
+          "material": "Bronze",
+          "kurzbeschreibung": "The beheaded bishop with his head in his hands, the mitre hovering above him.",
+          "audio_text": "Stop fourteen. Saint Dionysius. First Bishop of Paris in the third century. Dionysius of Paris was beheaded by the Romans around 250 AD. According to legend, the saint took his head in his hands and walked on for another two miles to his burial place. He is counted among the Fourteen Holy Helpers of the Catholic Church. In his sculpture, Weinhart shows him in the generally accepted form, with his head in his hands and in a wide-legged stride. Above the figure hovers the mitre, the mark of his episcopal dignity. Around his waist he has tied a rope with a simple cross. The drapery of the sculpture is only suggested. The surface, which presumably alludes to his suffering, is covered in scars. The outstretched hand with its long fingers points to a distant place. We find this gesture more often in Weinhart's work. In the two oil paintings of the Fourteen Holy Helpers in the same room, we also find Saint Dionysius, but in the formal language of the Baroque and Rococo."
         },
         "nl": {
           "titel": "Heilige Dionysius",
-          "untertitel": "Beeld aan het parochiehuis",
-          "jahr_text": "eind 20e eeuw",
-          "kurzbeschreibung": "Beeld van de heilige Dionysius in een nis in de buitenmuur van het parochiehuis in Bad Vigaun, bij Hallein.",
-          "audio_text": "Halte vijf. De heilige Dionysius in Bad Vigaun. Het beeld staat in een nis in de buitenmuur van het parochiehuis, vlak bij Hallein, waar Weinhart na de oorlog de vakschool bezocht. Het toont de heilige als bisschop met mijter. Zijn werk draait om het menszijn, gezien vanuit een christelijk-humanistisch wereldbeeld. In 1985 ontving hij de Grand Prix d'Art in het Zwitserse Thurgau, in 2003 kende de Republiek Oostenrijk hem de titel professor toe. Johann Weinhart overleed op 24 november 2019, een dag na zijn vierennegentigste verjaardag. Dank u dat u deze rondgang hebt gevolgd."
+          "untertitel": "In de derde eeuw eerste bisschop van Parijs",
+          "jahr_text": "ca. 2003",
+          "material": "Brons",
+          "kurzbeschreibung": "De onthoofde bisschop met zijn hoofd in de handen; boven hem zweeft de mijter.",
+          "audio_text": "Halte veertien. Heilige Dionysius. In de derde eeuw eerste bisschop van Parijs. Dionysius van Parijs wordt rond het jaar 250 na Christus door de Romeinen onthoofd. Volgens de legende nam de heilige zijn hoofd in zijn handen en liep nog twee mijl door tot aan zijn begraafplaats. Hij behoort tot de veertien noodhelpers van de katholieke kerk. Weinhart beeldt hem in zijn beeld af in de algemeen gangbare vorm, met het hoofd in de handen en in wijd uiteenstaande pas. Boven de figuur zweeft de mijter als teken van zijn bisschopswaardigheid. Om zijn heup heeft hij een touw met een eenvoudig kruis gebonden. De plooival van het beeld is slechts aangeduid. Het oppervlak, dat waarschijnlijk naar zijn lijden wil verwijzen, is overdekt met littekens. De uitgestrekte hand met de lange vingers wijst naar een verre plek. Dit gebaar vinden we vaker in het werk van Weinhart. Op de twee olieverfschilderijen van de veertien noodhelpers in dezelfde ruimte vinden we ook de heilige Dionysius, maar dan in de vormentaal van de barok en de rococo."
         },
         "it": {
           "titel": "San Dionigi",
-          "untertitel": "Statua sul centro parrocchiale",
-          "jahr_text": "fine del XX secolo",
-          "ort": "Bad Vigaun, Salisburgo",
-          "kurzbeschreibung": "Figura di San Dionigi in una nicchia nel muro esterno del centro parrocchiale di Bad Vigaun, vicino a Hallein.",
-          "audio_text": "Tappa cinque. San Dionigi a Bad Vigaun. La figura si trova in una nicchia nel muro esterno del centro parrocchiale, vicino a Hallein, dove Weinhart frequentò la scuola professionale dopo la guerra. Mostra il santo come vescovo con la mitra. Il suo lavoro ruota attorno all'essere umano, visto con uno sguardo cristiano e umanista. Nel 1985 ricevette il Grand Prix d'Art nel cantone svizzero di Turgovia, e nel 2003 la Repubblica d'Austria gli conferì il titolo di professore. Johann Weinhart morì il 24 novembre 2019, un giorno dopo il suo novantaquattresimo compleanno. Grazie per aver seguito questo percorso."
+          "untertitel": "Nel terzo secolo primo vescovo di Parigi",
+          "jahr_text": "ca. 2003",
+          "material": "Bronzo",
+          "kurzbeschreibung": "Il vescovo decapitato con il capo tra le mani, sopra di lui è sospesa la mitra.",
+          "audio_text": "Tappa quattordici. San Dionigi. Nel terzo secolo primo vescovo di Parigi. Dionigi di Parigi viene decapitato dai Romani intorno al 250 dopo Cristo. Secondo la leggenda, il santo prese la testa tra le mani e camminò ancora per due miglia fino al luogo della sua sepoltura. Egli è annoverato tra i quattordici santi ausiliatori della Chiesa cattolica. Nella sua scultura Weinhart lo raffigura nella forma canonica, con il capo tra le mani e a gambe divaricate nel passo. Sopra la figura è sospesa la mitra, segno della sua dignità episcopale. Intorno ai fianchi ha legato una corda con una semplice croce. Il panneggio della scultura è solo accennato. La superficie, che sembra voler alludere alla sua sofferenza, è ricoperta di cicatrici. La mano tesa, dalle dita lunghe, indica un luogo lontano. Questo gesto lo ritroviamo spesso nell'opera di Weinhart. Nei due dipinti a olio dei quattordici santi ausiliatori, nella stessa sala, troviamo anche San Dionigi, però nel linguaggio formale del Barocco e del Rococò."
+        }
+      }
+    },
+    {
+      "nr": "15",
+      "titel": "Heilige Maria",
+      "untertitel": "Bittet um Schutz für die Welt",
+      "ort": "",
+      "jahr_text": "ca. 2004",
+      "material": "Bronze",
+      "masse": "H: 35 cm",
+      "kurzbeschreibung": "Maria mit dem Jesusknaben, ohne Krone und in Auflösung begriffen: ein neuer Typus der Madonna mit Kind.",
+      "bild": "",
+      "bildnachweis": "",
+      "audio_text": "Station fünfzehn. Heilige Maria. Bittet um Schutz für die Welt. Die Verehrung Mariens erlebte im Mittelalter einen ersten Höhepunkt. Besonders die „Schöne Madonna“ mit dem Jesusknaben auf dem Arm und einer Krone auf dem Haupt hat unser Marienbild stark geprägt. Auch Weinhart widmet sich in dieser Skulptur der Darstellung Marias mit dem Jesusknaben. Maria hält dem Betrachter das Kind hin, als wolle sie sagen: „Nimm.“ Der Knabe selbst ist kaum fassbar und scheint sehr zerbrechlich. Er hält die Erdkugel in seinen Händen, die mit einem Kreuz bekrönt ist, und sein Haupt wird von einem Nimbus eingefasst. Zwischen ihm und seiner Mutter Maria ist ein Strahlenkranz sichtbar. Maria selbst ist in Auflösung begriffen. Man sieht teilweise durch sie hindurch. Ihr Gesicht wirkt schmerzverzerrt, ihr Haupt trägt keine Krone. Sie ist keine „Schöne Madonna“! Was will uns der Bildhauer mit dieser Figurengruppe mitteilen? Die Blicke beider Figuren sind himmelwärts gerichtet. Es geht hier nicht um uns Menschen, sondern die Bitte richtet sich an Gott: „Bitte beschütze diese Welt, zu deren Rettung sich dein Sohn geopfert hat.“ Auch hier zeigt sich Weinharts Alleinstellungsmerkmal. Es gibt in der Kunstgeschichte nur wenige moderne Künstler, die sich einer solchen Thematik stellten und mit ihrer plastischen Umsetzung einen neuen Typus Madonna mit Kind erschufen.",
+      "i18n": {
+        "en": {
+          "titel": "Holy Mary",
+          "untertitel": "Pleading for protection for the world",
+          "jahr_text": "c. 2004",
+          "material": "Bronze",
+          "kurzbeschreibung": "Mary with the infant Jesus, without a crown and in a state of dissolution: a new type of Madonna and Child.",
+          "audio_text": "Stop fifteen. Holy Mary. Pleading for protection for the world. The veneration of Mary reached a first peak in the Middle Ages. In particular, the \"Beautiful Madonna\", with the infant Jesus in her arms and a crown on her head, has strongly shaped our image of Mary. In this sculpture, too, Weinhart devotes himself to depicting Mary with the infant Jesus. Mary holds the child out to the viewer, as if to say: \"Take.\" The boy himself is barely tangible and seems very fragile. In his hands he holds the globe, topped with a cross, and his head is framed by a nimbus. Between him and his mother Mary, a halo of rays is visible. Mary herself is in a state of dissolution. One can partly see through her. Her face looks twisted in pain, and her head wears no crown. She is not a \"Beautiful Madonna\"! What does the sculptor want to tell us with this group of figures? The gazes of both figures are directed heavenwards. This is not about us humans; the plea is addressed to God: \"Please protect this world, for whose salvation your Son sacrificed himself.\" Here, too, Weinhart's unique position shows. In the history of art, there are only a few modern artists who took on such a theme and, with their sculptural realisation, created a new type of Madonna and Child."
+        },
+        "nl": {
+          "titel": "Heilige Maria",
+          "untertitel": "Zij smeekt om bescherming voor de wereld",
+          "jahr_text": "ca. 2004",
+          "material": "Brons",
+          "kurzbeschreibung": "Maria met het Jezuskind, zonder kroon en in oplossing: een nieuw type van de madonna met kind.",
+          "audio_text": "Halte vijftien. Heilige Maria. Zij smeekt om bescherming voor de wereld. De Mariaverering beleefde in de middeleeuwen een eerste hoogtepunt. Vooral de „Schone Madonna” met het Jezuskind op de arm en een kroon op het hoofd heeft ons Mariabeeld sterk gevormd. Ook Weinhart wijdt zich in dit beeld aan de voorstelling van Maria met het Jezuskind. Maria houdt de toeschouwer het kind voor, alsof ze wil zeggen: „Neem.” Het kind zelf is nauwelijks grijpbaar en lijkt heel breekbaar. Het houdt de aardbol in zijn handen, die met een kruis is bekroond, en zijn hoofd is omgeven door een nimbus. Tussen hem en zijn moeder Maria is een stralenkrans zichtbaar. Maria zelf is in oplossing. Men kijkt er deels doorheen. Haar gezicht lijkt van pijn vertrokken, haar hoofd draagt geen kroon. Ze is geen „Schone Madonna”! Wat wil de beeldhouwer ons met deze figurengroep zeggen? De blikken van beide figuren zijn naar de hemel gericht. Het gaat hier niet om ons mensen, maar de smeekbede richt zich tot God: „Bescherm toch deze wereld, tot wier redding uw Zoon zich heeft opgeofferd.” Ook hier blijkt Weinharts unieke positie. In de kunstgeschiedenis zijn er maar weinig moderne kunstenaars die zich aan zo'n thema waagden en met hun plastische uitwerking een nieuw type madonna met kind schiepen."
+        },
+        "it": {
+          "titel": "Santa Maria",
+          "untertitel": "Implora protezione per il mondo",
+          "jahr_text": "ca. 2004",
+          "material": "Bronzo",
+          "kurzbeschreibung": "Maria con il Bambino Gesù, senza corona e in via di dissoluzione: un nuovo tipo di Madonna con Bambino.",
+          "audio_text": "Tappa quindici. Santa Maria. Implora protezione per il mondo. La venerazione di Maria conobbe un primo apice nel Medioevo. In particolare la «Bella Madonna», con il Bambino Gesù in braccio e una corona sul capo, ha plasmato profondamente la nostra immagine di Maria. Anche Weinhart si dedica in questa scultura alla raffigurazione di Maria con il Bambino Gesù. Maria porge il bambino a chi guarda, come se volesse dire: «Prendi». Il bambino è appena afferrabile e sembra molto fragile. Tiene tra le mani il globo terrestre, sormontato da una croce, e il suo capo è cinto da un nimbo. Tra lui e sua madre Maria è visibile una raggiera. Maria stessa è in via di dissoluzione. In parte la si vede attraverso. Il suo volto appare contratto dal dolore, il suo capo non porta corona. Non è una «Bella Madonna»! Che cosa vuole comunicarci lo scultore con questo gruppo di figure? Gli sguardi di entrambe le figure sono rivolti al cielo. Non si tratta di noi esseri umani, la richiesta è rivolta a Dio: «Ti prego, proteggi questo mondo, per la cui salvezza tuo Figlio si è sacrificato». Anche qui emerge l'unicità di Weinhart. Nella storia dell'arte sono pochi gli artisti moderni che hanno affrontato un tema simile e, con la loro realizzazione plastica, hanno creato un nuovo tipo di Madonna con Bambino."
+        }
+      }
+    },
+    {
+      "nr": "22",
+      "titel": "Christus reißt sich los, um uns zu erreichen",
+      "untertitel": "",
+      "ort": "",
+      "jahr_text": "ca. 2015",
+      "material": "Bronze",
+      "masse": "H: 49 cm",
+      "kurzbeschreibung": "Jesus beugt sich vom knallroten Kreuz zu den Betrachtern herab.",
+      "bild": "",
+      "bildnachweis": "",
+      "audio_text": "Station zweiundzwanzig. Christus reißt sich los, um uns zu erreichen. In diesem Kruzifixus beugt sich Jesus vom Kreuz zu den Betrachtern, uns Menschen, herab. Es hat den Anschein, er wolle zu uns sprechen. Diese ungewöhnliche Körperhaltung entspricht nicht der allgemeingültigen Darstellung von Jesus am Kreuz, wie wir sie über Jahrhunderte gelernt haben. Als Beispiel dafür sehen Sie gegenüber an der Wand das Kruzifix aus der Barockzeit. Jesus verharrt dort inaktiv im Moment des Sterbens. Bei Weinhart nimmt Jesus eine aktive Rolle ein, die eine Fortschreibung der Geschichte um Jesus vermittelt. Jesus der Erlöser, der uns einen Ausweg aus dem Elend der Menschheit zeigen will. Dabei setzt Weinhart wieder auf starke Kontraste. Der bronzegoldene Körper von Jesus gegen das knallrote, wuchtige Kreuz. Die expressive, raumgreifende Körperhaltung gegen das flache, kaum strukturierte Kreuz, das die klassische Kreuzform verlassen hat. Damit hat Weinhart einen neuen Weg in der christlichen Kunst eingeschlagen.",
+      "i18n": {
+        "en": {
+          "titel": "Christ Tears Himself Free to Reach Us",
+          "untertitel": "",
+          "jahr_text": "c. 2015",
+          "material": "Bronze",
+          "kurzbeschreibung": "Jesus leans down from the bright red cross towards the viewers.",
+          "audio_text": "Stop twenty-two. Christ Tears Himself Free to Reach Us. In this crucifix, Jesus leans down from the cross towards the viewers, towards us humans. It seems as if he wants to speak to us. This unusual posture does not correspond to the generally accepted depiction of Jesus on the cross, as we have learned it over the centuries. As an example, opposite on the wall you can see the crucifix from the Baroque period. There, Jesus remains inactive at the moment of dying. In Weinhart's work, Jesus takes an active role, which suggests a continuation of the story of Jesus. Jesus the Redeemer, who wants to show us a way out of humanity's misery. Here again, Weinhart relies on strong contrasts. The bronze-golden body of Jesus against the bright red, massive cross. The expressive, space-claiming posture against the flat, barely structured cross, which has abandoned the classical cruciform. With this, Weinhart has struck out on a new path in Christian art."
+        },
+        "nl": {
+          "titel": "Christus rukt zich los om ons te bereiken",
+          "untertitel": "",
+          "jahr_text": "ca. 2015",
+          "material": "Brons",
+          "kurzbeschreibung": "Jezus buigt zich vanaf het knalrode kruis naar de toeschouwers toe.",
+          "audio_text": "Halte tweeëntwintig. Christus rukt zich los om ons te bereiken. In dit kruisbeeld buigt Jezus zich vanaf het kruis naar de toeschouwers toe, naar ons mensen. Het lijkt alsof hij tot ons wil spreken. Deze ongewone lichaamshouding komt niet overeen met de algemeen gangbare voorstelling van Jezus aan het kruis, zoals wij die door de eeuwen heen hebben geleerd. Als voorbeeld daarvan ziet u hier tegenover aan de muur het kruisbeeld uit de barokperiode. Jezus verkeert daar werkeloos in het moment van sterven. Bij Weinhart neemt Jezus een actieve rol aan, die een voortzetting van het verhaal rond Jezus uitdraagt. Jezus de Verlosser, die ons een uitweg wil wijzen uit de ellende van de mensheid. Daarbij zet Weinhart opnieuw in op sterke contrasten. Het bronsgouden lichaam van Jezus tegenover het knalrode, massieve kruis. De expressieve, ruimte innemende lichaamshouding tegenover het vlakke, nauwelijks gestructureerde kruis, dat de klassieke kruisvorm heeft verlaten. Daarmee heeft Weinhart in de christelijke kunst een nieuwe weg ingeslagen."
+        },
+        "it": {
+          "titel": "Cristo si strappa per raggiungerci",
+          "untertitel": "",
+          "jahr_text": "ca. 2015",
+          "material": "Bronzo",
+          "kurzbeschreibung": "Gesù si china verso chi guarda dalla croce rosso vivo.",
+          "audio_text": "Tappa ventidue. Cristo si strappa per raggiungerci. In questo crocifisso Gesù si china dalla croce verso chi lo guarda, verso noi esseri umani. Sembra che voglia parlarci. Questa posizione insolita del corpo non corrisponde alla raffigurazione canonica di Gesù in croce, quale abbiamo imparato nei secoli. Come esempio, di fronte, alla parete, vedete il crocifisso di epoca barocca. Lì Gesù resta inattivo nel momento della morte. In Weinhart Gesù assume un ruolo attivo, che comunica un proseguimento della storia di Gesù. Gesù il Redentore, che vuole mostrarci una via d'uscita dalla miseria dell'umanità. Anche qui Weinhart punta su forti contrasti. Il corpo di Gesù, di un bronzo dorato, contro la massiccia croce rosso vivo. La posa espressiva, che occupa lo spazio, contro la croce piatta, appena strutturata, che ha abbandonato la forma classica della croce. Con ciò Weinhart ha imboccato una nuova strada nell'arte cristiana."
+        }
+      }
+    },
+    {
+      "nr": "25",
+      "titel": "Vergebliche Flucht",
+      "untertitel": "",
+      "ort": "",
+      "jahr_text": "1985",
+      "material": "Bronzerelief",
+      "masse": "42 × 31,5 cm",
+      "kurzbeschreibung": "Bronzerelief: Stacheldraht und Textilgewebe verbinden sich ungewollt ineinander.",
+      "bild": "",
+      "bildnachweis": "",
+      "audio_text": "Station fünfundzwanzig. Vergebliche Flucht. Stacheldraht und Textilgewebe verbinden sich ungewollt ineinander. Ersteres vermittelt uns Menschen Abschreckung und Schmerzen, das andere Umhüllung und Behütung. Diese Verbindung passiert in einem undefinierbaren Raum. Die Darstellung verharrt in einem Moment der Ruhe. Das textile Gewebe löst sich im oberen Bereich auf. Der Titel des Bildes, „Vergebliche Flucht“, verleiht dem Stacheldraht und dem Textilgewebe eine symbolische Komponente und gibt gleichzeitig den Hinweis, wer sich in diesem Streit durchgesetzt hat. Bei diesem Bild kommen uns vielleicht assoziierende Bilder in den Sinn, von Gefangenschaft, Flucht, Hilflosigkeit und Entsetzen.",
+      "i18n": {
+        "en": {
+          "titel": "Futile Flight",
+          "untertitel": "",
+          "jahr_text": "1985",
+          "material": "Bronze relief",
+          "kurzbeschreibung": "Bronze relief: barbed wire and woven textile become entangled against their will.",
+          "audio_text": "Stop twenty-five. Futile Flight. Barbed wire and woven textile become entangled against their will. The former conveys to us humans deterrence and pain, the latter wrapping and protection. This union takes place in an undefined space. The depiction rests in a moment of calm. The woven textile dissolves in the upper area. The title of the picture, \"Futile Flight\", gives the barbed wire and the woven textile a symbolic dimension and at the same time hints at who has prevailed in this struggle. This picture may bring to mind associations of captivity, flight, helplessness and horror."
+        },
+        "nl": {
+          "titel": "Vergeefse vlucht",
+          "untertitel": "",
+          "jahr_text": "1985",
+          "material": "Bronzen reliëf",
+          "kurzbeschreibung": "Bronzen reliëf: prikkeldraad en textielweefsel raken tegen wil en dank in elkaar verstrengeld.",
+          "audio_text": "Halte vijfentwintig. Vergeefse vlucht. Prikkeldraad en textielweefsel raken tegen wil en dank in elkaar verstrengeld. Het eerste staat voor ons mensen voor afschrikking en pijn, het andere voor omhulling en bescherming. Deze verbinding vindt plaats in een ondefinieerbare ruimte. De voorstelling verstilt in een moment van rust. Het textielweefsel lost in het bovenste deel op. De titel van het werk, „Vergeefse vlucht”, geeft het prikkeldraad en het textielweefsel een symbolische component en wijst tegelijk aan wie in deze strijd de overhand heeft gekregen. Bij dit werk komen misschien beelden bij ons op van gevangenschap, vlucht, hulpeloosheid en ontzetting."
+        },
+        "it": {
+          "titel": "Fuga vana",
+          "untertitel": "",
+          "jahr_text": "1985",
+          "material": "Rilievo in bronzo",
+          "kurzbeschreibung": "Rilievo in bronzo: filo spinato e tessuto si legano l'uno all'altro contro la loro volontà.",
+          "audio_text": "Tappa venticinque. Fuga vana. Filo spinato e tessuto si legano l'uno all'altro contro la loro volontà. Il primo trasmette a noi esseri umani deterrenza e dolore, l'altro avvolgimento e protezione. Questo legame avviene in uno spazio indefinibile. La raffigurazione resta in un momento di quiete. Il tessuto si scioglie nella parte superiore. Il titolo dell'opera, «Fuga vana», conferisce al filo spinato e al tessuto una componente simbolica e dà al tempo stesso un'indicazione su chi l'abbia spuntata in questo scontro. Davanti a quest'opera ci vengono forse in mente immagini associate: prigionia, fuga, impotenza e orrore."
+        }
+      }
+    },
+    {
+      "nr": "33",
+      "titel": "Harfenspieler",
+      "untertitel": "Gott schickt Harfensaiten, der Mensch macht Stacheldraht daraus",
+      "ort": "",
+      "jahr_text": "1998",
+      "material": "Bronzerelief",
+      "masse": "41 × 31 cm",
+      "kurzbeschreibung": "Bronzerelief: zwei Hände ohne Arme, die obere im Stacheldraht gefangen.",
+      "bild": "",
+      "bildnachweis": "",
+      "audio_text": "Station dreiunddreißig. Harfenspieler. Gott schickt Harfensaiten, der Mensch macht Stacheldraht daraus. „Gott schickt Harfensaiten, der Mensch macht Stacheldraht daraus“, lautet der Untertitel dieses Bronzereliefs. Das ist die Aussage eines gläubigen Menschen mit dem verzweifelten Blick auf das Weltgeschehen. Dieses Werk ist 1998 entstanden, hat aber universelle Gültigkeit. Das Relief ist klein, trotzdem sticht es sofort ins Auge und löst Schmerzen aus. Weinhart versteht es hier, mit den Mitteln des Bildhauers seinen Blick auf die Welt in Form zu bringen. Die grob ausgearbeiteten Hände ohne Arme schälen sich aus dem Untergrund hervor. Die obere Hand ist im Stacheldraht gefangen, die untere versucht ihn zu umfassen. Die Stacheln des Drahtes treten spitz hervor, bereiten Schmerzen und lassen Blut fließen. Der Raum um das Geschehen ist, wie oft bei Weinharts Reliefs, undefinierbar und schafft dadurch unbeschränkte Interpretationsmöglichkeiten.",
+      "i18n": {
+        "en": {
+          "titel": "Harp Player",
+          "untertitel": "God sends harp strings, man makes barbed wire out of them",
+          "jahr_text": "1998",
+          "material": "Bronze relief",
+          "kurzbeschreibung": "Bronze relief: two hands without arms, the upper one caught in barbed wire.",
+          "audio_text": "Stop thirty-three. Harp Player. God sends harp strings, man makes barbed wire out of them. \"God sends harp strings, man makes barbed wire out of them\" is the subtitle of this bronze relief. It is the statement of a believing person looking in despair at world events. This work was created in 1998, but has universal validity. The relief is small, yet it catches the eye at once and causes pain. Here Weinhart knows how to give form to his view of the world with the means of the sculptor. The roughly worked hands without arms emerge from the background. The upper hand is caught in the barbed wire, the lower one tries to grasp it. The barbs of the wire protrude sharply, cause pain and make blood flow. The space around the scene is, as often in Weinhart's reliefs, undefined, and thereby creates unlimited possibilities of interpretation."
+        },
+        "nl": {
+          "titel": "Harpspeler",
+          "untertitel": "God stuurt harpsnaren, de mens maakt er prikkeldraad van",
+          "jahr_text": "1998",
+          "material": "Bronzen reliëf",
+          "kurzbeschreibung": "Bronzen reliëf: twee handen zonder armen, de bovenste gevangen in prikkeldraad.",
+          "audio_text": "Halte drieëndertig. Harpspeler. God stuurt harpsnaren, de mens maakt er prikkeldraad van. „God stuurt harpsnaren, de mens maakt er prikkeldraad van”, luidt de ondertitel van dit bronzen reliëf. Het is de uitspraak van een gelovig mens met een wanhopige blik op de gang van de wereld. Dit werk is in 1998 ontstaan, maar heeft universele geldigheid. Het reliëf is klein, toch springt het meteen in het oog en roept het pijn op. Weinhart weet hier met de middelen van de beeldhouwer zijn kijk op de wereld vorm te geven. De grof uitgewerkte handen zonder armen komen uit de ondergrond tevoorschijn. De bovenste hand zit gevangen in het prikkeldraad, de onderste probeert het te omvatten. De punten van het draad steken scherp naar voren, doen pijn en laten bloed vloeien. De ruimte rond het gebeuren is, zoals vaak bij Weinharts reliëfs, ondefinieerbaar en schept daardoor onbeperkte interpretatiemogelijkheden."
+        },
+        "it": {
+          "titel": "Suonatore di arpa",
+          "untertitel": "Dio manda corde d'arpa, l'uomo ne fa filo spinato",
+          "jahr_text": "1998",
+          "material": "Rilievo in bronzo",
+          "kurzbeschreibung": "Rilievo in bronzo: due mani senza braccia, quella superiore intrappolata nel filo spinato.",
+          "audio_text": "Tappa trentatré. Suonatore di arpa. Dio manda corde d'arpa, l'uomo ne fa filo spinato. «Dio manda corde d'arpa, l'uomo ne fa filo spinato» è il sottotitolo di questo rilievo in bronzo. È l'affermazione di una persona di fede che guarda con disperazione agli eventi del mondo. Quest'opera nacque nel 1998, ma ha una validità universale. Il rilievo è piccolo, eppure colpisce subito l'occhio e provoca dolore. Qui Weinhart sa dare forma, con i mezzi dello scultore, al suo sguardo sul mondo. Le mani, lavorate in modo grezzo e senza braccia, emergono dal fondo. La mano superiore è intrappolata nel filo spinato, quella inferiore cerca di afferrarlo. Le spine del filo sporgono aguzze, procurano dolore e fanno scorrere il sangue. Lo spazio intorno alla scena è, come spesso nei rilievi di Weinhart, indefinibile e crea così possibilità di interpretazione illimitate."
+        }
+      }
+    },
+    {
+      "nr": "40",
+      "titel": "Versuchung",
+      "untertitel": "Der heutige Apfel im Paradies ist die Genmanipulation der Helix",
+      "ort": "",
+      "jahr_text": "2000",
+      "material": "Bronze, Stein",
+      "masse": "H: 130 cm",
+      "kurzbeschreibung": "Eine Schlange windet sich um eine Helix, an der Spitze die Frucht vom Baum der Erkenntnis.",
+      "bild": "",
+      "bildnachweis": "",
+      "audio_text": "Station vierzig. Versuchung. Der heutige Apfel im Paradies ist die Genmanipulation der Helix. Doktor Beneder schrieb im Werkkatalog von 2003, dass Weinhart dieses Werk zum Nachdenken schuf. Er nennt es „Helix“ oder die „Versuchung“. An der Spitze dieser Bronzeplastik befindet sich die Frucht vom Baum der Erkenntnis, deren verstohlener Verzehr schon einmal nicht die erhoffte Wirkung brachte, sondern nur Elend schuf. Das Erkenntnisinteresse der Menschheit war aber damit nicht erloschen, sondern begann erst recht zu wirken, und heute stehen wir wieder vor einem Baum der Erkenntnis, dessen Früchte göttliche Macht versprechen. Die Spaltung des Atom- und Zellkerns bringt die Menschen in Versuchung, Gott zu spielen. Weinharts Skulptur zeigt eine Schlange, die sich um eine Helix windet, die all unsere Erbanlagen trägt. Und nun ist wieder ein Raunen im Ohr zu hören: „Ihr werdet sein wie Gott!“ Wir können eine Welt schaffen, wie wir sie wollen. Es ist die Versuchung schlechthin. Es geht dem Menschen wie dem Zauberlehrling: „Die ich rief, die Geister, werd’ ich nun nicht los“, so Goethe. So weit die Interpretation durch den Künstler.",
+      "i18n": {
+        "en": {
+          "titel": "Temptation",
+          "untertitel": "Today's apple in Paradise is the genetic manipulation of the helix",
+          "jahr_text": "2000",
+          "material": "Bronze, stone",
+          "kurzbeschreibung": "A serpent winds around a helix, with the fruit of the tree of knowledge at its tip.",
+          "audio_text": "Stop forty. Temptation. Today's apple in Paradise is the genetic manipulation of the helix. Doctor Beneder wrote in the catalogue of works of 2003 that Weinhart created this work to provoke thought. He calls it \"Helix\" or \"Temptation\". At the top of this bronze sculpture is the fruit of the tree of knowledge, whose furtive consumption once before did not bring the hoped-for effect, but created only misery. Yet humanity's thirst for knowledge was not extinguished by this, but only began to take full effect, and today we again stand before a tree of knowledge whose fruits promise divine power. The splitting of the atomic nucleus and of the cell nucleus tempts people to play God. Weinhart's sculpture shows a serpent winding around a helix, which carries all our genetic inheritance. And now a whisper is heard in our ear once more: \"You will be like God!\" We can create a world as we want it. It is temptation par excellence. Humans fare like the Sorcerer's Apprentice: \"The spirits that I summoned, I now cannot get rid of\", as Goethe put it. So much for the interpretation by the artist."
+        },
+        "nl": {
+          "titel": "Verzoeking",
+          "untertitel": "De appel in het paradijs van vandaag is de genmanipulatie van de helix",
+          "jahr_text": "2000",
+          "material": "Brons, steen",
+          "kurzbeschreibung": "Een slang kronkelt om een helix, bovenaan de vrucht van de boom van de kennis.",
+          "audio_text": "Halte veertig. Verzoeking. De appel in het paradijs van vandaag is de genmanipulatie van de helix. Doctor Beneder schreef in de werkcatalogus van 2003 dat Weinhart dit werk maakte om te laten nadenken. Hij noemt het „Helix” of de „Verzoeking”. Bovenaan deze bronzen plastiek bevindt zich de vrucht van de boom van de kennis, waarvan het heimelijk eten al eens niet het gehoopte effect had, maar alleen ellende bracht. De kennisdrang van de mensheid was daarmee echter niet gedoofd, maar begon pas echt te werken, en vandaag staan we opnieuw voor een boom van de kennis, waarvan de vruchten goddelijke macht beloven. De splitsing van de atoomkern en de celkern brengt de mens in verzoeking om God te spelen. Weinharts beeld toont een slang die zich om een helix kronkelt, die al onze erfelijke aanleg draagt. En nu is er weer een gefluister in het oor te horen: „Jullie zullen zijn als God!” We kunnen een wereld scheppen zoals we die willen. Het is de verzoeking bij uitstek. De mens vergaat het als de tovenaarsleerling: „De geesten die ik riep, raak ik nu niet meer kwijt”, aldus Goethe. Tot zover de interpretatie door de kunstenaar."
+        },
+        "it": {
+          "titel": "Tentazione",
+          "untertitel": "La mela di oggi nel paradiso è la manipolazione genetica dell'elica",
+          "jahr_text": "2000",
+          "material": "Bronzo, pietra",
+          "kurzbeschreibung": "Un serpente si avvolge attorno a un'elica, in cima il frutto dell'albero della conoscenza.",
+          "audio_text": "Tappa quaranta. Tentazione. La mela di oggi nel paradiso è la manipolazione genetica dell'elica. Il dottor Beneder scrisse nel catalogo delle opere del 2003 che Weinhart creò quest'opera per far riflettere. Egli la chiama «Elica» o «Tentazione». In cima a questa scultura in bronzo si trova il frutto dell'albero della conoscenza, il cui consumo furtivo, già una volta, non portò l'effetto sperato, ma creò soltanto miseria. L'interesse della conoscenza dell'umanità non si spense però per questo, anzi cominciò davvero a operare, e oggi ci troviamo di nuovo davanti a un albero della conoscenza, i cui frutti promettono un potere divino. La scissione dell'atomo e del nucleo cellulare porta gli esseri umani nella tentazione di giocare a fare Dio. La scultura di Weinhart mostra un serpente che si avvolge attorno a un'elica, che porta tutto il nostro patrimonio genetico. E di nuovo si sente un sussurro all'orecchio: «Sarete come Dio!» Possiamo creare un mondo come lo vogliamo. È la tentazione per eccellenza. All'uomo accade come all'apprendista stregone: «Gli spiriti che ho evocato, ora non riesco più a liberarmene», scrive Goethe. Fin qui l'interpretazione dell'artista."
         }
       }
     }

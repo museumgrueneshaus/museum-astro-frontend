@@ -1,6 +1,7 @@
 // Erzeugt die Audiodateien 00–05 aus daten.json mit einer Neural-TTS.
 // Anbieter per env: TTS=elevenlabs (Standard) oder TTS=openai.
-//   ELEVENLABS_API_KEY=… ELEVENLABS_VOICE=<voice_id> node scripts/weinhart/tts.mjs
+//   ELEVENLABS_VOICE=<voice_id> node --env-file=.env.local scripts/weinhart/tts.mjs   (Key steht in .env.local)
+//   Stimme bisher: George JBFqnCBsd6RMkjVDRZzb, Modell eleven_v4_turbo. Free-Tier nur mp3_44100_128 (ELEVENLABS_FORMAT).
 //   TTS=openai OPENAI_API_KEY=… node scripts/weinhart/tts.mjs
 //   TTS=say node scripts/weinhart/tts.mjs   (macOS-Stimmen, nur als Probe)
 // Optional: NUR=01,04 nur einzelne Stationen, SPRACHEN=de,en nur einzelne Sprachen.
@@ -36,7 +37,7 @@ async function elevenlabs(text, l) {
   const voice = process.env.ELEVENLABS_VOICE;
   if (!key || !voice) throw new Error('ELEVENLABS_API_KEY und ELEVENLABS_VOICE setzen');
   const model = process.env.ELEVENLABS_MODEL || 'eleven_multilingual_v2';
-  const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=mp3_44100_192`, {
+  const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=${process.env.ELEVENLABS_FORMAT || 'mp3_44100_128'}`, {
     method: 'POST',
     headers: { 'xi-api-key': key, 'content-type': 'application/json' },
     body: JSON.stringify({

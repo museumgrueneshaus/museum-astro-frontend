@@ -8,19 +8,24 @@
       #v(3mm)
       #text(size: 13pt, fill: rgb("#8a6a40"))[#nr]
       #v(-1mm)
-      #text(size: 24pt, weight: 300)[#titel]
+      #text(size: if titel.len() > 30 { 18pt } else { 24pt }, weight: 300)[#titel]
       #v(6mm)
-      #text(size: 9pt, font: "Inter")[Audioguide · Audio guide · Audiotour · Audioguida]
+      #text(size: 9pt, font: "Inter")[Audioguide · Audio guide]
       #v(1mm)
-      #text(size: 7pt, font: "Inter", fill: luma(110))[DE · EN · NL · IT]
+      #text(size: 7pt, font: "Inter", fill: luma(110))[DE · EN]
     ],
     align(horizon, image(datei, width: 62mm)),
   ))
   pagebreak(weak: true)
 }
-#schild("00", "Einführung", "weinhart-00.svg", "https://museumgh-preview.netlify.app/audioguide/?a=weinhart&s=weinhart-00")
-#schild("01", "Zugspitzgeist", "weinhart-01.svg", "https://museumgh-preview.netlify.app/audioguide/?a=weinhart&s=weinhart-01")
-#schild("02", "Hl. Jakobus", "weinhart-02.svg", "https://museumgh-preview.netlify.app/audioguide/?a=weinhart&s=weinhart-02")
-#schild("03", "Lealibrunnen", "weinhart-03.svg", "https://museumgh-preview.netlify.app/audioguide/?a=weinhart&s=weinhart-03")
-#schild("04", "Ewige Gewalt", "weinhart-04.svg", "https://museumgh-preview.netlify.app/audioguide/?a=weinhart&s=weinhart-04")
-#schild("05", "Hl. Dionysius", "weinhart-05.svg", "https://museumgh-preview.netlify.app/audioguide/?a=weinhart&s=weinhart-05")
+#schild("00", "Einführung", "weinhart-00.svg", "https://museumgh-preview.netlify.app/g/7pv2ht")
+#schild("04", "Heiliger Martin des 21. Jahrhunderts", "weinhart-04.svg", "https://museumgh-preview.netlify.app/g/z627pa")
+#schild("05", "Studie zur modernen Apokalypse", "weinhart-05.svg", "https://museumgh-preview.netlify.app/g/xby4yv")
+#schild("09", "Vater, warum hast du mich verlassen?", "weinhart-09.svg", "https://museumgh-preview.netlify.app/g/qanc6c")
+#schild("10", "Selbstbildnis", "weinhart-10.svg", "https://museumgh-preview.netlify.app/g/xddb24")
+#schild("14", "Heiliger Dionysius", "weinhart-14.svg", "https://museumgh-preview.netlify.app/g/qd92uc")
+#schild("15", "Heilige Maria", "weinhart-15.svg", "https://museumgh-preview.netlify.app/g/5e87d7")
+#schild("22", "Christus reißt sich los, um uns zu erreichen", "weinhart-22.svg", "https://museumgh-preview.netlify.app/g/5t47xw")
+#schild("25", "Vergebliche Flucht", "weinhart-25.svg", "https://museumgh-preview.netlify.app/g/dbbrer")
+#schild("33", "Harfenspieler", "weinhart-33.svg", "https://museumgh-preview.netlify.app/g/y42z77")
+#schild("40", "Versuchung", "weinhart-40.svg", "https://museumgh-preview.netlify.app/g/rdkff5")

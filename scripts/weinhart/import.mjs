@@ -1,7 +1,7 @@
-// Legt die Weinhart-Testinhalte in Sanity an: Einführung + 5 Exponate + Ausstellung.
+// Legt den Weinhart-Audioguide in Sanity an: Einführung + Exponate + Ausstellung.
 // Ohne --schreiben läuft nur eine Probe (zeigt, was angelegt würde, lädt nichts hoch).
-//   SANITY_WRITE_TOKEN=… node scripts/weinhart/import.mjs            → Probe
-//   SANITY_WRITE_TOKEN=… node scripts/weinhart/import.mjs --schreiben → anlegen
+//   node --env-file=.env.local scripts/weinhart/import.mjs            → Probe
+//   node --env-file=.env.local scripts/weinhart/import.mjs --schreiben → anlegen
 // Wiederholbar: feste IDs (createOrReplace), Sanity erkennt gleiche Dateien am Hash.
 // Audio: audio/<sprache>/NN.m4a, fehlende Sprachen werden übersprungen.
 import { createClient } from '@sanity/client';
@@ -24,6 +24,8 @@ const SPRACHEN = d.sprachen || ['de'];
 const FREMD = SPRACHEN.filter(l => l !== 'de');
 
 const exists = (p) => access(p).then(() => true, () => false);
+// Zufallscodes der QR-Schilder (qr.py); ohne Datei bleibt die lesbare Kennung.
+const codes = (await exists(join(DIR, 'codes.json'))) ? JSON.parse(await readFile(join(DIR, 'codes.json'), 'utf8')) : {};
 const key = (s) => s.replace(/[^a-z0-9]/gi, '').slice(0, 12) || 'k';
 const block = (text, k) => ({ _type: 'block', _key: k, style: 'normal', markDefs: [], children: [{ _type: 'span', _key: `${k}s`, text, marks: [] }] });
 const dauer = (f) => {
@@ -72,10 +74,10 @@ for (const s of eintraege) {
     beschreibung: [block(s.audio_text, `b${s.nr}`)],
     titel_en: en.titel, untertitel_en: en.untertitel, kurzbeschreibung_en: en.kurzbeschreibung,
     beschreibung_en: en.audio_text ? [block(en.audio_text, `e${s.nr}`)] : undefined,
-    inventarnummer: `WH-T${s.nr}`,
+    inventarnummer: `WH-${s.nr}`,
     slug: { _type: 'slug', current: `weinhart-${s.nr}` },
-    qr_code: { _type: 'slug', current: `weinhart-${s.nr}` },
-    tags: ['Testinhalt', 'Weinhart'],
+    qr_code: { _type: 'slug', current: codes[`weinhart-${s.nr}`] || `weinhart-${s.nr}` },
+    tags: ['Weinhart'],
     datierung: s.jahr_text ? { jahr_text: s.jahr_text, ...(/^\d{4}$/.test(s.jahr_text) ? { jahr_von: +s.jahr_text, jahr_bis: +s.jahr_text } : {}) } : undefined,
     herstellung: s.material || s.ort ? { material: s.material || undefined, entstehungsort: s.ort || undefined } : undefined,
     physisch: s.masse ? { masse: s.masse } : undefined,
@@ -97,7 +99,7 @@ const ausstellung = {
   guide: Object.fromEntries(FREMD.map(l => { const { audio_text, ...r } = A.i18n[l]; return [l, r]; })),
   titelbild: docs[1].hauptbild ? { _type: 'image', asset: docs[1].hauptbild.asset } : undefined,
   exponate: docs.map(x => ({ _type: 'reference', _ref: x._id, _key: key(x._id) })),
-  tags: ['Testinhalt'],
+  tags: ['Weinhart'],
   zeitraum: { typ: 'sonder' },
   veroeffentlichung: { status: 'entwurf' },
 };

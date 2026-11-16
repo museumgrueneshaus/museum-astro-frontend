@@ -1,3 +1,4 @@
+
 # Redirect root to index
 / /index.html 200
 
@@ -5,6 +6,9 @@
 /kiosk/* /kiosk/index.html 200
 /exponat/* /exponat/index.html 200
 /mobile/* /mobile/index.html 200
+
+# Audioguide-Kurzcodes aus den QR-Schildern (Adresse bleibt /g/<code>)
+/g/* /audioguide/index.html 200
 
 # API routes
 /api/* /.netlify/functions/* 200
