@@ -581,7 +581,7 @@ const DATASET = import.meta.env.PUBLIC_SANITY_DATASET || 'production';
       // Ohne Tonspur in der gewählten Sprache: deren Lesefassung, falls vorhanden.
       const a = audioOf(e);
       const fallback = a && a.sprache !== L;
-      const lt = fallback ? e.guide?.[L]?.lesetext : null;
+      const lt = fallback || !a ? e.guide?.[L]?.lesetext : null;
       const txt = lt || a?.transkript;
       const paras = txt ? txt.split(/\n\s*\n/).filter(Boolean) : ptText(e.beschreibung);
       $('tr-text').innerHTML = (fallback ? `<p class="note">${esc(t(a.sprache === 'en' ? 'nurEn' : 'nurDe'))}</p>` : '') + paras.map(p => `<p lang="${lt ? L : a?.sprache || 'de'}">${esc(p)}</p>`).join('');
@@ -608,8 +608,9 @@ const DATASET = import.meta.env.PUBLIC_SANITY_DATASET || 'production';
     }
     function loadTrack(e, autoplay) {
       const a = audioOf(e);
-      if (!a?.asset?.url) return;
       current = e;
+      document.querySelector('.player').classList.toggle('hidden', !a?.asset?.url);
+      if (!a?.asset?.url) { audio.pause(); audio.removeAttribute('src'); audio.load(); syncUi(); return; }
       audio.src = a.asset.url;
       audio.playbackRate = RATES[rateIdx];
       buildWave(e._id);
